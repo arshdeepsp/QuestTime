@@ -1,26 +1,105 @@
 /* ===== phone polish ===== */
-@media (max-width:720px){
-  .mbar{grid-template-columns:repeat(3,1fr);gap:6px;padding-left:8px;padding-right:8px}
-  .mbar .stone{flex-direction:column;gap:4px;font-size:8px;padding:8px 2px;min-height:52px}
-  .mbar .stone b{font-size:11px}
+@media (max-width: 720px) {
+  .mbar {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .mbar .stone {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 8px;
+    padding: 8px 2px;
+    min-height: 52px;
+  }
+  .mbar .stone b {
+    font-size: 11px;
+  }
 
-  .tl-from{display:none}
-  .timeline{margin-top:6px}.tl-for{font-size:18px}
-  #quests .q .ctl{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 8px}
-  .ctl .stone.tmr{order:1;height:40px;padding:0 10px}
-  .ctl .ctr.act{order:2;flex:0 0 auto!important}
-  .ctl .ctr.plan{order:3;flex-basis:100%;justify-content:flex-end;opacity:.9}
-  .ctr .stone{width:40px;height:40px}
-  .ctr output{min-width:62px;padding:10px 2px}
-  .ctr.plan .stone{width:34px;height:34px}.ctr.plan output{min-width:56px;padding:7px 2px}
-  .ctr .tag{font-size:15px!important}
-  .tm{font:16px var(--vt);height:40px;min-width:118px}
-  .ctr .stone.now{height:40px}
-  .sw{width:76px;height:36px;--k:28px}
-  .stone.sc{width:34px;height:34px}
-  .stone.wkbtn,.stone.tdbtn{padding:11px 12px}
-  .pzb{width:30px;height:30px}
-  .q{grid-template-columns:14px 30px 1fr}
-  .tdrow input{font-size:18px;padding:8px}
-  .tdrow .stone{padding:10px 14px}
+  .tl-from {
+    display: none;
+  }
+  .timeline {
+    margin-top: 6px;
+  }
+  .tl-for {
+    font-size: 18px;
+  }
+  #quests .q .ctl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px 8px;
+  }
+  .ctl .stone.tmr {
+    order: 1;
+    height: 40px;
+    padding: 0 10px;
+  }
+  .ctl .ctr.act {
+    order: 2;
+    flex: 0 0 auto !important;
+  }
+  .ctl .ctr.plan {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-end;
+    opacity: 0.9;
+  }
+  .ctr .stone {
+    width: 40px;
+    height: 40px;
+  }
+  .ctr output {
+    min-width: 62px;
+    padding: 10px 2px;
+  }
+  .ctr.plan .stone {
+    width: 34px;
+    height: 34px;
+  }
+  .ctr.plan output {
+    min-width: 56px;
+    padding: 7px 2px;
+  }
+  .ctr .tag {
+    font-size: 15px !important;
+  }
+  .tm {
+    font: 16px var(--vt);
+    height: 40px;
+    min-width: 118px;
+  }
+  .ctr .stone.now {
+    height: 40px;
+  }
+  .sw {
+    width: 76px;
+    height: 36px;
+    --k: 28px;
+  }
+  .stone.sc {
+    width: 34px;
+    height: 34px;
+  }
+  .stone.wkbtn,
+  .stone.tdbtn {
+    padding: 11px 12px;
+  }
+  .pzb {
+    width: 30px;
+    height: 30px;
+  }
+  .q {
+    grid-template-columns: 14px 30px 1fr;
+  }
+  .tdrow input {
+    font-size: 18px;
+    padding: 8px;
+  }
+  .tdrow .stone {
+    padding: 10px 14px;
+  }
 }

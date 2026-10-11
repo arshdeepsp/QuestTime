@@ -1,11 +1,46 @@
 /* Swipe-left-for-menu on list rows outside the quest list (swipeMenu, 45): the same blue edge as a quest row's swipe. */
-.sjsec-h,.tr,details.rules>summary{touch-action:pan-y}
-.sjsec-h.sw-l,.tr.sw-l,details.rules>summary.sw-l{box-shadow:inset -8px 0 0 #2C6FB0,0 0 0 3px #6FB6EA}
-.qmenu button.armed{background:#B3261E;color:#fff}
+.sjsec-h,
+.tr,
+details.rules > summary {
+  touch-action: pan-y;
+}
+.sjsec-h.sw-l,
+.tr.sw-l,
+details.rules > summary.sw-l {
+  box-shadow:
+    inset -8px 0 0 #2c6fb0,
+    0 0 0 3px #6fb6ea;
+}
+.qmenu button.armed {
+  background: #b3261e;
+  color: #fff;
+}
 /* To-do review rows answer a two-way swipe: right = keep (green edge), left = delete (red edge); a row marked for deletion is struck through. */
-.tdrev{touch-action:pan-y}
-.tdrev.sw-r{box-shadow:inset 8px 0 0 #3C8527,0 0 0 3px #7FE05A}
-.tdrev.sw-l{box-shadow:inset -8px 0 0 #B3261E,0 0 0 3px #E07060}
-.tdrev.dropq>span{text-decoration:line-through;opacity:.6}
+.tdrev {
+  touch-action: pan-y;
+}
+.tdrev.sw-r {
+  box-shadow:
+    inset 8px 0 0 #3c8527,
+    0 0 0 3px #7fe05a;
+}
+.tdrev.sw-l {
+  box-shadow:
+    inset -8px 0 0 #b3261e,
+    0 0 0 3px #e07060;
+}
+.tdrev.dropq > span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
 /* Rulebook sections reorder by hold on phones; the grip is for mouse and keyboard. */
-@media (max-width:720px){details.rules>summary{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}details.rules .sdrag{display:none!important}}
+@media (max-width: 720px) {
+  details.rules > summary {
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  details.rules .sdrag {
+    display: none !important;
+  }
+}

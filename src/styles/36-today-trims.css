@@ -1,48 +1,216 @@
 /* ===== Today trims (usability pass 2) ===== */
 /* Period note: one quiet line above the list; warm when behind pace, red only on a checkpoint day that's behind. */
-.carrynote{display:flex;align-items:center;gap:8px;cursor:pointer;margin:0 0 8px;padding:6px 10px;background:#B5B5B5;border:3px solid;border-color:#555 #fff #fff #555;color:#1E1E1E;font:17px/1.25 var(--vt);text-shadow:none}
-.carrynote span{flex:1;min-width:0}
-.carrynote .sq{flex:none;font:8px var(--px);font-style:normal;width:20px;height:20px;display:grid;place-items:center;background:#373737;color:#FFFF55;border:2px solid #1E1E1E}
-.carrynote.warm{background:#F3E2B8;border-color:#8A6A1E #FFF3D6 #FFF3D6 #8A6A1E;color:#4A3A0E}
-.carrynote.hot{background:#FFE3DD;border-color:#B3261E #FFD0C8 #FFD0C8 #B3261E;color:#7A1A12}
-.carrynote[hidden]{display:none!important}
+.carrynote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  background: #b5b5b5;
+  border: 3px solid;
+  border-color: #555 #fff #fff #555;
+  color: #1e1e1e;
+  font: 17px/1.25 var(--vt);
+  text-shadow: none;
+}
+.carrynote span {
+  flex: 1;
+  min-width: 0;
+}
+.carrynote .sq {
+  flex: none;
+  font: 8px var(--px);
+  font-style: normal;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: #373737;
+  color: #ffff55;
+  border: 2px solid #1e1e1e;
+}
+.carrynote.warm {
+  background: #f3e2b8;
+  border-color: #8a6a1e #fff3d6 #fff3d6 #8a6a1e;
+  color: #4a3a0e;
+}
+.carrynote.hot {
+  background: #ffe3dd;
+  border-color: #b3261e #ffd0c8 #ffd0c8 #b3261e;
+  color: #7a1a12;
+}
+.carrynote[hidden] {
+  display: none !important;
+}
 /* Weekly check-in card at the top of Subjects */
-.rrcard{background:#C6C6C6;border:3px solid;border-color:#fff #555 #555 #fff;box-shadow:0 0 0 3px #000;padding:10px 12px;margin:0 0 14px;color:#1E1E1E;text-shadow:none}
-.rrcard-h{display:grid;gap:4px;margin-bottom:6px}
-.rrcard-h b{font:10px var(--px);color:#1E1E1E}
-.rrcard-h small{font:16px var(--vt);color:#3F3F3F}
-.rrcard .edrow.end{margin-top:8px}
+.rrcard {
+  background: #c6c6c6;
+  border: 3px solid;
+  border-color: #fff #555 #555 #fff;
+  box-shadow: 0 0 0 3px #000;
+  padding: 10px 12px;
+  margin: 0 0 14px;
+  color: #1e1e1e;
+  text-shadow: none;
+}
+.rrcard-h {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.rrcard-h b {
+  font: 10px var(--px);
+  color: #1e1e1e;
+}
+.rrcard-h small {
+  font: 16px var(--vt);
+  color: #3f3f3f;
+}
+.rrcard .edrow.end {
+  margin-top: 8px;
+}
 /* Phone header: the pencil and Minimal live in the ⋮ menu; the Minimal button only shows while Minimal view is on, as the way out. */
-@media (max-width:720px){
-  html body #hdrEdit{display:none!important}
-  html body:not(.focusview) #focusBtn{display:none!important}
-  .gui-r{grid-template-columns:minmax(0,1fr) auto!important}
-  .gui-r .lock:empty{display:none}
+@media (max-width: 720px) {
+  html body #hdrEdit {
+    display: none !important;
+  }
+  html body:not(.focusview) #focusBtn {
+    display: none !important;
+  }
+  .gui-r {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+  .gui-r .lock:empty {
+    display: none;
+  }
 }
 /* Quick to-do add: first thing in the phone list */
-@media (max-width:720px){
-  html body .tdghost{display:flex!important;order:-1;margin-bottom:2px;padding:4px 8px}
-  html body.hide-todo .tdghost,html body.past-view .tdghost,html body #quests.timing .tdghost{display:none!important}
+@media (max-width: 720px) {
+  html body .tdghost {
+    display: flex !important;
+    order: -1;
+    margin-bottom: 2px;
+    padding: 4px 8px;
+  }
+  html body.hide-todo .tdghost,
+  html body.past-view .tdghost,
+  html body #quests.timing .tdghost {
+    display: none !important;
+  }
 }
 /* Quest forms: secondary fields fold under "More options"; the button carries a one-line summary of what's set. */
-.more-tog{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;width:100%;text-align:left;margin:6px 0 2px}
-.more-tog small{font:15px var(--vt);color:#3F3F3F;text-transform:none;letter-spacing:0;font-weight:400;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.moreb{display:grid;gap:8px;padding:8px;margin:4px 0 6px;border:3px dashed #8B8B8B;background:rgba(0,0,0,.05)}
-.moreb .sjfield{margin:0}
+.more-tog {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  width: 100%;
+  text-align: left;
+  margin: 6px 0 2px;
+}
+.more-tog small {
+  font: 15px var(--vt);
+  color: #3f3f3f;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.moreb {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  margin: 4px 0 6px;
+  border: 3px dashed #8b8b8b;
+  background: rgba(0, 0, 0, 0.05);
+}
+.moreb .sjfield {
+  margin: 0;
+}
 /* After a streak reset: a dismissible card under the HUD (Challenge only), never a gate. */
-.resetcard{display:grid;gap:6px;margin:0 0 10px;padding:10px 12px;background:#C6C6C6;border:3px solid;border-color:#fff #555 #555 #fff;box-shadow:0 0 0 3px #000;color:#1E1E1E;text-shadow:none}
-.resetcard b{font:10px var(--px)}
-.resetcard span{font:16px var(--vt);color:#3F3F3F}
-.resetcard textarea{font:18px var(--vt);background:#373737;color:#fff;border:3px solid;border-color:#1E1E1E #8B8B8B #8B8B8B #1E1E1E;padding:6px 8px;resize:vertical;min-height:44px}
-.resetcard[hidden]{display:none!important}
+.resetcard {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  background: #c6c6c6;
+  border: 3px solid;
+  border-color: #fff #555 #555 #fff;
+  box-shadow: 0 0 0 3px #000;
+  color: #1e1e1e;
+  text-shadow: none;
+}
+.resetcard b {
+  font: 10px var(--px);
+}
+.resetcard span {
+  font: 16px var(--vt);
+  color: #3f3f3f;
+}
+.resetcard textarea {
+  font: 18px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 6px 8px;
+  resize: vertical;
+  min-height: 44px;
+}
+.resetcard[hidden] {
+  display: none !important;
+}
 /* Per-quest streak chip after the label */
-.qstk{display:inline-flex;align-items:center;gap:2px;font:14px var(--vt);color:#FFD23F;text-shadow:1px 1px 0 #3F3F3F;vertical-align:middle;margin-left:4px}
-.qstk svg{width:12px;height:12px;display:block}
-.qstk b{font-weight:400}
-.qstk[hidden]{display:none!important}
-.strip i.repaired{background:#9B7FD6}
+.qstk {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font: 14px var(--vt);
+  color: #ffd23f;
+  text-shadow: 1px 1px 0 #3f3f3f;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.qstk svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+.qstk b {
+  font-weight: 400;
+}
+.qstk[hidden] {
+  display: none !important;
+}
+.strip i.repaired {
+  background: #9b7fd6;
+}
 /* Account page */
-.acct{display:grid;gap:8px;padding:10px 12px}
-.acct label{display:grid;gap:4px;font:8px var(--px);color:#3F3F3F}
-.acct input{font:19px var(--vt);background:#373737;color:#fff;border:3px solid;border-color:#1E1E1E #8B8B8B #8B8B8B #1E1E1E;padding:6px 8px;min-width:0}
-.acct .cmsg2.bad{color:#9E2A1F}
+.acct {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.acct label {
+  display: grid;
+  gap: 4px;
+  font: 8px var(--px);
+  color: #3f3f3f;
+}
+.acct input {
+  font: 19px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 6px 8px;
+  min-width: 0;
+}
+.acct .cmsg2.bad {
+  color: #9e2a1f;
+}

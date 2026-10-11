@@ -15,11 +15,13 @@ Pixel-art gamified habit/productivity app. Web PWA (GitHub Pages) + Android app 
 npm install
 npx playwright install chromium
 npm run build
+npm run format
 npm test
 npm run serve
 npm run android:apk
 ```
 - `build` → `dist/` (single `index.html` + assets + `sw.js` with versioned cache; the version hashes `index.html` and `vendor/firebase.js`). It also bundles `src/firebase/fb.js` + the Firebase SDK with esbuild into `dist/vendor/firebase.js` (ESM, loaded lazily on sign-in; listed in the service worker's assets).
+- `format` → Prettier 3 (`.prettierrc.json`: print width 120) over `src/js`, `src/styles`, `src/firebase` and `build.mjs`; run it before committing (`format:check` reports without writing). Source is formatted for reading; the build whitespace-minifies the joined JS and CSS with esbuild (`squeeze`: comments dropped, nothing renamed), so formatting doesn't grow the app. `tests/` isn't formatted.
 - `test` → build + Playwright (headless Chromium, fake clock, seeded localStorage), served over http by `tests/serve.mjs` on :4173 (file:// lost localStorage across reloads and made reload tests flaky). ~350 tests, ~4 min (`--workers=2` in the container).
 - `android:apk` → build, `npx cap sync android`, `node scripts/add-native.cjs`, `./gradlew assembleDebug`. Never run `assembleDebug` alone after source changes.
 - First Android setup: `npx cap add android`, `node scripts/add-permissions.cjs`, `npx @capacitor/assets generate --android`, then `npm run android:apk`.
@@ -133,11 +135,10 @@ build.mjs              the whole build
 - Cloud sync tests never touch the network: `sync.spec` installs an in-memory `window.PCFB` (`fake` in `tests/fakecloud.mjs`) with `window.__cloud.remote(path, data)` to simulate another device and a Firestore-shape validator in `batch`. Both fakes persist across the app's sign-in/out reloads (`__fc` / `__fb` in localStorage), so preset init scripts start with `if (localStorage.getItem("__fc")) return;`; wrap an action that reloads in `reloadOn(page, fn)` and poll with `ev()` (an evaluate that tolerates a reload). `store(page)` in sync.spec reads the signed-in account's copy.
 
 ## Known debt (planned clean-up, in order)
-1. Auto-format (code is dense one-liners).
-2. Remove dead code: bank, Top 3, old quest-cap picker, legacy fields.
-3. Rename/regroup files by feature.
-4. Consolidate CSS per screen; reduce `!important` layering (mobile rules are scattered; later files override earlier).
-5. Add subscriptions to the store and move to real ES modules (`src/firebase/fb.js` is the first).
+1. Remove dead code: bank, Top 3, old quest-cap picker, legacy fields.
+2. Rename/regroup files by feature.
+3. Consolidate CSS per screen; reduce `!important` layering (mobile rules are scattered; later files override earlier).
+4. Add subscriptions to the store and move to real ES modules (`src/firebase/fb.js` is the first).
 
 ## Before publishing (not started)
 - Reskin away from Minecraft look: grass-block icon/tiles, grey bevel panel palette, "Nether" theme name, "Achievement unlocked!" toast. Check the name on the Play Store.

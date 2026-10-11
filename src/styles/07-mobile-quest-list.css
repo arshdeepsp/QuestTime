@@ -1,72 +1,399 @@
 /* ===== mobile quest list ===== */
-@media (max-width:720px){
-  #gui{padding:12px 10px}
-  #gui .gh{margin-bottom:8px}
-  .qcount{display:inline-block;font:9px var(--px);background:#3C8527;color:#fff;padding:4px 6px;margin-left:6px;vertical-align:middle;text-shadow:none}
-  #quests{display:flex;flex-direction:column;gap:6px}
-  #quests .q{grid-template-columns:22px 12px 28px minmax(0,1fr) auto!important;padding:8px 8px;gap:4px 8px;align-items:center;min-height:0}
-  #quests .q .req{display:none!important}
-  #quests .q .lbl{font-size:10px;line-height:1.35}
-  #quests .q:not(.colq) .ctl{grid-column:5!important;grid-row:1;justify-self:end}
-  #quests .q.colq .ctl{grid-column:1/-1!important;display:none!important}
-  #quests .q.colq.open .ctl,#quests .q.colq.running .ctl{display:flex!important}
-  #quests .q .qsum{display:block;grid-column:5;grid-row:1;font:17px var(--vt);color:#fff;background:#373737;border:2px solid #1E1E1E;padding:4px 8px;white-space:nowrap;cursor:pointer;text-shadow:none}
-  #quests .q.open .qsum{background:#3C8527}
-  #quests .q.running .qsum{display:none}
-  #quests .q .sjchip{margin-top:2px;font-size:14px;padding:0 5px}
-  #quests .q .stone.wkbtn,#quests .q .stone.tdbtn{font-size:8px;padding:8px 9px}
-  #quests .q .sw{width:64px;height:32px;--k:24px}
-  .donesep{display:flex;align-items:center;justify-content:space-between;order:2;width:100%;text-align:left;font:9px var(--px);color:#3F3F3F;background:#B5B5B5;border:2px solid #8B8B8B;padding:9px 12px;margin-top:2px;cursor:pointer}
-  .donesep[hidden]{display:none !important}
-  .donesep .chev{display:inline-block;flex:none;width:8px;height:8px;border-right:3px solid #555;border-bottom:3px solid #555;transform:rotate(45deg);margin:-4px 4px 0 0;transition:transform .15s}
-  #quests.done-open .donesep .chev{transform:rotate(-135deg);margin:4px 4px 0 0}
-  .qcount{cursor:pointer}
-  html body .qtools:not(:has(#shareBtn:not([hidden]))){display:none!important}
-  html body .qtools{grid-template-columns:1fr!important}
-  html body #sparkBar,html body #sparkBar[hidden]{display:grid!important;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 44px}
-  .m-hide{display:none}
-  #sparkBar .stone{overflow:hidden;text-overflow:ellipsis}
-  .gui-r{grid-template-columns:minmax(0,1fr) auto auto auto!important}
-  .hdricon{display:grid;place-items:center;width:34px;height:30px;padding:0!important}.hdricon svg{width:16px;height:16px}
-  .stone.hdradd{display:none!important}
-  .fab{display:grid;place-items:center;position:fixed;right:14px;bottom:calc(max(var(--navH,0px), 72px + var(--sab)) + 12px);z-index:24;width:56px;height:56px;font:22px var(--px);color:#fff;background:#3C8527;border:4px solid;border-color:#5DB33F #2A5E1B #2A5E1B #5DB33F;box-shadow:0 0 0 3px #000,0 6px 0 rgba(0,0,0,.35);text-shadow:2px 2px 0 #1E4A12;cursor:pointer}
-  .fab:active{transform:translateY(2px)}
-  body:not([data-cur="today"]) .fab,body.grove-on .fab,body.past-view .fab{display:none!important}
-  .tdghost{display:none!important;order:1;gap:6px;align-items:center;border:3px dashed #8B8B8B;background:rgba(255,255,255,.25);padding:6px 8px}
-  .tdghost input{flex:1;min-width:0;font:18px var(--vt);background:transparent;border:0;color:#3F3F3F;padding:4px 2px;outline:none}
-  .tdghost input::placeholder{color:#6A6A6A}
-  .tdghost .stone{font-size:7px!important;padding:8px 9px!important}
-  .tdghost:focus-within{border-style:solid;border-color:#3C8527;background:#E8F5E1}
-  #gui{padding-bottom:12px}
-  .wrap{padding-bottom:70px}
-  #quests .q.t-weekly .wkbox{display:none}
-  .wksub{display:block;font:15px var(--vt);color:#E6E6E6;margin-top:2px}
-  #quests .q.indone{order:3}
-  #quests:not(.done-open) .q.indone{display:none!important}
-  #quests .q.indone .qgrip{visibility:hidden}
-  #quests .q.running{border-color:#FFD23F}
-  #quests .q.running .ctr,#quests .q.running .plan{display:none!important}
-  .runbox{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;flex:1;min-width:0}
-  .rb-t{font:20px var(--px);color:#FFFF55;text-shadow:2px 2px 0 #000}
-  .rb-s{grid-column:1;font:16px var(--vt);color:#fff}
-  .rb-b{grid-column:1/-1;height:8px;background:#1E1E1E;border:2px solid #000}.rb-b i{display:block;height:100%;background:#7FE05A}
-  .rb-f{grid-column:1/-1;font:15px var(--vt);color:#FFF3C4}.rb-f:empty{display:none}
-  #quests .q.running .ctl{align-items:center;gap:10px;flex-wrap:nowrap!important}
-  #quests .q.running .tmr{order:2;align-self:stretch;height:auto!important;min-height:44px;padding:0 14px}
-  #quests .q.running .tmr span{display:none}
-  .qtools{flex-wrap:wrap;gap:6px}.qtools .stone{font-size:8px;padding:9px 10px}
-  .tdtg{display:inline-block}
-  .qtools .lg{display:none}
-  html body.hide-grip #quests .q{grid-template-columns:0 12px 28px minmax(0,1fr) auto!important}
-  #tdRow{display:none}body.tdopen #tdRow{display:flex}
-  #gui .xp,#xpText{display:none!important}
-  #sparkBar{gap:6px;margin-bottom:8px}#sparkBar .stone{font-size:7px;padding:9px 4px;white-space:nowrap}
-  .qtools{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.qtools .stone{font-size:7px!important;padding:10px 2px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qtools .stone[hidden]{display:none !important}
-  .gui-r{gap:6px}.gui-r .locks,#lockTxt{font-size:15px}
+@media (max-width: 720px) {
+  #gui {
+    padding: 12px 10px;
+  }
+  #gui .gh {
+    margin-bottom: 8px;
+  }
+  .qcount {
+    display: inline-block;
+    font: 9px var(--px);
+    background: #3c8527;
+    color: #fff;
+    padding: 4px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+    text-shadow: none;
+  }
+  #quests {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #quests .q {
+    grid-template-columns: 22px 12px 28px minmax(0, 1fr) auto !important;
+    padding: 8px 8px;
+    gap: 4px 8px;
+    align-items: center;
+    min-height: 0;
+  }
+  #quests .q .req {
+    display: none !important;
+  }
+  #quests .q .lbl {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  #quests .q:not(.colq) .ctl {
+    grid-column: 5 !important;
+    grid-row: 1;
+    justify-self: end;
+  }
+  #quests .q.colq .ctl {
+    grid-column: 1/-1 !important;
+    display: none !important;
+  }
+  #quests .q.colq.open .ctl,
+  #quests .q.colq.running .ctl {
+    display: flex !important;
+  }
+  #quests .q .qsum {
+    display: block;
+    grid-column: 5;
+    grid-row: 1;
+    font: 17px var(--vt);
+    color: #fff;
+    background: #373737;
+    border: 2px solid #1e1e1e;
+    padding: 4px 8px;
+    white-space: nowrap;
+    cursor: pointer;
+    text-shadow: none;
+  }
+  #quests .q.open .qsum {
+    background: #3c8527;
+  }
+  #quests .q.running .qsum {
+    display: none;
+  }
+  #quests .q .sjchip {
+    margin-top: 2px;
+    font-size: 14px;
+    padding: 0 5px;
+  }
+  #quests .q .stone.wkbtn,
+  #quests .q .stone.tdbtn {
+    font-size: 8px;
+    padding: 8px 9px;
+  }
+  #quests .q .sw {
+    width: 64px;
+    height: 32px;
+    --k: 24px;
+  }
+  .donesep {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    order: 2;
+    width: 100%;
+    text-align: left;
+    font: 9px var(--px);
+    color: #3f3f3f;
+    background: #b5b5b5;
+    border: 2px solid #8b8b8b;
+    padding: 9px 12px;
+    margin-top: 2px;
+    cursor: pointer;
+  }
+  .donesep[hidden] {
+    display: none !important;
+  }
+  .donesep .chev {
+    display: inline-block;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-right: 3px solid #555;
+    border-bottom: 3px solid #555;
+    transform: rotate(45deg);
+    margin: -4px 4px 0 0;
+    transition: transform 0.15s;
+  }
+  #quests.done-open .donesep .chev {
+    transform: rotate(-135deg);
+    margin: 4px 4px 0 0;
+  }
+  .qcount {
+    cursor: pointer;
+  }
+  html body .qtools:not(:has(#shareBtn:not([hidden]))) {
+    display: none !important;
+  }
+  html body .qtools {
+    grid-template-columns: 1fr !important;
+  }
+  html body #sparkBar,
+  html body #sparkBar[hidden] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 44px;
+  }
+  .m-hide {
+    display: none;
+  }
+  #sparkBar .stone {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gui-r {
+    grid-template-columns: minmax(0, 1fr) auto auto auto !important;
+  }
+  .hdricon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 30px;
+    padding: 0 !important;
+  }
+  .hdricon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .stone.hdradd {
+    display: none !important;
+  }
+  .fab {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    right: 14px;
+    bottom: calc(max(var(--navH, 0px), 72px + var(--sab)) + 12px);
+    z-index: 24;
+    width: 56px;
+    height: 56px;
+    font: 22px var(--px);
+    color: #fff;
+    background: #3c8527;
+    border: 4px solid;
+    border-color: #5db33f #2a5e1b #2a5e1b #5db33f;
+    box-shadow:
+      0 0 0 3px #000,
+      0 6px 0 rgba(0, 0, 0, 0.35);
+    text-shadow: 2px 2px 0 #1e4a12;
+    cursor: pointer;
+  }
+  .fab:active {
+    transform: translateY(2px);
+  }
+  body:not([data-cur="today"]) .fab,
+  body.grove-on .fab,
+  body.past-view .fab {
+    display: none !important;
+  }
+  .tdghost {
+    display: none !important;
+    order: 1;
+    gap: 6px;
+    align-items: center;
+    border: 3px dashed #8b8b8b;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 6px 8px;
+  }
+  .tdghost input {
+    flex: 1;
+    min-width: 0;
+    font: 18px var(--vt);
+    background: transparent;
+    border: 0;
+    color: #3f3f3f;
+    padding: 4px 2px;
+    outline: none;
+  }
+  .tdghost input::placeholder {
+    color: #6a6a6a;
+  }
+  .tdghost .stone {
+    font-size: 7px !important;
+    padding: 8px 9px !important;
+  }
+  .tdghost:focus-within {
+    border-style: solid;
+    border-color: #3c8527;
+    background: #e8f5e1;
+  }
+  #gui {
+    padding-bottom: 12px;
+  }
+  .wrap {
+    padding-bottom: 70px;
+  }
+  #quests .q.t-weekly .wkbox {
+    display: none;
+  }
+  .wksub {
+    display: block;
+    font: 15px var(--vt);
+    color: #e6e6e6;
+    margin-top: 2px;
+  }
+  #quests .q.indone {
+    order: 3;
+  }
+  #quests:not(.done-open) .q.indone {
+    display: none !important;
+  }
+  #quests .q.indone .qgrip {
+    visibility: hidden;
+  }
+  #quests .q.running {
+    border-color: #ffd23f;
+  }
+  #quests .q.running .ctr,
+  #quests .q.running .plan {
+    display: none !important;
+  }
+  .runbox {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .rb-t {
+    font: 20px var(--px);
+    color: #ffff55;
+    text-shadow: 2px 2px 0 #000;
+  }
+  .rb-s {
+    grid-column: 1;
+    font: 16px var(--vt);
+    color: #fff;
+  }
+  .rb-b {
+    grid-column: 1/-1;
+    height: 8px;
+    background: #1e1e1e;
+    border: 2px solid #000;
+  }
+  .rb-b i {
+    display: block;
+    height: 100%;
+    background: #7fe05a;
+  }
+  .rb-f {
+    grid-column: 1/-1;
+    font: 15px var(--vt);
+    color: #fff3c4;
+  }
+  .rb-f:empty {
+    display: none;
+  }
+  #quests .q.running .ctl {
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap !important;
+  }
+  #quests .q.running .tmr {
+    order: 2;
+    align-self: stretch;
+    height: auto !important;
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  #quests .q.running .tmr span {
+    display: none;
+  }
+  .qtools {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .qtools .stone {
+    font-size: 8px;
+    padding: 9px 10px;
+  }
+  .tdtg {
+    display: inline-block;
+  }
+  .qtools .lg {
+    display: none;
+  }
+  html body.hide-grip #quests .q {
+    grid-template-columns: 0 12px 28px minmax(0, 1fr) auto !important;
+  }
+  #tdRow {
+    display: none;
+  }
+  body.tdopen #tdRow {
+    display: flex;
+  }
+  #gui .xp,
+  #xpText {
+    display: none !important;
+  }
+  #sparkBar {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  #sparkBar .stone {
+    font-size: 7px;
+    padding: 9px 4px;
+    white-space: nowrap;
+  }
+  .qtools {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .qtools .stone {
+    font-size: 7px !important;
+    padding: 10px 2px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .qtools .stone[hidden] {
+    display: none !important;
+  }
+  .gui-r {
+    gap: 6px;
+  }
+  .gui-r .locks,
+  #lockTxt {
+    font-size: 15px;
+  }
 }
-@media (max-width:720px){.pp{width:22px;height:22px}}
-.goalcards{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
-.gcard{display:grid;gap:3px;text-align:left;background:#8B8B8B;color:#fff;border:3px solid;border-color:#373737 #fff #fff #373737;padding:8px;cursor:pointer;font:inherit}
-.gcard b{font:9px var(--px);font-weight:400}.gcard span{font:15px var(--vt);color:#EDEDED}
-.gcard.on{background:#3C8527;border-color:#2A5E1B #5DB33F #5DB33F #2A5E1B}
-@media (max-width:720px){#fx{top:var(--hdrH,0px)!important;bottom:var(--navH,0px)!important;height:auto!important}}
+@media (max-width: 720px) {
+  .pp {
+    width: 22px;
+    height: 22px;
+  }
+}
+.goalcards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+}
+.gcard {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  background: #8b8b8b;
+  color: #fff;
+  border: 3px solid;
+  border-color: #373737 #fff #fff #373737;
+  padding: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.gcard b {
+  font: 9px var(--px);
+  font-weight: 400;
+}
+.gcard span {
+  font: 15px var(--vt);
+  color: #ededed;
+}
+.gcard.on {
+  background: #3c8527;
+  border-color: #2a5e1b #5db33f #5db33f #2a5e1b;
+}
+@media (max-width: 720px) {
+  #fx {
+    top: var(--hdrH, 0px) !important;
+    bottom: var(--navH, 0px) !important;
+    height: auto !important;
+  }
+}

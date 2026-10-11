@@ -1,24 +1,185 @@
 /* ===== priority drag, subject chips, completion ===== */
-.q{grid-template-columns:20px 18px 26px 1fr auto!important}
-@media (max-width:720px){.q{grid-template-columns:22px 14px 30px 1fr!important}.q .ctl{grid-column:1/-1!important}}
-.qgrip{width:20px;height:28px;padding:0;background:none;border:0;cursor:grab;touch-action:none;position:relative;opacity:.75}
-.qgrip i,.qgrip::before,.qgrip::after{content:"";position:absolute;left:4px;right:4px;height:3px;background:#E6E6E6;box-shadow:1px 1px 0 #3F3F3F}
-.qgrip::before{top:7px}.qgrip i{display:block;top:13px}.qgrip::after{top:19px}
-.qgrip:hover{opacity:1}
-.gui.ro .qgrip{visibility:hidden}
-#quests .q.dragging{outline:3px dashed #FFFF55;opacity:.85}
-.sjchip{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font:15px var(--vt);background:#3A3A6A;color:#E8E8FF;border:2px solid #1E1E3A;padding:1px 7px;cursor:pointer;text-shadow:none}
-.sjchip .rdot{width:8px;height:8px;background:#FF3B30;display:inline-block}
-.q.doneq{opacity:.75}.q.doneq .lbl::after{content:" \2713 complete";font:15px var(--vt);color:#C8F5B0}
-.shelf{display:grid;gap:6px;margin:0 3px}
-.shelf-r{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:#212121;color:#fff;border:3px solid #555;padding:8px 12px;font-size:19px}
-.shelf-r .mv{font-size:16px;color:#BDBDBD}.shelf-r.ar{opacity:.8}
-.pickrow{cursor:pointer}.pickrow input{width:18px;height:18px;accent-color:#3C8527}
-.stakes{margin:6px 0 10px;padding-left:20px;display:grid;gap:6px;font-size:19px}.stakes b{color:#9E2A1F}
-.prep{display:grid;gap:6px;margin:6px 0 10px}
-.pc{display:flex;gap:10px;align-items:center;font-size:19px;cursor:pointer}.pc input{width:20px;height:20px;accent-color:#3C8527;flex:none}
-.help.okc{color:#2E6B24}
-.help.warnc{color:#9E2A1F}
-.diag{display:grid;gap:4px;background:#B5B5B5;border:2px solid #8B8B8B;padding:8px 10px;margin:6px 0}.dg-r{display:flex;justify-content:space-between;font-size:17px}.dg-r b{font-weight:400}.dg-r .okc{color:#2E6B24}.dg-r .warnc{color:#9E2A1F}.dg-n{font-size:16px;color:#3F3F3F}
-.stakes.soft b{color:#2E6B24}
-#gBody .tpk input{font:19px var(--vt);background:#373737;color:#fff;border:3px solid;border-color:#1E1E1E #8B8B8B #8B8B8B #1E1E1E;padding:6px 8px;width:100%;box-sizing:border-box}
+.q {
+  grid-template-columns: 20px 18px 26px 1fr auto !important;
+}
+@media (max-width: 720px) {
+  .q {
+    grid-template-columns: 22px 14px 30px 1fr !important;
+  }
+  .q .ctl {
+    grid-column: 1/-1 !important;
+  }
+}
+.qgrip {
+  width: 20px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: grab;
+  touch-action: none;
+  position: relative;
+  opacity: 0.75;
+}
+.qgrip i,
+.qgrip::before,
+.qgrip::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  background: #e6e6e6;
+  box-shadow: 1px 1px 0 #3f3f3f;
+}
+.qgrip::before {
+  top: 7px;
+}
+.qgrip i {
+  display: block;
+  top: 13px;
+}
+.qgrip::after {
+  top: 19px;
+}
+.qgrip:hover {
+  opacity: 1;
+}
+.gui.ro .qgrip {
+  visibility: hidden;
+}
+#quests .q.dragging {
+  outline: 3px dashed #ffff55;
+  opacity: 0.85;
+}
+.sjchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font: 15px var(--vt);
+  background: #3a3a6a;
+  color: #e8e8ff;
+  border: 2px solid #1e1e3a;
+  padding: 1px 7px;
+  cursor: pointer;
+  text-shadow: none;
+}
+.sjchip .rdot {
+  width: 8px;
+  height: 8px;
+  background: #ff3b30;
+  display: inline-block;
+}
+.q.doneq {
+  opacity: 0.75;
+}
+.q.doneq .lbl::after {
+  content: " \2713 complete";
+  font: 15px var(--vt);
+  color: #c8f5b0;
+}
+.shelf {
+  display: grid;
+  gap: 6px;
+  margin: 0 3px;
+}
+.shelf-r {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  background: #212121;
+  color: #fff;
+  border: 3px solid #555;
+  padding: 8px 12px;
+  font-size: 19px;
+}
+.shelf-r .mv {
+  font-size: 16px;
+  color: #bdbdbd;
+}
+.shelf-r.ar {
+  opacity: 0.8;
+}
+.pickrow {
+  cursor: pointer;
+}
+.pickrow input {
+  width: 18px;
+  height: 18px;
+  accent-color: #3c8527;
+}
+.stakes {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 19px;
+}
+.stakes b {
+  color: #9e2a1f;
+}
+.prep {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 10px;
+}
+.pc {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 19px;
+  cursor: pointer;
+}
+.pc input {
+  width: 20px;
+  height: 20px;
+  accent-color: #3c8527;
+  flex: none;
+}
+.help.okc {
+  color: #2e6b24;
+}
+.help.warnc {
+  color: #9e2a1f;
+}
+.diag {
+  display: grid;
+  gap: 4px;
+  background: #b5b5b5;
+  border: 2px solid #8b8b8b;
+  padding: 8px 10px;
+  margin: 6px 0;
+}
+.dg-r {
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+}
+.dg-r b {
+  font-weight: 400;
+}
+.dg-r .okc {
+  color: #2e6b24;
+}
+.dg-r .warnc {
+  color: #9e2a1f;
+}
+.dg-n {
+  font-size: 16px;
+  color: #3f3f3f;
+}
+.stakes.soft b {
+  color: #2e6b24;
+}
+#gBody .tpk input {
+  font: 19px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 6px 8px;
+  width: 100%;
+  box-sizing: border-box;
+}

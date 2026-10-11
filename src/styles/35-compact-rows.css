@@ -1,24 +1,103 @@
 /* ===== Phone rows, slimmed (usability pass): no drag grip (hold the row to reorder), subjects box inline after the
    label, ~52px rows, and a play button on every time row so starting a timer is one tap. ===== */
 /* The play button is a phone control; on wider screens the row already has its own timer button. */
-#quests .q .qplay{display:none}
-@media (max-width:720px){
-  #quests .q{grid-template-columns:12px 28px minmax(0,1fr) auto auto!important;padding:6px 8px!important;gap:2px 8px!important;min-height:52px;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
-  #quests .q .qgrip{display:none!important}
-  #quests .q .gem{grid-column:1}
-  #quests .q .pzb{grid-column:2}
-  #quests .q>div:nth-of-type(1){grid-column:3;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-width:0}
-  #quests .q .lbl{flex:0 1 auto;min-width:0}
-  #quests .q .sjchip{margin-top:0!important;min-height:18px;padding:0 6px}
-  #quests .q .proj{flex-basis:100%}
-  #quests .q.colq .qplay{grid-column:4;grid-row:1;width:40px;height:36px;display:flex;align-items:center;justify-content:center;background:#3C8527;border:3px solid;border-color:#5DB33F #2A5E1B #2A5E1B #5DB33F;cursor:pointer;padding:0}
-  #quests .q.colq .qplay .ic{display:block;width:0;height:0;border-left:10px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent}
-  #quests .q .qplay[hidden],#quests .q.running .qplay{display:none!important}
-  #quests .q .qsum{grid-column:5!important;grid-row:1;padding:3px 8px!important;line-height:1.1}
-  #quests .q .qsum b{display:block;font:17px var(--vt);font-weight:400}
-  #quests .q .qsum small{display:block;font:11px var(--vt);opacity:.85;white-space:nowrap}
-  #quests .q:not(.colq) .ctl{grid-column:4/-1!important}
-  #quests .q.colq.open .ctl,#quests .q.colq.running .ctl{grid-column:1/-1!important}
-  #quests .q.dragging{opacity:.85;box-shadow:0 0 0 3px #FFFF55}
-  html body.hide-grip #quests .q{grid-template-columns:12px 28px minmax(0,1fr) auto auto!important}
+#quests .q .qplay {
+  display: none;
+}
+@media (max-width: 720px) {
+  #quests .q {
+    grid-template-columns: 12px 28px minmax(0, 1fr) auto auto !important;
+    padding: 6px 8px !important;
+    gap: 2px 8px !important;
+    min-height: 52px;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #quests .q .qgrip {
+    display: none !important;
+  }
+  #quests .q .gem {
+    grid-column: 1;
+  }
+  #quests .q .pzb {
+    grid-column: 2;
+  }
+  #quests .q > div:nth-of-type(1) {
+    grid-column: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 6px;
+    min-width: 0;
+  }
+  #quests .q .lbl {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  #quests .q .sjchip {
+    margin-top: 0 !important;
+    min-height: 18px;
+    padding: 0 6px;
+  }
+  #quests .q .proj {
+    flex-basis: 100%;
+  }
+  #quests .q.colq .qplay {
+    grid-column: 4;
+    grid-row: 1;
+    width: 40px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #3c8527;
+    border: 3px solid;
+    border-color: #5db33f #2a5e1b #2a5e1b #5db33f;
+    cursor: pointer;
+    padding: 0;
+  }
+  #quests .q.colq .qplay .ic {
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 10px solid #fff;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+  }
+  #quests .q .qplay[hidden],
+  #quests .q.running .qplay {
+    display: none !important;
+  }
+  #quests .q .qsum {
+    grid-column: 5 !important;
+    grid-row: 1;
+    padding: 3px 8px !important;
+    line-height: 1.1;
+  }
+  #quests .q .qsum b {
+    display: block;
+    font: 17px var(--vt);
+    font-weight: 400;
+  }
+  #quests .q .qsum small {
+    display: block;
+    font: 11px var(--vt);
+    opacity: 0.85;
+    white-space: nowrap;
+  }
+  #quests .q:not(.colq) .ctl {
+    grid-column: 4/-1 !important;
+  }
+  #quests .q.colq.open .ctl,
+  #quests .q.colq.running .ctl {
+    grid-column: 1/-1 !important;
+  }
+  #quests .q.dragging {
+    opacity: 0.85;
+    box-shadow: 0 0 0 3px #ffff55;
+  }
+  html body.hide-grip #quests .q {
+    grid-template-columns: 12px 28px minmax(0, 1fr) auto auto !important;
+  }
 }

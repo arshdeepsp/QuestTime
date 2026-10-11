@@ -1,12 +1,52 @@
 /* ===== grove info toggle ===== */
-.ginfo-tg{position:absolute;z-index:2;font-size:8px;padding:8px 10px;left:max(14px,var(--sal));bottom:calc(14px + var(--sab))}
-.grove .ginfo{bottom:calc(52px + var(--sab))}
-.grove.info-off .ginfo{display:none}
-.grove.info-off .ginfo-tg{opacity:.85}
-@media (max-width:720px){
-  .grove .ginfo{left:10px;right:10px;max-width:none;padding:10px 12px;gap:4px;bottom:calc(50px + var(--sab))}
-  .gtitle{font-size:10px}.gline{font-size:16px}.gline.small{font-size:14px}
-  .gback{top:calc(10px + var(--sat))!important;bottom:auto!important;right:10px;font-size:8px;padding:8px 10px}
-  .ginfo-tg{left:10px;bottom:calc(10px + var(--sab))}
-  .ghint{top:calc(56px + var(--sat))!important;font-size:8px}
+.ginfo-tg {
+  position: absolute;
+  z-index: 2;
+  font-size: 8px;
+  padding: 8px 10px;
+  left: max(14px, var(--sal));
+  bottom: calc(14px + var(--sab));
+}
+.grove .ginfo {
+  bottom: calc(52px + var(--sab));
+}
+.grove.info-off .ginfo {
+  display: none;
+}
+.grove.info-off .ginfo-tg {
+  opacity: 0.85;
+}
+@media (max-width: 720px) {
+  .grove .ginfo {
+    left: 10px;
+    right: 10px;
+    max-width: none;
+    padding: 10px 12px;
+    gap: 4px;
+    bottom: calc(50px + var(--sab));
+  }
+  .gtitle {
+    font-size: 10px;
+  }
+  .gline {
+    font-size: 16px;
+  }
+  .gline.small {
+    font-size: 14px;
+  }
+  .gback {
+    top: calc(10px + var(--sat)) !important;
+    bottom: auto !important;
+    right: 10px;
+    font-size: 8px;
+    padding: 8px 10px;
+  }
+  .ginfo-tg {
+    left: 10px;
+    bottom: calc(10px + var(--sab));
+  }
+  .ghint {
+    top: calc(56px + var(--sat)) !important;
+    font-size: 8px;
+  }
 }
