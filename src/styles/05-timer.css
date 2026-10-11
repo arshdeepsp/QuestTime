@@ -11,7 +11,7 @@ html body #quests.timing .q.running {
   grid-column: 1/-1;
   gap: 14px;
   padding: 26px 20px 22px;
-  background: #2a2a2a;
+  background: #2e2a26;
   border: 4px solid #ffd23f;
   box-shadow:
     0 0 0 3px #000,
@@ -41,14 +41,14 @@ html body #quests.timing .q.running {
 }
 #quests.timing .q.running .rb-s {
   font-size: 20px;
-  color: #e6e6e6;
+  color: #e8e6e4;
 }
 #quests.timing .q.running .rb-b {
   width: 100%;
   height: 18px;
-  background: #111;
+  background: #121110;
   border: 3px solid #000;
-  box-shadow: inset 0 0 0 2px #3a3a3a;
+  box-shadow: inset 0 0 0 2px #403a34;
 }
 #quests.timing .q.running .rb-b i {
   background: repeating-linear-gradient(90deg, #7fe05a 0 14px, #5db33f 14px 16px);
@@ -108,7 +108,7 @@ html body #spBtn {
 }
 .rb-b {
   height: 8px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
 }
 .rb-b i {
@@ -162,9 +162,9 @@ html body #spBtn {
   width: min(560px, 100%);
   max-height: 100%;
   overflow: auto;
-  background: #212121;
+  background: #24211e;
   color: #fff;
-  border: 4px solid #555;
+  border: 4px solid #60554a;
   box-shadow: 0 0 0 4px #000;
   padding: 20px;
   display: grid;
@@ -192,7 +192,7 @@ html body #spBtn {
 }
 .sp-bar {
   height: 14px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
 }
 .sp-bar i {
@@ -202,7 +202,7 @@ html body #spBtn {
   box-shadow: inset 0 -3px 0 #3e9e2b;
 }
 .sp-card .help {
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .sp-list {
   display: grid;
@@ -214,9 +214,9 @@ html body #spBtn {
   gap: 4px 12px;
   align-items: center;
   text-align: left;
-  background: #3a3a3a;
+  background: #403a34;
   color: #fff;
-  border: 3px solid #555;
+  border: 3px solid #60554a;
   padding: 8px 10px;
   font: 19px var(--vt);
   cursor: pointer;
@@ -227,13 +227,13 @@ html body #spBtn {
 }
 .sp-opt em {
   font-style: normal;
-  color: #bdbdbd;
+  color: #c5bdb5;
   font-size: 15px;
 }
 .sp-pb {
   grid-column: 1/-1;
   height: 6px;
-  background: #1e1e1e;
+  background: #201e1c;
 }
 .sp-pb i {
   display: block;
@@ -283,15 +283,15 @@ html body #spBtn {
   width: 26px;
   height: 26px;
   padding: 0;
-  background: #6a6a6a;
+  background: #796a5b;
   border: 3px solid;
-  border-color: #b0b0b0 #3a3a3a #3a3a3a #b0b0b0;
+  border-color: #bab0a6 #403a34 #403a34 #bab0a6;
   cursor: pointer;
 }
 .pzb {
   color: #fff;
   font: 16px/1 var(--vt);
-  text-shadow: 1px 1px 0 #3f3f3f;
+  text-shadow: 1px 1px 0 #463f38;
 }
 .pzb:hover {
   background: #7d86c9;
@@ -360,7 +360,7 @@ html body #spBtn {
   .rb-b {
     grid-column: 1/-1;
     height: 8px;
-    background: #1e1e1e;
+    background: #201e1c;
     border: 2px solid #000;
   }
   .rb-b i {

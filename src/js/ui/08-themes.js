@@ -6,36 +6,38 @@ import { updateSky } from "./09-scenic-sky.js";
 
 export var THEMES, FX, mqDark, CYCLE, lastEff;
 
-export function tile(pal, top, seed, ww) {
+/* A theme's ground: a flat 24x24 pixel field with a few lighter patches and scattered motifs (tufts, sparkles, embers, cracks), drawn at 4x. */
+export function ground(t, seed) {
   var h = seed,
     r = function () {
       h = (h * 1103515245 + 12345) & 0x7fffffff;
       return h / 0x7fffffff;
     },
-    w = ww || [0.34, 0.28, 0.2, 0.12, 0.06],
-    o = "",
-    drip = [];
-  for (var x = 0; x < 16; x++) drip.push(4 + Math.floor(r() * 4));
-  for (var y = 0; y < 16; y++)
-    for (x = 0; x < 16; x++) {
-      var c;
-      if (top && y < drip[x]) c = top[Math.floor(r() * top.length)];
-      else {
-        var t = r(),
-          a = 0,
-          ix = 0;
-        for (; ix < w.length; ix++) {
-          a += w[ix];
-          if (t < a) break;
-        }
-        c = pal[Math.min(ix, pal.length - 1)];
-      }
-      o += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + c + '"/>';
+    N = 24,
+    o = '<rect width="24" height="24" fill="' + t.base + '"/>',
+    px = function (x, y, c) {
+      o += '<rect x="' + ((x + N) % N) + '" y="' + ((y + N) % N) + '" width="1" height="1" fill="' + c + '"/>';
+    };
+  for (var i = 0; i < 5; i++) {
+    var x = Math.floor(r() * N),
+      y = Math.floor(r() * N),
+      w = 3 + Math.floor(r() * 4);
+    for (var k = 0; k < w; k++) px(x + k, y, t.alt);
+    for (k = 1; k < w - 1; k++) px(x + k, y + 1, t.alt);
+  }
+  t.mot.forEach(function (m) {
+    for (var n = 0; n < m.n; n++) {
+      var mx = Math.floor(r() * N),
+        my = Math.floor(r() * N);
+      m.p.forEach(function (q) {
+        px(mx + q[0], my + q[1], q[2] || m.c);
+      });
     }
+  });
   return (
     'url("data:image/svg+xml,' +
     encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">' + o + "</svg>",
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" shape-rendering="crispEdges">' + o + "</svg>",
     ) +
     '")'
   );
@@ -729,6 +731,7 @@ export function fxPatterns() {
 export function effTheme() {
   var t = cfg().theme;
   if (t === "stone") t = "";
+  if (t === "nether") t = "ember";
   if (!t) {
     var sk = skyState(new Date());
     return sk.alt >= 0 ? "day" : "night";
@@ -745,19 +748,14 @@ export function applyTheme(force) {
     eff = effTheme();
   if (!force && eff === lastEff) return;
   lastEff = eff;
-  ["--dirt", "--grass", "--bg"].forEach(function (p) {
+  ["--ground", "--bg"].forEach(function (p) {
     st.removeProperty(p);
   });
-  if (
-    eff === "night" ||
-    eff === "day" ||
-    eff === "ocean" ||
-    eff === "city" ||
-    eff === "mountains" ||
-    eff === "village"
-  ) {
-    st.setProperty("--dirt", "none");
-    st.setProperty("--grass", "none");
+  if (THEMES[eff]) {
+    st.setProperty("--ground", ground(THEMES[eff], 11));
+    st.setProperty("--bg", THEMES[eff].bg);
+  } else {
+    st.setProperty("--ground", "none");
     st.setProperty(
       "--bg",
       eff === "day" || eff === "mountains" || eff === "village"
@@ -768,15 +766,10 @@ export function applyTheme(force) {
             ? "#171A36"
             : "#0B1026",
     );
-  } else if (THEMES[eff]) {
-    var p = THEMES[eff];
-    st.setProperty("--dirt", tile(p.d, null, 7, p.w));
-    st.setProperty("--grass", eff === "snow" ? tile(p.d, null, 7, p.w) : tile(p.d, p.g, 11, p.w));
-    st.setProperty("--bg", p.bg);
   }
   if (fx) {
     fx.className =
-      ["snow", "ocean", "night", "day", "nether", "lava", "city", "mountains", "village"].indexOf(eff) >= 0 ? eff : "";
+      ["snow", "ocean", "night", "day", "ember", "lava", "city", "mountains", "village"].indexOf(eff) >= 0 ? eff : "";
     if (fx.className) {
       var P = fxPatterns();
       Object.keys(P).forEach(function (k) {
@@ -789,50 +782,107 @@ export function applyTheme(force) {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
+  var TUFT = [
+      [0, 1],
+      [1, 0],
+      [2, 1],
+    ],
+    DOT = [[0, 0]];
   THEMES = {
     grass: {
-      d: ["#79553A", "#8B6243", "#6A4A31", "#976D4C", "#5C3F2A"],
-      g: ["#5E9E3A", "#6FB444", "#4F8A30", "#7CC24E"],
-      bg: "#79553A",
+      base: "#5E9E3A",
+      alt: "#66A842",
+      mot: [
+        { c: "#4A8530", p: TUFT, n: 5 },
+        {
+          c: "#F2E27A",
+          p: [
+            [0, 0],
+            [1, 1, "#4A8530"],
+          ],
+          n: 2,
+        },
+        { c: "#F4F1E8", p: DOT, n: 1 },
+      ],
+      bg: "#5E9E3A",
       tc: "#5E9E3A",
     },
-    night: {
-      d: ["#4A3322", "#553B27", "#3F2B1C", "#5E432D", "#35251A"],
-      g: ["#2F5A22", "#3A6B2A", "#264C1C", "#447A31"],
-      bg: "#4A3322",
-      tc: "#2F5A22",
-    },
-    nether: {
-      d: ["#6B2222", "#702424", "#661F1F", "#772828", "#5F1D1D"],
-      g: ["#9B2F4E", "#A8365A", "#8C2946", "#B24163"],
-      bg: "#6B2222",
-      tc: "#9B2F4E",
-      w: [0.5, 0.2, 0.15, 0.1, 0.05],
-    },
     snow: {
-      d: ["#5E7289", "#62768D", "#5A6E84", "#667B92", "#57697F"],
-      g: ["#F4F8FB", "#FFFFFF", "#EEF4F9", "#F8FBFD"],
+      base: "#6F86A0",
+      alt: "#7B91AA",
+      mot: [
+        {
+          c: "#FFFFFF",
+          p: [
+            [1, 0],
+            [0, 1],
+            [1, 1],
+            [2, 1],
+            [1, 2],
+          ],
+          n: 2,
+        },
+        {
+          c: "#C8D5E1",
+          p: [
+            [0, 0],
+            [1, 0],
+          ],
+          n: 4,
+        },
+      ],
       bg: "#5E7289",
       tc: "#F4F8FB",
-      w: [0.55, 0.2, 0.13, 0.08, 0.04],
     },
-    ocean: {
-      d: ["#1F4E79", "#22527E", "#1D4A74", "#255782", "#1B476F"],
-      g: ["#E3D39A", "#E8D9A2", "#DDCD92", "#EDDFAA"],
-      bg: "#1F4E79",
-      tc: "#E3D39A",
-      w: [0.55, 0.2, 0.13, 0.08, 0.04],
+    ember: {
+      base: "#4A1A1A",
+      alt: "#561F1F",
+      mot: [
+        { c: "#FFA53A", p: DOT, n: 4 },
+        {
+          c: "#E0561B",
+          p: [
+            [0, 0],
+            [1, 0, "#8C2B1A"],
+          ],
+          n: 3,
+        },
+        { c: "#3A1212", p: TUFT, n: 3 },
+      ],
+      bg: "#4A1A1A",
+      tc: "#9B2F4E",
     },
     lava: {
-      d: ["#2B2026", "#352830", "#231A1F", "#3E2F38", "#1C1519"],
-      g: ["#E0561B", "#F07A1F", "#C9401A", "#FFA53A"],
+      base: "#2B2026",
+      alt: "#352830",
+      mot: [
+        {
+          c: "#E0561B",
+          p: [
+            [0, 0],
+            [1, 1, "#FFA53A"],
+            [2, 1],
+            [3, 2],
+          ],
+          n: 2,
+        },
+        {
+          c: "#1C1519",
+          p: [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+          ],
+          n: 3,
+        },
+      ],
       bg: "#2B2026",
       tc: "#E0561B",
     },
   };
   FX = null;
   mqDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-  CYCLE = ["grass", "day", "mountains", "village", "city", "night", "snow", "ocean", "lava", "nether"];
+  CYCLE = ["grass", "day", "mountains", "village", "city", "night", "snow", "ocean", "lava", "ember"];
   lastEff = null;
   setInterval(function () {
     applyTheme();

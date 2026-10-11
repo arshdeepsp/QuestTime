@@ -5,12 +5,12 @@
   gap: 8px;
 }
 .lane {
-  background: #8b8b8b;
+  background: #9d8b79;
   border: 3px solid;
-  border-color: #373737 #fff #fff #373737;
+  border-color: #3d3731 #fff #fff #3d3731;
   padding: 12px;
   color: #fff;
-  text-shadow: 2px 2px 0 #3f3f3f;
+  text-shadow: 2px 2px 0 #463f38;
 }
 .lane h4 {
   font-size: 10px;
@@ -19,7 +19,7 @@
 }
 .lane .no {
   margin-top: 8px;
-  color: #e6e6e6;
+  color: #e8e6e4;
 }
 .lane .no b {
   font-weight: 400;
@@ -37,17 +37,17 @@
   font-family: var(--px);
   font-size: 9px;
   color: #fff;
-  text-shadow: 2px 2px 0 #3f3f3f;
-  background: #7a7a7a;
+  text-shadow: 2px 2px 0 #463f38;
+  background: #8d7a67;
   border: 3px solid;
-  border-color: #b0b0b0 #3a3a3a #3a3a3a #b0b0b0;
+  border-color: #bab0a6 #403a34 #403a34 #bab0a6;
   padding: 8px 10px;
 }
 .q .gem {
   width: 14px;
   height: 14px;
-  background: #373737;
-  border: 2px solid #1e1e1e;
+  background: #3d3731;
+  border: 2px solid #201e1c;
 }
 .q.met .gem {
   background: #50d65a;
@@ -55,7 +55,7 @@
   box-shadow: inset -3px -3px 0 #2fa33a;
 }
 .q.opt .gem {
-  background: #6a6a6a;
+  background: #796a5b;
 }
 .q.fail .gem {
   background: #e0453a;
@@ -382,7 +382,7 @@ body.calm #fx::after {
 }
 .q.limok .gem {
   background: transparent;
-  border: 2px dashed #e6e6e6;
+  border: 2px dashed #e8e6e4;
 }
 #fx {
   position: fixed;
@@ -396,7 +396,7 @@ body.calm #fx::after {
 #fx.ocean,
 #fx.night,
 #fx.day,
-#fx.nether,
+#fx.ember,
 #fx.lava {
   display: block;
 }
@@ -683,18 +683,18 @@ body.calm #fx::after {
     background-position: 640px 0;
   }
 }
-#fx.nether {
+#fx.ember {
   background:
     radial-gradient(ellipse at 50% 115%, rgba(255, 96, 16, 0.38), transparent 62%),
     linear-gradient(rgba(40, 0, 0, 0.25), rgba(120, 20, 0, 0.15));
 }
-#fx.nether .l1 {
+#fx.ember .l1 {
   display: block;
   background-image: var(--embersA);
   background-size: 240px 240px;
   animation: fxEmberA 9s linear infinite;
 }
-#fx.nether .l2 {
+#fx.ember .l2 {
   display: block;
   background-image: var(--embersB);
   background-size: 300px 300px;

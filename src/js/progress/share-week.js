@@ -64,15 +64,15 @@ export function shareWeek(btn) {
   function panel(x, y, w, h) {
     g.fillStyle = "#000";
     g.fillRect(x - 8, y - 8, w + 16, h + 16);
-    g.fillStyle = "#555";
+    g.fillStyle = "#60554A";
     g.fillRect(x - 4, y - 4, w + 8, h + 8);
-    g.fillStyle = "#212121";
+    g.fillStyle = "#24211E";
     g.fillRect(x, y, w, h);
   }
   g.textAlign = "left";
   g.fillStyle = "#FFFFFF";
   g.font = "40px " + PX;
-  g.fillText("ProductivityCraft", 70, 120);
+  g.fillText("QuestTime", 70, 120);
   g.fillStyle = "#FFFF55";
   g.font = "26px " + PX;
   g.fillText("My week", 70, 175);
@@ -104,7 +104,7 @@ export function shareWeek(btn) {
       ]
   ).forEach(function (s, i) {
     var cx = 110 + i * ((W - 220) / 3);
-    g.fillStyle = "#BDBDBD";
+    g.fillStyle = "#C5BDB5";
     g.font = "20px " + PX;
     g.fillText(s[0], cx, 340);
     g.fillStyle = i === 0 ? "#7FE05A" : "#FFFFFF";
@@ -116,7 +116,7 @@ export function shareWeek(btn) {
     var m = st.marks[d],
       col =
         d < START_KEY
-          ? "#2A2A2A"
+          ? "#2E2A26"
           : m === "ok"
             ? gold(S.days[d])
               ? "#C99A1E"
@@ -130,7 +130,7 @@ export function shareWeek(btn) {
                   : m === "frozen"
                     ? "#6FC3E8"
                     : d === T
-                      ? "#555"
+                      ? "#60554A"
                       : "#9E2A1F";
     g.fillStyle = col;
     g.fillRect(70 + i * (sq + 14), 570, sq, 70);
@@ -140,7 +140,7 @@ export function shareWeek(btn) {
   g.font = "22px " + PX;
   g.fillText("Time by quest", 110, 760);
   if (!ids.length) {
-    g.fillStyle = "#BDBDBD";
+    g.fillStyle = "#C5BDB5";
     g.font = "36px " + VT;
     g.fillText("No timed work logged this week.", 110, 830);
   }
@@ -152,7 +152,7 @@ export function shareWeek(btn) {
     g.textAlign = "right";
     g.fillText(hm(mins[k]), W - 110, y);
     g.textAlign = "left";
-    g.fillStyle = "#1E1E1E";
+    g.fillStyle = "#201E1C";
     g.fillRect(110, y + 14, W - 220, 20);
     g.fillStyle = "#7FE05A";
     g.fillRect(110, y + 14, Math.round(((W - 220) * mins[k]) / mx), 20);
@@ -169,7 +169,7 @@ export function shareWeek(btn) {
       W / 2,
       H - 110,
     );
-  g.fillText("Made with ProductivityCraft", W / 2, H - 60);
+  g.fillText("Made with QuestTime", W / 2, H - 60);
   btn.disabled = true;
   c.toBlob(function (blob) {
     btn.disabled = false;

@@ -69,5 +69,13 @@ styles = styles.replace(/<style name="AppTheme\.NoActionBarLaunch"[\s\S]*?<\/sty
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>`);
 fs.writeFileSync(stylesPath, styles);
+const appName = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8")).appName;
+const stringsPath = path.join("android", "app", "src", "main", "res", "values", "strings.xml");
+fs.writeFileSync(
+  stringsPath,
+  fs
+    .readFileSync(stringsPath, "utf8")
+    .replace(/(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g, `$1${appName}$2`),
+);
 
-console.log("Native focus timer plugin and plain launch screen added to android/");
+console.log("Native focus timer plugin, plain launch screen and app name added to android/");

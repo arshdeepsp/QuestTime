@@ -9,8 +9,8 @@ body.au-open {
   z-index: 40;
   display: flex;
   flex-direction: column;
-  background: #c6c6c6;
-  color: #1e1e1e;
+  background: #ccc6c0;
+  color: #201e1c;
 }
 .aupage[hidden] {
   display: none !important;
@@ -22,7 +22,7 @@ body.au-open {
   gap: 10px;
   min-height: 44px;
   padding: calc(10px + var(--sat)) 12px 10px;
-  background: #212121;
+  background: #24211e;
   border-bottom: 4px solid #000;
 }
 .au-hd h2 {
@@ -45,21 +45,21 @@ body.au-open {
   display: grid;
   gap: 6px;
   padding: 14px;
-  background: #c6c6c6;
+  background: #ccc6c0;
   border: 3px solid;
-  border-color: #fff #555 #555 #fff;
+  border-color: #fff #60554a #60554a #fff;
 }
 .au-box label {
   font: 8px/1.4 var(--px);
-  color: #3f3f3f;
+  color: #463f38;
   margin-top: 6px;
 }
 .au-box input {
   font: 20px var(--vt);
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 8px 10px;
   min-width: 0;
   width: 100%;

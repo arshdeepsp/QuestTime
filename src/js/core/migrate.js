@@ -172,6 +172,10 @@ export function migrate(c) {
     });
     v = 18;
   }
+  if (v < 19) {
+    if (c.cfg && c.cfg.theme === "nether") c.cfg.theme = "ember";
+    v = 19;
+  }
   c.schema = v;
   return c;
 }

@@ -103,7 +103,7 @@ export function init() {
           throw 0;
         }
         if (!j || j.app !== "personal-operating-playbook" || typeof j.days !== "object") {
-          setSync("That file isn't a ProductivityCraft backup.");
+          setSync("That file isn't a QuestTime backup.");
           throw 0;
         }
         if ((j.schema || 2) > SCHEMA) {

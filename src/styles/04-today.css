@@ -51,7 +51,7 @@
   padding-top: 3px;
 }
 .lock {
-  color: #555;
+  color: #60554a;
 }
 .gui.ro .lock {
   color: #9e2a1f;
@@ -67,12 +67,12 @@
   display: grid;
   gap: 12px;
   align-items: center;
-  background: #8b8b8b;
+  background: #9d8b79;
   border: 3px solid;
-  border-color: #373737 #fff #fff #373737;
+  border-color: #3d3731 #fff #fff #3d3731;
   padding: 10px 12px;
   color: #fff;
-  text-shadow: 2px 2px 0 #3f3f3f;
+  text-shadow: 2px 2px 0 #463f38;
 }
 .q.fail .ctr output {
   color: #ff8a80;
@@ -83,7 +83,7 @@
   line-height: 1.5;
 }
 .q .req {
-  color: #e6e6e6;
+  color: #e8e6e4;
 }
 .ctr {
   display: flex;
@@ -103,13 +103,13 @@
   justify-content: flex-end;
 }
 .ctr .tag {
-  color: #e6e6e6;
+  color: #e8e6e4;
   margin-right: 4px;
   min-width: 34px;
   text-align: right;
 }
 .ctr.plan output {
-  background: #4a4a4a;
+  background: #534a41;
   color: #c9d6ff;
 }
 .ctr .stone.now {
@@ -120,10 +120,10 @@
 .tm {
   font-family: "Press Start 2P", monospace;
   font-size: 10px;
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 6px 6px;
   height: 32px;
   color-scheme: dark;
@@ -138,10 +138,10 @@
   text-align: center;
   font-family: "Press Start 2P", monospace;
   font-size: 10px;
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 8px 4px;
   text-shadow: none;
 }
@@ -150,7 +150,7 @@
 }
 .empty {
   font-size: 20px;
-  color: #3f3f3f;
+  color: #463f38;
   padding: 8px 2px;
 }
 #quests.timing .donesep,
@@ -235,9 +235,9 @@ html body.focusview #sparkBar {
   width: 100%;
   text-align: left;
   font: 9px var(--px);
-  color: #3f3f3f;
-  background: #b5b5b5;
-  border: 2px solid #8b8b8b;
+  color: #463f38;
+  background: #beb5ac;
+  border: 2px solid #9d8b79;
   padding: 9px 12px;
   margin-top: 2px;
   cursor: pointer;
@@ -250,8 +250,8 @@ html body.focusview #sparkBar {
   flex: none;
   width: 8px;
   height: 8px;
-  border-right: 3px solid #555;
-  border-bottom: 3px solid #555;
+  border-right: 3px solid #60554a;
+  border-bottom: 3px solid #60554a;
   transform: rotate(45deg);
   margin: -4px 4px 0 0;
   transition: transform 0.15s;
@@ -385,8 +385,8 @@ body.focusview #quests .q .req {
   left: 4px;
   right: 4px;
   height: 3px;
-  background: #e6e6e6;
-  box-shadow: 1px 1px 0 #3f3f3f;
+  background: #e8e6e4;
+  box-shadow: 1px 1px 0 #463f38;
 }
 .qgrip::before {
   top: 7px;
@@ -449,7 +449,7 @@ body.focusview #quests .q .req {
 .heat {
   flex: 1;
   height: 8px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
   max-width: 220px;
 }
@@ -481,7 +481,7 @@ body.focusview #quests .q .req {
 }
 .park-n {
   font: 15px var(--vt);
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .parkbox {
   background: #fff3c4;
@@ -501,7 +501,7 @@ body.focusview #quests .q .req {
   gap: 6px;
   align-items: center;
   font-size: 18px;
-  color: #3f3f3f;
+  color: #463f38;
 }
 .dragh.mini {
   width: 26px;
@@ -526,7 +526,7 @@ body.focusview #quests .q .req {
   padding: 10px 12px;
   background: #fff3c4;
   border: 3px solid #b8860b;
-  color: #3f3f3f;
+  color: #463f38;
   font-size: 18px;
 }
 .bknudge .bkb {
@@ -567,8 +567,8 @@ body.focusview #quests .q .req {
 .mrow .mk {
   width: 12px;
   height: 12px;
-  background: #373737;
-  border: 2px solid #1e1e1e;
+  background: #3d3731;
+  border: 2px solid #201e1c;
 }
 .mrow.ok .mk {
   background: #50d65a;
@@ -597,15 +597,15 @@ body.focusview #quests .q .req {
   flex: 1;
   min-width: 0;
   font: 20px/1.2 var(--vt);
-  background: #8b8b8b;
+  background: #9d8b79;
   color: #fff;
   border: 3px solid;
-  border-color: #373737 #fff #fff #373737;
+  border-color: #3d3731 #fff #fff #3d3731;
   padding: 5px 8px;
-  text-shadow: 1px 1px 0 #3f3f3f;
+  text-shadow: 1px 1px 0 #463f38;
 }
 .tdrow input::placeholder {
-  color: #d9d9d9;
+  color: #dcd9d6;
 }
 .tdrow .stone {
   font-size: 9px;
@@ -620,9 +620,9 @@ body.focusview #quests .q .req {
   width: 30px;
   height: 38px;
   padding: 0;
-  background: #7a7a7a;
+  background: #8d7a67;
   border: 3px solid;
-  border-color: #b0b0b0 #3a3a3a #3a3a3a #b0b0b0;
+  border-color: #bab0a6 #403a34 #403a34 #bab0a6;
   cursor: grab;
   touch-action: none;
   position: relative;
@@ -636,7 +636,7 @@ body.focusview #quests .q .req {
   right: 6px;
   height: 3px;
   background: #fff;
-  box-shadow: 1px 1px 0 #3f3f3f;
+  box-shadow: 1px 1px 0 #463f38;
 }
 .dragh::before {
   top: 9px;
@@ -691,8 +691,8 @@ body.focusview #quests .q .req {
 }
 .pbar {
   height: 8px;
-  background: #373737;
-  border: 2px solid #1e1e1e;
+  background: #3d3731;
+  border: 2px solid #201e1c;
   max-width: 260px;
 }
 .pbar i {
@@ -742,7 +742,7 @@ body.focusview #quests .q .req {
   font-family: "Press Start 2P", monospace;
   font-size: 8px;
   line-height: 1.8;
-  color: #555;
+  color: #60554a;
 }
 /* ===== to-do review ===== */
 .tdrev {
@@ -777,9 +777,9 @@ body.focusview #quests .q .req {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border: 2px dashed #8b8b8b;
+  border: 2px dashed #9d8b79;
   padding: 8px 12px;
-  color: #3f3f3f;
+  color: #463f38;
   background: rgba(255, 255, 255, 0.18);
 }
 .waitlist[hidden] {
@@ -793,7 +793,7 @@ body.focusview #quests .q .req {
 }
 .wl-r em {
   font-style: normal;
-  color: #5a5a5a;
+  color: #665a4e;
   font-size: 16px;
 }
 #quests.timing .waitlist {
@@ -805,10 +805,10 @@ body.focusview #quests .q .req {
   height: 24px;
   padding: 0;
   font: 9px var(--px);
-  color: #1e1e1e;
-  background: #c6c6c6;
+  color: #201e1c;
+  background: #ccc6c0;
   border: 3px solid;
-  border-color: #fff #555 #555 #fff;
+  border-color: #fff #60554a #60554a #fff;
   cursor: pointer;
 }
 body.nostreak #carryNote {
@@ -875,10 +875,10 @@ details.rules > summary.sw-l {
   cursor: pointer;
   margin: 0 0 8px;
   padding: 6px 10px;
-  background: #b5b5b5;
+  background: #beb5ac;
   border: 3px solid;
-  border-color: #555 #fff #fff #555;
-  color: #1e1e1e;
+  border-color: #60554a #fff #fff #60554a;
+  color: #201e1c;
   font: 17px/1.25 var(--vt);
   text-shadow: none;
 }
@@ -894,9 +894,9 @@ details.rules > summary.sw-l {
   height: 20px;
   display: grid;
   place-items: center;
-  background: #373737;
+  background: #3d3731;
   color: #ffff55;
-  border: 2px solid #1e1e1e;
+  border: 2px solid #201e1c;
 }
 .carrynote.warm {
   background: #f3e2b8;
@@ -916,7 +916,7 @@ details.rules > summary.sw-l {
   gap: 8px;
   padding: 8px;
   margin: 4px 0 6px;
-  border: 3px dashed #8b8b8b;
+  border: 3px dashed #9d8b79;
   background: rgba(0, 0, 0, 0.05);
 }
 /* Per-quest streak chip after the label */
@@ -926,7 +926,7 @@ details.rules > summary.sw-l {
   gap: 2px;
   font: 14px var(--vt);
   color: #ffd23f;
-  text-shadow: 1px 1px 0 #3f3f3f;
+  text-shadow: 1px 1px 0 #463f38;
   vertical-align: middle;
   margin-left: 4px;
 }
@@ -999,8 +999,8 @@ details.rules > summary.sw-l {
     display: block;
     font: 17px var(--vt);
     color: #fff;
-    background: #373737;
-    border: 2px solid #1e1e1e;
+    background: #3d3731;
+    border: 2px solid #201e1c;
     white-space: nowrap;
     cursor: pointer;
     text-shadow: none;
@@ -1029,9 +1029,9 @@ details.rules > summary.sw-l {
     width: 100%;
     text-align: left;
     font: 9px var(--px);
-    color: #3f3f3f;
-    background: #b5b5b5;
-    border: 2px solid #8b8b8b;
+    color: #463f38;
+    background: #beb5ac;
+    border: 2px solid #9d8b79;
     padding: 9px 12px;
     margin-top: 2px;
     cursor: pointer;
@@ -1044,8 +1044,8 @@ details.rules > summary.sw-l {
     flex: none;
     width: 8px;
     height: 8px;
-    border-right: 3px solid #555;
-    border-bottom: 3px solid #555;
+    border-right: 3px solid #60554a;
+    border-bottom: 3px solid #60554a;
     transform: rotate(45deg);
     margin: -4px 4px 0 0;
     transition: transform 0.15s;
@@ -1077,7 +1077,7 @@ details.rules > summary.sw-l {
     order: 1;
     gap: 6px;
     align-items: center;
-    border: 3px dashed #8b8b8b;
+    border: 3px dashed #9d8b79;
     background: rgba(255, 255, 255, 0.25);
     padding: 6px 8px;
   }
@@ -1087,12 +1087,12 @@ details.rules > summary.sw-l {
     font: 18px var(--vt);
     background: transparent;
     border: 0;
-    color: #3f3f3f;
+    color: #463f38;
     padding: 4px 2px;
     outline: none;
   }
   .tdghost input::placeholder {
-    color: #6a6a6a;
+    color: #796a5b;
   }
   .tdghost .stone {
     font-size: 7px;
@@ -1109,7 +1109,7 @@ details.rules > summary.sw-l {
   .wksub {
     display: block;
     font: 15px var(--vt);
-    color: #e6e6e6;
+    color: #e8e6e4;
     margin-top: 2px;
   }
   #quests .q.indone {

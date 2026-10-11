@@ -11,9 +11,9 @@
   height: 48px;
   display: grid;
   place-items: center;
-  background: #6f6f6f;
+  background: #806f5e;
   border: 3px solid;
-  border-color: #555 #ddd #ddd #555;
+  border-color: #60554a #e0ddda #e0ddda #60554a;
   box-sizing: border-box;
 }
 .hp-t .slot svg {
@@ -30,8 +30,8 @@ body.hp-open {
   z-index: 30;
   display: flex;
   flex-direction: column;
-  background: #c6c6c6;
-  color: #1e1e1e;
+  background: #ccc6c0;
+  color: #201e1c;
 }
 .hppage[hidden] {
   display: none !important;
@@ -42,7 +42,7 @@ body.hp-open {
   justify-content: space-between;
   gap: 10px;
   padding: calc(10px + var(--sat)) 12px 10px;
-  background: #212121;
+  background: #24211e;
   border-bottom: 4px solid #000;
 }
 .hp-hd h2 {
@@ -64,7 +64,7 @@ body.hp-open {
 .hp-intro {
   margin: 0 auto 12px;
   font: 18px/1.25 var(--vt);
-  color: #333;
+  color: #38332e;
 }
 .hp-g {
   margin: 0 auto 16px;
@@ -72,15 +72,15 @@ body.hp-open {
 .hp-gh {
   margin: 0 0 6px;
   font: 9px/1.5 var(--px);
-  color: #3a3a3a;
+  color: #403a34;
 }
 .hp-list {
-  background: #b5b5b5;
+  background: #beb5ac;
   border: 3px solid;
-  border-color: #555 #fff #fff #555;
+  border-color: #60554a #fff #fff #60554a;
 }
 .hp-item {
-  border-top: 2px solid #9c9c9c;
+  border-top: 2px solid #aa9c8e;
 }
 .hp-item:first-child {
   border-top: 0;
@@ -95,7 +95,7 @@ body.hp-open {
   text-align: left;
   background: none;
   border: 0;
-  color: #1e1e1e;
+  color: #201e1c;
   cursor: pointer;
 }
 .hp-t b {
@@ -106,7 +106,7 @@ body.hp-open {
   display: block;
   margin-top: 2px;
   font: 17px/1.15 var(--vt);
-  color: #333;
+  color: #38332e;
 }
 .hp-b {
   display: none;

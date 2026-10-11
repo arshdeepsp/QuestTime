@@ -118,7 +118,7 @@ for (const [w, hgt, mob] of [
   [850, 1000, false],
   [1366, 900, false],
 ]) {
-  for (const theme of ["night", "ocean", "nether", "snow"])
+  for (const theme of ["night", "ocean", "ember", "snow"])
     RUNS.push({
       name: `w${w}-${theme}`,
       vp: { viewport: { width: w, height: hgt }, isMobile: mob, hasTouch: mob },

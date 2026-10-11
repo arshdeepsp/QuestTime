@@ -26,17 +26,17 @@ body.focusview .privacy {
   display: grid;
   gap: 4px;
   text-align: left;
-  background: #8b8b8b;
+  background: #9d8b79;
   color: #fff;
   border: 3px solid;
-  border-color: #373737 #fff #fff #373737;
+  border-color: #3d3731 #fff #fff #3d3731;
   padding: 10px;
   cursor: pointer;
   font: inherit;
 }
 .stylecard b {
   font: 11px var(--px);
-  text-shadow: 1px 1px 0 #3f3f3f;
+  text-shadow: 1px 1px 0 #463f38;
 }
 .stylecard em {
   font: 16px var(--vt);
@@ -45,7 +45,7 @@ body.focusview .privacy {
 }
 .stylecard span {
   font: 16px/1.15 var(--vt);
-  color: #ededed;
+  color: #eeedec;
 }
 .stylecard.on {
   background: #3c8527;
@@ -85,9 +85,9 @@ details.rules > summary .sdrag {
 .dlc {
   font-size: 8px;
   line-height: 1.4;
-  background: #3a3a3a;
+  background: #403a34;
   border: 2px solid #000;
-  color: #e0e0e0;
+  color: #e2e0de;
   padding: 5px 7px;
 }
 .dlc.soon {
@@ -95,16 +95,16 @@ details.rules > summary .sdrag {
   color: #fff;
 }
 .dlc.more {
-  background: #555;
+  background: #60554a;
 }
 .drawer-b .sh {
   font-family: "Press Start 2P", monospace;
   font-weight: 400;
   font-size: 10px;
-  color: #3f3f3f;
+  color: #463f38;
   margin: 14px 0 2px;
   padding-top: 12px;
-  border-top: 3px solid #a6a6a6;
+  border-top: 3px solid #b2a69a;
 }
 .drawer {
   position: fixed;
@@ -113,8 +113,8 @@ details.rules > summary .sdrag {
   height: 100%;
   width: min(440px, 100%);
   z-index: 31;
-  background: #c6c6c6;
-  color: #3f3f3f;
+  background: #ccc6c0;
+  color: #463f38;
   border-left: 4px solid #000;
   box-shadow: -6px 0 0 rgba(0, 0, 0, 0.25);
   display: flex;
@@ -128,15 +128,15 @@ details.rules > summary .sdrag {
   justify-content: space-between;
   gap: 10px;
   padding: 14px 16px;
-  background: #7a7a7a;
-  border-bottom: 3px solid #373737;
+  background: #8d7a67;
+  border-bottom: 3px solid #3d3731;
 }
 .drawer-h h2 {
   font-family: "Press Start 2P", monospace;
   font-weight: 400;
   font-size: 12px;
   color: #fff;
-  text-shadow: 2px 2px 0 #3f3f3f;
+  text-shadow: 2px 2px 0 #463f38;
 }
 .drawer-h .stone {
   font-size: 8px;
@@ -153,7 +153,7 @@ details.rules > summary .sdrag {
 .wk {
   font-family: "Press Start 2P", monospace;
   font-size: 8px;
-  color: #e6e6e6;
+  color: #e8e6e4;
 }
 .stone.wkbtn {
   font-size: 9px;
@@ -189,7 +189,7 @@ details.rules > summary .sdrag {
 }
 .help {
   font-size: 17px;
-  color: #555;
+  color: #60554a;
   line-height: 1.3;
 }
 .cmsg2 {
@@ -210,28 +210,28 @@ details.rules > summary .sdrag {
   width: 100%;
   text-align: left;
   padding: 10px 12px;
-  background: #a9a9a9;
-  color: #1e1e1e;
+  background: #b4a99e;
+  color: #201e1c;
   border: 3px solid;
-  border-color: #fff #555 #555 #fff;
+  border-color: #fff #60554a #60554a #fff;
   cursor: pointer;
 }
 .scat:hover,
 .scat:focus-visible {
-  background: #b8b8b8;
+  background: #c0b8b0;
   outline: none;
 }
 .scat:active {
-  border-color: #555 #fff #fff #555;
+  border-color: #60554a #fff #fff #60554a;
 }
 .scat .slot {
   width: 48px;
   height: 48px;
   display: grid;
   place-items: center;
-  background: #6f6f6f;
+  background: #806f5e;
   border: 3px solid;
-  border-color: #555 #ddd #ddd #555;
+  border-color: #60554a #e0ddda #e0ddda #60554a;
   box-sizing: border-box;
 }
 .scat .slot svg {
@@ -249,7 +249,7 @@ details.rules > summary .sdrag {
   display: block;
   margin-top: 2px;
   font: 17px/1.15 var(--vt);
-  color: #333;
+  color: #38332e;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -263,7 +263,7 @@ details.rules > summary .sdrag {
 .stitle {
   margin: 0;
   font: 12px/1.4 var(--px);
-  color: #1e1e1e;
+  color: #201e1c;
 }
 .sgroup {
   margin: 0 0 16px;
@@ -275,12 +275,12 @@ details.rules > summary .sdrag {
   gap: 8px;
   margin: 0 0 6px;
   font: 9px/1.5 var(--px);
-  color: #3a3a3a;
+  color: #403a34;
 }
 .scard {
-  background: #b5b5b5;
+  background: #beb5ac;
   border: 3px solid;
-  border-color: #555 #fff #fff #555;
+  border-color: #60554a #fff #fff #60554a;
 }
 .srow {
   display: flex;
@@ -288,7 +288,7 @@ details.rules > summary .sdrag {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border-top: 2px solid #9c9c9c;
+  border-top: 2px solid #aa9c8e;
 }
 .scard > .srow:first-child,
 .scard > :first-child {
@@ -302,13 +302,13 @@ details.rules > summary .sdrag {
   display: block;
   font: 20px/1.1 var(--vt);
   font-weight: 400;
-  color: #1e1e1e;
+  color: #201e1c;
 }
 .srow-t small {
   display: block;
   margin-top: 2px;
   font: 16px/1.15 var(--vt);
-  color: #4a4a4a;
+  color: #534a41;
 }
 .srow-c {
   flex: none;
@@ -320,10 +320,10 @@ details.rules > summary .sdrag {
 .scard select {
   box-sizing: border-box;
   font: 20px/1.2 var(--vt);
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 5px 8px;
   min-width: 0;
   color-scheme: dark;

@@ -1,6 +1,6 @@
 {
   "appId": "com.arsh.productivitycraft",
-  "appName": "ProductivityCraft",
+  "appName": "QuestTime",
   "webDir": "dist",
   "android": { "backgroundColor": "#212121" },
   "plugins": {

@@ -1185,7 +1185,7 @@ export function init() {
     snow: "Snow",
     ocean: "Ocean",
     lava: "Lava",
-    nether: "Nether",
+    ember: "Ember",
     city: "City skyline",
     mountains: "Mountains",
     village: "Village",

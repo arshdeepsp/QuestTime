@@ -6,11 +6,11 @@
   margin-bottom: 10px;
 }
 .facts div {
-  background: #8b8b8b;
+  background: #9d8b79;
   border: 3px solid;
-  border-color: #373737 #fff #fff #373737;
+  border-color: #3d3731 #fff #fff #3d3731;
   color: #fff;
-  text-shadow: 2px 2px 0 #3f3f3f;
+  text-shadow: 2px 2px 0 #463f38;
   padding: 8px 10px;
   font-family: var(--px);
   font-size: 10px;
@@ -20,7 +20,7 @@
   display: block;
   font-family: var(--vt);
   font-size: 17px;
-  color: #e6e6e6;
+  color: #e8e6e4;
   margin-top: 2px;
   text-shadow: none;
 }
@@ -48,17 +48,17 @@ body.focusview #toast {
   justify-content: space-between;
   align-items: baseline;
   gap: 14px;
-  border-bottom: 2px solid #a6a6a6;
+  border-bottom: 2px solid #b2a69a;
   padding: 7px 0;
   font-size: 18px;
 }
 .dt-r span {
-  color: #5a5a5a;
+  color: #665a4e;
 }
 .dt-r b {
   font-weight: 400;
   text-align: right;
-  color: #1e1e1e;
+  color: #201e1c;
 }
 body.calm .modal-card {
   animation: none !important;
@@ -90,8 +90,8 @@ body.calm .modal-card {
 .diag {
   display: grid;
   gap: 4px;
-  background: #b5b5b5;
-  border: 2px solid #8b8b8b;
+  background: #beb5ac;
+  border: 2px solid #9d8b79;
   padding: 8px 10px;
   margin: 6px 0;
 }
@@ -111,7 +111,7 @@ body.calm .modal-card {
 }
 .dg-n {
   font-size: 16px;
-  color: #3f3f3f;
+  color: #463f38;
 }
 .trcard .sh2 {
   color: #ffff55;
@@ -129,9 +129,9 @@ body.calm .modal-card {
   z-index: 40;
   display: grid;
   min-width: 170px;
-  background: #c6c6c6;
+  background: #ccc6c0;
   border: 3px solid;
-  border-color: #fff #555 #555 #fff;
+  border-color: #fff #60554a #60554a #fff;
   box-shadow:
     0 0 0 3px #000,
     0 6px 0 rgba(0, 0, 0, 0.3);
@@ -141,14 +141,14 @@ body.calm .modal-card {
   text-align: left;
   background: none;
   border: 0;
-  border-bottom: 2px solid #a6a6a6;
+  border-bottom: 2px solid #b2a69a;
   padding: 8px 12px;
-  color: #1e1e1e;
+  color: #201e1c;
   cursor: pointer;
 }
 .qmenu button:last-child {
   border-bottom: 0;
-  color: #5a5a5a;
+  color: #665a4e;
 }
 .qmenu button:hover,
 .qmenu button:focus {
@@ -161,7 +161,7 @@ body.calm .modal-card {
   font-size: 11px;
   line-height: 1.6;
   margin: 0 0 10px;
-  color: #3f3f3f;
+  color: #463f38;
 }
 .mhead.good {
   color: #2e6b24;
@@ -179,21 +179,21 @@ body.calm .modal-card {
   grid-template-columns: 16px 1fr auto;
   gap: 10px;
   align-items: center;
-  background: #8b8b8b;
+  background: #9d8b79;
   color: #fff;
-  border: 2px solid #555;
+  border: 2px solid #60554a;
   padding: 6px 10px;
-  text-shadow: 1px 1px 0 #3f3f3f;
+  text-shadow: 1px 1px 0 #463f38;
   font-size: 19px;
 }
 .mrow em {
   font-style: normal;
   font-size: 15px;
-  color: #e6e6e6;
+  color: #e8e6e4;
 }
 .mrow .mv {
   font-size: 18px;
-  color: #f0f0f0;
+  color: #f1f0ef;
 }
 .sh2 {
   font-family: "Press Start 2P", monospace;
@@ -204,10 +204,10 @@ body.calm .modal-card {
   width: 100%;
   box-sizing: border-box;
   font: 20px/1.3 var(--vt);
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 8px;
 }
 .modal {
@@ -226,10 +226,10 @@ body.calm .modal-card {
   max-height: min(88vh, 100%);
   display: flex;
   flex-direction: column;
-  background: #c6c6c6;
-  color: #3f3f3f;
+  background: #ccc6c0;
+  color: #463f38;
   border: 4px solid;
-  border-color: #fff #555 #555 #fff;
+  border-color: #fff #60554a #60554a #fff;
   box-shadow:
     0 0 0 4px #000,
     0 10px 0 rgba(0, 0, 0, 0.3);
@@ -268,9 +268,9 @@ body.calm .modal-card {
   height: 56px;
   display: grid;
   place-items: center;
-  background: #8b8b8b;
+  background: #9d8b79;
   border: 3px solid;
-  border-color: #555 #fff #fff #555;
+  border-color: #60554a #fff #fff #60554a;
 }
 .nfcall .slot svg {
   width: 40px;
@@ -294,8 +294,8 @@ body.calm .modal-card {
 .nfbar {
   grid-column: 1/-1;
   height: 10px;
-  background: #555;
-  border: 2px solid #333;
+  background: #60554a;
+  border: 2px solid #38332e;
 }
 .nfbar i {
   display: block;

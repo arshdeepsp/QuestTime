@@ -281,14 +281,14 @@ export function certPDF(a, btn) {
         g.fillRect(x, y + gg, w, h - 2 * gg);
       }
       pr(tx - gg, ty - gg, tw + 2 * gg, th + 2 * gg, "#000");
-      pr(tx, ty, tw, th, "#555");
-      pr(tx + gg, ty + gg, tw - 2 * gg, th - 2 * gg, "#212121");
+      pr(tx, ty, tw, th, "#60554A");
+      pr(tx + gg, ty + gg, tw - 2 * gg, th - 2 * gg, "#24211E");
       var s = 230,
         sx = tx + 62,
         sy = ty + (th - s) / 2;
-      g.fillStyle = "#8B8B8B";
+      g.fillStyle = "#9D8B79";
       g.fillRect(sx - 16, sy - 16, s + 32, s + 32);
-      g.fillStyle = "#C6C6C6";
+      g.fillStyle = "#CCC6C0";
       g.fillRect(sx - 8, sy - 8, s + 16, s + 16);
       var ic = D.icons[a.icon] || D.icons.star,
         p = s / 16;
@@ -323,7 +323,7 @@ export function certPDF(a, btn) {
         dfs--;
         g.font = dfs + "px " + PX;
       }
-      g.fillStyle = "#BDBDBD";
+      g.fillStyle = "#C5BDB5";
       g.fillText(d0, X, ty + 270);
       g.textAlign = "center";
       g.font = "22px " + PX;
@@ -333,7 +333,7 @@ export function certPDF(a, btn) {
         W / 2,
         ty + th + 170,
       );
-      g.fillText("ProductivityCraft", W / 2, H - 100);
+      g.fillText("QuestTime", W / 2, H - 100);
       var pdf = new J({ orientation: "landscape", unit: "pt", format: "letter" });
       pdf.setProperties({ title: "Badge: " + a.title });
       pdf.addImage(c.toDataURL("image/png"), "PNG", 0, 0, 792, 612, undefined, "FAST");

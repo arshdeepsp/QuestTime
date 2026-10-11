@@ -22,9 +22,9 @@
   gap: 18px;
 }
 .ach {
-  background: #212121;
+  background: #24211e;
   color: #fff;
-  border: 4px solid #555;
+  border: 4px solid #60554a;
   box-shadow: 0 0 0 4px #000;
   padding: 14px;
   display: grid;
@@ -36,7 +36,7 @@
 .ach .slot {
   width: 72px;
   height: 72px;
-  border: 4px solid #8b8b8b;
+  border: 4px solid #9d8b79;
 }
 .ach .slot svg {
   width: 56px;
@@ -53,7 +53,7 @@
   line-height: 1.4;
 }
 .ach .t3 {
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .ach .st {
   color: #9aa2b1;
@@ -79,10 +79,10 @@
   filter: grayscale(1) brightness(0.35);
 }
 .ach.locked .t1 {
-  color: #8a8a8a;
+  color: #9c8a78;
 }
 .ach.locked .t2 {
-  color: #9a9a9a;
+  color: #a89a8c;
 }
 .ach-note {
   margin-top: 14px;
@@ -97,7 +97,7 @@
 }
 .ach-sub small {
   font: 16px var(--vt);
-  color: #d8d8d8;
+  color: #dbd8d5;
   margin-left: 8px;
   text-shadow: none;
 }
@@ -106,7 +106,7 @@
 }
 .ach .abar {
   height: 8px;
-  background: #111;
+  background: #121110;
   border: 2px solid #000;
   margin-top: 8px;
 }
@@ -132,10 +132,10 @@ html body .qtools:not(:has(#shareBtn:not([hidden]))) {
   display: grid;
   gap: 3px;
   text-align: left;
-  background: #8b8b8b;
+  background: #9d8b79;
   color: #fff;
   border: 3px solid;
-  border-color: #373737 #fff #fff #373737;
+  border-color: #3d3731 #fff #fff #3d3731;
   padding: 8px;
   cursor: pointer;
   font: inherit;
@@ -146,7 +146,7 @@ html body .qtools:not(:has(#shareBtn:not([hidden]))) {
 }
 .gcard span {
   font: 15px var(--vt);
-  color: #ededed;
+  color: #eeedec;
 }
 .gcard.on {
   background: #3c8527;
@@ -190,15 +190,15 @@ body.focusview #shareBtn {
   grid-template-columns: 1fr auto auto;
   gap: 10px;
   align-items: center;
-  background: #212121;
+  background: #24211e;
   color: #fff;
-  border: 3px solid #555;
+  border: 3px solid #60554a;
   padding: 8px 12px;
   font-size: 19px;
 }
 .shelf-r .mv {
   font-size: 16px;
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .shelf-r.ar {
   opacity: 0.8;
@@ -233,8 +233,8 @@ body.focusview #shareBtn {
   text-shadow: 2px 2px 0 #000;
 }
 .trcard {
-  background: #212121;
-  border: 4px solid #555;
+  background: #24211e;
+  border: 4px solid #60554a;
   box-shadow: 0 0 0 3px #000;
   padding: 14px;
   color: #fff;
@@ -250,7 +250,7 @@ body.focusview #shareBtn {
 }
 .tchart .tl {
   font: 14px var(--vt);
-  fill: #bdbdbd;
+  fill: #c5bdb5;
 }
 .ttop {
   display: grid;
@@ -277,7 +277,7 @@ body.focusview #shareBtn {
 }
 .ttop-n small {
   font: 15px var(--vt);
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .ttop-m {
   font: 18px var(--vt);
@@ -286,7 +286,7 @@ body.focusview #shareBtn {
 .ttop-b {
   grid-column: 1/-1;
   height: 10px;
-  background: #111;
+  background: #121110;
   border: 2px solid #000;
 }
 .ttop-b i {
@@ -309,7 +309,7 @@ body.focusview #shareBtn {
 .tnote {
   margin: 6px 0 0;
   font: 16px var(--vt);
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .tcharts .trcard:last-child:nth-child(odd) {
   grid-column: 1/-1;
@@ -317,7 +317,7 @@ body.focusview #shareBtn {
 .ttop-flat {
   font: 13px var(--vt);
   font-style: normal;
-  color: #1e1e1e;
+  color: #201e1c;
   background: #f2b705;
   padding: 0 5px;
 }
@@ -328,7 +328,7 @@ body.focusview #shareBtn {
 }
 #heatLab {
   font: 16px var(--vt);
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 #groveBtn {
   display: none;
@@ -363,7 +363,7 @@ body[data-cur="achievements"] .ach-sec {
   max-width: min(420px, calc(100% - 28px));
   background: rgba(33, 33, 33, 0.88);
   color: #fff;
-  border: 4px solid #555;
+  border: 4px solid #60554a;
   box-shadow: 0 0 0 3px #000;
   padding: 12px 14px;
   display: grid;
@@ -380,11 +380,11 @@ body[data-cur="achievements"] .ach-sec {
 }
 .gline.small {
   font-size: 16px;
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .gbar {
   height: 10px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
 }
 .gbar i {
@@ -458,11 +458,11 @@ body.nostreak #sideAch {
   gap: 6px;
   margin: 0 0 10px;
   padding: 10px 12px;
-  background: #c6c6c6;
+  background: #ccc6c0;
   border: 3px solid;
-  border-color: #fff #555 #555 #fff;
+  border-color: #fff #60554a #60554a #fff;
   box-shadow: 0 0 0 3px #000;
-  color: #1e1e1e;
+  color: #201e1c;
   text-shadow: none;
 }
 .resetcard b {
@@ -470,14 +470,14 @@ body.nostreak #sideAch {
 }
 .resetcard span {
   font: 16px var(--vt);
-  color: #3f3f3f;
+  color: #463f38;
 }
 .resetcard textarea {
   font: 18px var(--vt);
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 6px 8px;
   resize: vertical;
   min-height: 44px;
@@ -587,17 +587,17 @@ body.nostreak #sideAch {
     gap: 12px;
     align-items: center;
     margin: 22px 3px 0;
-    background: #212121;
+    background: #24211e;
     color: #fff;
-    border: 4px solid #555;
+    border: 4px solid #60554a;
     box-shadow: 0 0 0 3px #000;
     padding: 12px;
   }
   .sideach .slot {
     width: 56px;
     height: 56px;
-    background: #c6c6c6;
-    border: 3px solid #8b8b8b;
+    background: #ccc6c0;
+    border: 3px solid #9d8b79;
     display: grid;
     place-items: center;
   }
@@ -621,11 +621,11 @@ body.nostreak #sideAch {
   .sideach .p {
     font-family: var(--vt);
     font-size: 17px;
-    color: #bdbdbd;
+    color: #c5bdb5;
   }
   .sideach .bar {
     height: 8px;
-    background: #1e1e1e;
+    background: #201e1c;
     border: 2px solid #000;
     margin-top: 6px;
   }

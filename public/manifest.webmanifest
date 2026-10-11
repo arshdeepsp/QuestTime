@@ -1,12 +1,12 @@
 {
-  "name": "ProductivityCraft",
-  "short_name": "ProdCraft",
-  "description": "A pixel-art habit game: daily quests, streaks, achievements and wrap-ups.",
+  "name": "QuestTime",
+  "short_name": "QuestTime",
+  "description": "A pixel-art habit game: daily quests, streaks, badges and wrap-ups.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#79553A",
-  "theme_color": "#5E9E3A",
+  "background_color": "#201E1C",
+  "theme_color": "#201E1C",
   "icons": [
     {
       "src": "icons/icon-192.png",

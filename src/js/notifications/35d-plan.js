@@ -366,7 +366,7 @@ export function notifDiag(el) {
             .join("; ") +
           "</div>"
         : "") +
-      '</div><p class="help">If permission and exact timing are both granted and alerts still arrive late, Android\u2019s battery saver is holding them. Set Android Settings \u203a Apps \u203a ProductivityCraft \u203a Battery to <b>Unrestricted</b>. On Samsung, also remove it from <b>Sleeping apps</b>.</p><div class="edrow"><button type="button" class="stone mini" id="nfT60">Test in 1 minute</button><span class="pz" id="nfT60s"></span></div><div class="edrow"><button type="button" class="stone mini" id="nfLive">Test live timer</button><span class="pz" id="nfLiveS"></span></div>';
+      '</div><p class="help">If permission and exact timing are both granted and alerts still arrive late, Android\u2019s battery saver is holding them. Set Android Settings \u203a Apps \u203a QuestTime \u203a Battery to <b>Unrestricted</b>. On Samsung, also remove it from <b>Sleeping apps</b>.</p><div class="edrow"><button type="button" class="stone mini" id="nfT60">Test in 1 minute</button><span class="pz" id="nfT60s"></span></div><div class="edrow"><button type="button" class="stone mini" id="nfLive">Test live timer</button><span class="pz" id="nfLiveS"></span></div>';
     el.querySelector("#nfLive").addEventListener("click", function () {
       var FN = capPlugin("FocusNotify"),
         out = el.querySelector("#nfLiveS");
@@ -442,7 +442,7 @@ export function notifTest() {
         notifications: [
           {
             id: 4999,
-            title: "ProductivityCraft",
+            title: "QuestTime",
             body: "Notifications are working.",
             channelId: "pc_alerts2",
             schedule: { at: new Date(Date.now() + 3000), allowWhileIdle: true },

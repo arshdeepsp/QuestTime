@@ -10,9 +10,9 @@
 }
 .hud {
   margin: 22px 3px 0;
-  background: #212121;
+  background: #24211e;
   color: #fff;
-  border: 4px solid #555;
+  border: 4px solid #60554a;
   box-shadow: 0 0 0 3px #000;
   padding: 16px;
   display: grid;
@@ -32,7 +32,7 @@
   margin-top: 10px;
   font-size: 10px;
   line-height: 1.6;
-  color: #e0e0e0;
+  color: #e2e0de;
 }
 .hud .stats b {
   color: #fff;
@@ -40,7 +40,7 @@
 }
 .hud .note {
   margin-top: 10px;
-  color: #bdbdbd;
+  color: #c5bdb5;
 }
 .hud .note.warn {
   color: #ff8a65;
@@ -51,7 +51,7 @@
   justify-content: space-between;
   gap: 10px;
   margin-top: 14px;
-  color: #e0e0e0;
+  color: #e2e0de;
 }
 .strip {
   display: grid;
@@ -68,13 +68,13 @@
 }
 .dayinfo {
   margin-top: 10px;
-  color: #bdbdbd;
+  color: #c5bdb5;
   min-height: 15px;
 }
 .strip i {
   display: block;
   aspect-ratio: 1;
-  background: #3a3a3a;
+  background: #403a34;
   border: 2px solid #000;
   position: relative;
 }
@@ -86,7 +86,7 @@
   justify-content: space-between;
   align-items: baseline;
   font-size: 9px;
-  color: #e0e0e0;
+  color: #e2e0de;
   gap: 10px;
 }
 .lvn {
@@ -97,7 +97,7 @@
 .xpb {
   margin-top: 6px;
   height: 12px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
   padding: 2px;
 }
@@ -125,7 +125,7 @@
   background: #a57a12;
 }
 .strip i.pend {
-  background: #555;
+  background: #60554a;
 }
 .strip i.today {
   outline: 2px solid #ffff55;
@@ -133,7 +133,7 @@
 }
 .strip i.pre {
   background: transparent;
-  border-color: #333;
+  border-color: #38332e;
 }
 .gui-h {
   display: flex;
@@ -147,14 +147,14 @@
   font-family: "Press Start 2P", "Courier New", monospace;
   font-weight: 400;
   font-size: 13px;
-  color: #3f3f3f;
+  color: #463f38;
 }
 .xp {
   margin-top: 14px;
 }
 .xpbar {
   height: 14px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -162,7 +162,7 @@
   padding: 2px;
 }
 .xpbar i {
-  background: #2a2a2a;
+  background: #2e2a26;
 }
 .xpl {
   display: flex;
@@ -174,7 +174,7 @@
   flex-wrap: wrap;
 }
 .sync {
-  color: #555;
+  color: #60554a;
   margin-top: 10px;
 }
 #gui.timing #hdrAdd,
@@ -251,7 +251,7 @@ body.focusview #gui .xp {
 }
 .xpbar2 {
   height: 12px;
-  background: #1e1e1e;
+  background: #201e1c;
   border: 2px solid #000;
 }
 .xpbar2 i {
@@ -279,8 +279,8 @@ body.focusview #gui .xp {
   gap: 6px;
   margin: 16px 3px 0;
   padding: 6px;
-  background: #212121;
-  border: 4px solid #555;
+  background: #24211e;
+  border: 4px solid #60554a;
   box-shadow: 0 0 0 3px #000;
   position: sticky;
   top: calc(6px + var(--sat));
@@ -293,10 +293,10 @@ body.focusview #gui .xp {
   justify-content: center;
   gap: 8px;
   font: 9px var(--px);
-  color: #bdbdbd;
-  background: #3a3a3a;
+  color: #c5bdb5;
+  background: #403a34;
   border: 3px solid;
-  border-color: #5a5a5a #1e1e1e #1e1e1e #5a5a5a;
+  border-color: #665a4e #201e1c #201e1c #665a4e;
   padding: 10px 6px;
   cursor: pointer;
   text-shadow: 1px 1px 0 #000;
@@ -325,14 +325,14 @@ body.focusview #gui .xp {
 }
 .statsbtn {
   font: 16px/1 var(--vt);
-  background: #3a3a3a;
-  color: #e0e0e0;
+  background: #403a34;
+  color: #e2e0de;
   border: 2px solid #000;
   padding: 3px 8px;
   cursor: pointer;
 }
 .statsbtn:hover {
-  background: #555;
+  background: #60554a;
 }
 .sync,
 .hud .note,
@@ -398,7 +398,7 @@ body.focusview #gui .xp {
 }
 .strip i.future {
   background: transparent;
-  border: 2px dashed #4a4a4a;
+  border: 2px dashed #534a41;
   cursor: default;
 }
 .strip i.lost {
@@ -428,14 +428,14 @@ body.nostreak .mainnav [data-go="grove"] {
   display: grid;
   gap: 4px;
   font: 8px var(--px);
-  color: #3f3f3f;
+  color: #463f38;
 }
 .acct input {
   font: 19px var(--vt);
-  background: #373737;
+  background: #3d3731;
   color: #fff;
   border: 3px solid;
-  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
   padding: 6px 8px;
   min-width: 0;
 }
@@ -531,11 +531,11 @@ body.nostreak .mainnav [data-go="grove"] {
     z-index: 26;
     margin: 0;
     padding: calc(8px + var(--sat)) 12px 8px;
-    background: #212121;
+    background: #24211e;
     border-bottom: 4px solid #000;
     box-shadow:
       0 3px 0 rgba(0, 0, 0, 0.3),
-      inset 0 -3px 0 #3a3a3a;
+      inset 0 -3px 0 #403a34;
   }
   .appico {
     display: block;
@@ -559,7 +559,7 @@ body.nostreak .mainnav [data-go="grove"] {
   .titlebar h1 {
     font-size: 8px !important;
     line-height: 1.2;
-    color: #bdbdbd;
+    color: #c5bdb5;
     text-shadow: none;
     letter-spacing: 0.5px;
   }
@@ -599,7 +599,7 @@ body.nostreak .mainnav [data-go="grove"] {
     box-shadow: none;
     padding: 6px 6px calc(6px + var(--sab));
     gap: 4px;
-    background: #c6c6c6;
+    background: #ccc6c0;
     z-index: 30;
   }
   .mainnav button {
@@ -607,9 +607,9 @@ body.nostreak .mainnav [data-go="grove"] {
     gap: 4px;
     font-size: 7px;
     padding: 7px 2px;
-    color: #3f3f3f;
-    background: #b5b5b5;
-    border-color: #fff #777 #777 #fff;
+    color: #463f38;
+    background: #beb5ac;
+    border-color: #fff #897765 #897765 #fff;
     text-shadow: none;
   }
   .mainnav button svg {
@@ -634,7 +634,7 @@ body.nostreak .mainnav [data-go="grove"] {
     bottom: 0;
     z-index: 25;
     padding: 8px 10px calc(8px + var(--sab));
-    background: #c6c6c6;
+    background: #ccc6c0;
     border-top: 4px solid #000;
     box-shadow: 0 -3px 0 #fff inset;
   }
@@ -696,8 +696,8 @@ body.nostreak .mainnav [data-go="grove"] {
     margin-left: auto;
     width: 9px;
     height: 9px;
-    border-right: 3px solid #bdbdbd;
-    border-bottom: 3px solid #bdbdbd;
+    border-right: 3px solid #c5bdb5;
+    border-bottom: 3px solid #c5bdb5;
     transform: rotate(45deg);
     transition: transform 0.15s;
   }
@@ -715,7 +715,7 @@ body.nostreak .mainnav [data-go="grove"] {
   .hud.hud-open .hudline {
     margin-bottom: 8px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #333;
+    border-bottom: 2px solid #38332e;
   }
   .hud.hud-open .rank {
     display: none;

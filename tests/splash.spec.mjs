@@ -8,7 +8,7 @@ const flip = (page, v) => page.evaluate((st) => { Object.defineProperty(document
 test("the splash shows on launch with today's status, then gets out of the way", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q }, extra: on });
   await expect(page.locator("#splash")).toBeVisible();
-  await expect(page.locator("#splash .spl-t")).toHaveText("ProductivityCraft");
+  await expect(page.locator("#splash .spl-t")).toHaveText("QuestTime");
   await expect(page.locator("#splS")).toHaveText("Streak 0 · Today: 0 of 1 done");
   await expect(page.locator("#splash")).toBeHidden({ timeout: 3000 });
   await page.click("#quests .q .tmr");

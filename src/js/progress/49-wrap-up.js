@@ -241,9 +241,9 @@ export function wrapCanvas(k) {
   function panel(x, y, w, h, fill) {
     g.fillStyle = "#000";
     g.fillRect(x - 6, y - 6, w + 12, h + 12);
-    g.fillStyle = "#555";
+    g.fillStyle = "#60554A";
     g.fillRect(x, y, w, h);
-    g.fillStyle = fill || "#212121";
+    g.fillStyle = fill || "#24211E";
     g.fillRect(x + 6, y + 6, w - 12, h - 12);
   }
   function txt(t, x, y, font, col, al) {
@@ -284,7 +284,7 @@ export function wrapCanvas(k) {
       }
     });
   }
-  txt("ProductivityCraft", 90, 130, "28px " + PX, "#FFFFFF");
+  txt("QuestTime", 90, 130, "28px " + PX, "#FFFFFF");
   txt("Daily wrap-up", 90, 185, "22px " + PX, "#FFFF55");
   txt(
     parse(k).toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
@@ -327,8 +327,8 @@ export function wrapCanvas(k) {
     py = 280,
     pw = W - 180,
     ph = 520;
-  panel(px, py, pw, ph, "#C6C6C6");
-  txt("Plan vs done", px + 36, py + 62, "20px " + PX, "#3F3F3F");
+  panel(px, py, pw, ph, "#CCC6C0");
+  txt("Plan vs done", px + 36, py + 62, "20px " + PX, "#463F38");
   var maxv = Math.max(
       60,
       ...n.rows.map(function (r) {
@@ -339,18 +339,18 @@ export function wrapCanvas(k) {
     bwid = pw - 330 - 290,
     ry = py + 110,
     rs = Math.min(90, Math.floor((ph - 170) / Math.max(1, n.rows.length)));
-  if (!n.rows.length) txt("No time quests on this day.", px + 36, py + 140, "32px " + VT, "#5A5A5A");
+  if (!n.rows.length) txt("No time quests on this day.", px + 36, py + 140, "32px " + VT, "#665A4E");
   n.rows.slice(0, 6).forEach(function (r) {
-    txt(r.n.length > 18 ? r.n.slice(0, 17) + "\u2026" : r.n, px + 36, ry + 30, "32px " + VT, "#1E1E1E");
-    g.fillStyle = "#8B8B8B";
+    txt(r.n.length > 18 ? r.n.slice(0, 17) + "\u2026" : r.n, px + 36, ry + 30, "32px " + VT, "#201E1C");
+    g.fillStyle = "#9D8B79";
     g.fillRect(bx, ry, bwid, 20);
     g.fillStyle = "#5B6CF0";
     g.fillRect(bx, ry, Math.round((bwid * r.p) / maxv), 20);
-    g.fillStyle = "#373737";
+    g.fillStyle = "#3D3731";
     g.fillRect(bx, ry + 26, bwid, 20);
     g.fillStyle = r.d >= r.p ? "#50D65A" : r.d >= r.min ? "#E8B923" : "#E0453A";
     g.fillRect(bx, ry + 26, Math.round((bwid * r.d) / maxv), 20);
-    txt(hm(r.d) + " / " + hm(r.p), px + pw - 36, ry + 30, "32px " + VT, "#1E1E1E", "right");
+    txt(hm(r.d) + " / " + hm(r.p), px + pw - 36, ry + 30, "32px " + VT, "#201E1C", "right");
     txt(
       (r.gap >= 0 ? "+" : "-") + hm(Math.abs(r.gap)),
       px + pw - 36,
@@ -366,23 +366,23 @@ export function wrapCanvas(k) {
     px + 36,
     py + ph - 40,
     "34px " + VT,
-    "#1E1E1E",
+    "#201E1C",
   );
   g.fillStyle = "#5B6CF0";
   g.fillRect(px + pw - 420, py + ph - 62, 24, 20);
-  txt("plan", px + pw - 386, py + ph - 44, "28px " + VT, "#1E1E1E");
+  txt("plan", px + pw - 386, py + ph - 44, "28px " + VT, "#201E1C");
   g.fillStyle = "#50D65A";
   g.fillRect(px + pw - 280, py + ph - 62, 24, 20);
-  txt("done", px + pw - 246, py + ph - 44, "28px " + VT, "#1E1E1E");
+  txt("done", px + pw - 246, py + ph - 44, "28px " + VT, "#201E1C");
   var qy = py + ph + 40,
     qh = 180;
-  panel(px, qy, pw, qh, "#C6C6C6");
+  panel(px, qy, pw, qh, "#CCC6C0");
   var oth = defs
     .filter(function (q) {
       return q.type !== "time" && q.type !== "todo";
     })
     .slice(0, 4);
-  if (!oth.length) txt("No other quests on this day.", px + 36, qy + 110, "32px " + VT, "#5A5A5A");
+  if (!oth.length) txt("No other quests on this day.", px + 36, qy + 110, "32px " + VT, "#665A4E");
   oth.forEach(function (q, i) {
     var v = e[q.id],
       val =
@@ -413,24 +413,24 @@ export function wrapCanvas(k) {
                 : "",
       lb = q.label.length > 16 ? q.label.slice(0, 15) + "\u2026" : q.label;
     var cx = px + 36 + i * ((pw - 72) / oth.length);
-    txt(lb, cx, qy + 62, "14px " + PX, "#3F3F3F");
+    txt(lb, cx, qy + 62, "14px " + PX, "#463F38");
     txt(val, cx, qy + 120, "48px " + VT, metQ(q, e) ? "#2E6B24" : "#9E2A1F");
-    txt(sub, cx, qy + 160, "28px " + VT, "#5A5A5A");
+    txt(sub, cx, qy + 160, "28px " + VT, "#665A4E");
   });
   var ny = qy + qh + 40,
     nh = H - ny - 110;
   panel(px, ny, pw, nh);
-  g.fillStyle = "#C6C6C6";
+  g.fillStyle = "#CCC6C0";
   g.fillRect(px + 36, ny + 36, 168, 168);
-  g.fillStyle = "#8B8B8B";
+  g.fillStyle = "#9D8B79";
   g.fillRect(px + 42, ny + 42, 156, 156);
-  g.fillStyle = "#C6C6C6";
+  g.fillStyle = "#CCC6C0";
   g.fillRect(px + 48, ny + 48, 144, 144);
   icon(n.icon, px + 56, ny + 56, 128);
   var tx = px + 240;
   txt("Surprise note", tx, ny + 72, "16px " + PX, "#FFFF55");
   txt(n.head, tx, ny + 122, "24px " + PX, "#FFFFFF");
-  var yy = wrap(n.body, tx, ny + 180, pw - 240 - 40, 40, "34px " + VT, "#E6E6E6");
+  var yy = wrap(n.body, tx, ny + 180, pw - 240 - 40, 40, "34px " + VT, "#E8E6E4");
   if (n.fun) wrap(n.fun, tx, yy + 14, pw - 240 - 40, 40, "34px " + VT, "#9AA6FF");
   txt(
     "Page 1 of 2  \u00b7  locked " + fmtD(add(k, 1)) + ", " + (dayEnd() ? dayEnd() + ":00 am" : "12:00 am"),
@@ -463,9 +463,9 @@ export function wrapCanvas2(k) {
   function panel(x, y, w, h, fill) {
     g.fillStyle = "#000";
     g.fillRect(x - 6, y - 6, w + 12, h + 12);
-    g.fillStyle = "#555";
+    g.fillStyle = "#60554A";
     g.fillRect(x, y, w, h);
-    g.fillStyle = fill || "#C6C6C6";
+    g.fillStyle = fill || "#CCC6C0";
     g.fillRect(x + 6, y + 6, w - 12, h - 12);
   }
   function txt(t, x, y, font, col, al) {
@@ -545,7 +545,7 @@ export function wrapCanvas2(k) {
     gd = inW.filter(function (d) {
       return gold(S.days[d] || {});
     }).length;
-  txt("ProductivityCraft", 90, 120, "24px " + PX, "#FFFFFF");
+  txt("QuestTime", 90, 120, "24px " + PX, "#FFFFFF");
   txt("Insights", 90, 172, "22px " + PX, "#FFFF55");
   txt(
     parse(k).toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
@@ -561,13 +561,13 @@ export function wrapCanvas2(k) {
     py = 200,
     ph = 230;
   panel(px, py, pw, ph);
-  txt("Last 7 days", px + 36, py + 58, "18px " + PX, "#3F3F3F");
+  txt("Last 7 days", px + 36, py + 58, "18px " + PX, "#463F38");
   txt(
     "Cleared " + cl + "/" + inW.length + "  \u00b7  gold " + gd,
     px + pw - 36,
     py + 58,
     "32px " + VT,
-    "#1E1E1E",
+    "#201E1C",
     "right",
   );
   var sq = 110,
@@ -576,7 +576,7 @@ export function wrapCanvas2(k) {
     var x = px + 36 + i * (sq + gap),
       y = py + 86,
       dd = S.days[d] || {},
-      col = d < START_KEY ? "#8B8B8B" : gold(dd) ? "#C99A1E" : ok(dd) ? "#3C8527" : "#9E2A1F";
+      col = d < START_KEY ? "#9D8B79" : gold(dd) ? "#C99A1E" : ok(dd) ? "#3C8527" : "#9E2A1F";
     g.fillStyle = "#000";
     g.fillRect(x - 3, y - 3, sq + 6, 76 + 6);
     g.fillStyle = col;
@@ -599,7 +599,7 @@ export function wrapCanvas2(k) {
       x + sq / 2,
       y + 112,
       "26px " + VT,
-      "#3F3F3F",
+      "#463F38",
       "center",
     );
   });
@@ -608,17 +608,17 @@ export function wrapCanvas2(k) {
     th = 130 + 46 * Math.max(1, Q.length);
   panel(px, ty, pw, th);
   var cols = [px + 36, px + 380, px + 560, px + 740, px + pw - 36];
-  txt("Quest", cols[0], ty + 56, "14px " + PX, "#3F3F3F");
-  txt("Week", cols[1], ty + 56, "14px " + PX, "#3F3F3F");
-  txt("Plan", cols[2], ty + 56, "14px " + PX, "#3F3F3F");
-  txt("vs plan", cols[3], ty + 56, "14px " + PX, "#3F3F3F");
-  txt("Today vs avg", cols[4], ty + 56, "14px " + PX, "#3F3F3F", "right");
+  txt("Quest", cols[0], ty + 56, "14px " + PX, "#463F38");
+  txt("Week", cols[1], ty + 56, "14px " + PX, "#463F38");
+  txt("Plan", cols[2], ty + 56, "14px " + PX, "#463F38");
+  txt("vs plan", cols[3], ty + 56, "14px " + PX, "#463F38");
+  txt("Today vs avg", cols[4], ty + 56, "14px " + PX, "#463F38", "right");
   rows.forEach(function (rw, i) {
     var y = ty + 104 + i * 46,
       p = rw.wp ? Math.round((rw.wd / rw.wp) * 100) : 0;
-    txt(rw.q.label.length > 20 ? rw.q.label.slice(0, 19) + "\u2026" : rw.q.label, cols[0], y, "32px " + VT, "#1E1E1E");
-    txt(hm(rw.wd), cols[1], y, "32px " + VT, "#1E1E1E");
-    txt(hm(rw.wp), cols[2], y, "32px " + VT, "#1E1E1E");
+    txt(rw.q.label.length > 20 ? rw.q.label.slice(0, 19) + "\u2026" : rw.q.label, cols[0], y, "32px " + VT, "#201E1C");
+    txt(hm(rw.wd), cols[1], y, "32px " + VT, "#201E1C");
+    txt(hm(rw.wp), cols[2], y, "32px " + VT, "#201E1C");
     txt(p + "%", cols[3], y, "32px " + VT, p >= 100 ? "#2E6B24" : "#9E2A1F");
     var dlt = rw.avg == null ? null : Math.round(rw.today - rw.avg);
     txt(
@@ -626,7 +626,7 @@ export function wrapCanvas2(k) {
       cols[4],
       y,
       "32px " + VT,
-      dlt == null ? "#5A5A5A" : dlt >= 0 ? "#2E6B24" : "#9E2A1F",
+      dlt == null ? "#665A4E" : dlt >= 0 ? "#2E6B24" : "#9E2A1F",
       "right",
     );
   });
@@ -645,15 +645,15 @@ export function wrapCanvas2(k) {
   });
   var lv = level(xpNet(k));
   {
-    txt("XP earned", px + 36, by + 56, "16px " + PX, "#3F3F3F");
+    txt("XP earned", px + 36, by + 56, "16px " + PX, "#463F38");
     [
       ["Minutes", mins_],
       ["Plan bonuses", pb],
       ["Cleared", ok(e) ? 50 : 0],
       ["Gold", gold(e) ? 100 : 0],
     ].forEach(function (a, i) {
-      txt(a[0], px + 36, by + 96 + i * 30, "30px " + VT, "#1E1E1E");
-      txt("+" + a[1], px + bw - 36, by + 96 + i * 30, "30px " + VT, "#1E1E1E", "right");
+      txt(a[0], px + 36, by + 96 + i * 30, "30px " + VT, "#201E1C");
+      txt("+" + a[1], px + bw - 36, by + 96 + i * 30, "30px " + VT, "#201E1C", "right");
     });
     txt("Level " + lv.l + "  \u00b7  " + lv.cur + "/" + lv.need, px + 36, by + bh - 20, "30px " + VT, "#2E6B24");
   }
@@ -663,7 +663,7 @@ export function wrapCanvas2(k) {
     if (!nx && x[0] > st.streak) nx = x;
   });
   var na = nextBadge(badgeStats(st));
-  txt(np ? "Last 7 days" : "Progress", qx + 36, by + 56, "16px " + PX, "#3F3F3F");
+  txt(np ? "Last 7 days" : "Progress", qx + 36, by + 56, "16px " + PX, "#463F38");
   var pr = np
     ? [
         "Focus: " +
@@ -689,13 +689,13 @@ export function wrapCanvas2(k) {
         na ? "Next badge: " + na.a.title + " (" + na.p.txt + ")" : "All badges earned",
       ];
   pr.forEach(function (t, i) {
-    txt(t, qx + 36, by + 96 + i * 30, "30px " + VT, "#1E1E1E");
+    txt(t, qx + 36, by + 96 + i * 30, "30px " + VT, "#201E1C");
   });
   /* observations */
   var oy = by + bh + 30,
     sh0 = 210,
     oh = H - 80 - sh0 - 30 - oy;
-  panel(px, oy, pw, oh, "#212121");
+  panel(px, oy, pw, oh, "#24211E");
   txt("Observations", px + 36, oy + 58, "16px " + PX, "#FFFF55");
   var obs = [],
     tot = rows.reduce(function (a, x) {
@@ -852,7 +852,7 @@ export function wrapCanvas2(k) {
   obs.slice(0, nob).forEach(function (o) {
     g.fillStyle = "#7FE05A";
     g.fillRect(px + 40, yy - 18, 12, 12);
-    yy = wrap(o[1], px + 70, yy, pw - 110, 38, "32px " + VT, "#E6E6E6") + 10;
+    yy = wrap(o[1], px + 70, yy, pw - 110, 38, "32px " + VT, "#E8E6E4") + 10;
   });
   /* suggested plan */
   var sy = oy + oh + 30,
@@ -863,7 +863,7 @@ export function wrapCanvas2(k) {
     px + 36,
     sy + 58,
     "16px " + PX,
-    "#3F3F3F",
+    "#463F38",
   );
   var TQ2 = activeDefs(add(k, 1))
       .filter(function (q) {
@@ -872,7 +872,7 @@ export function wrapCanvas2(k) {
       .slice(0, 6),
     nc = Math.max(1, TQ2.length),
     cw = (pw - 72 - (nc - 1) * 20) / nc;
-  if (!TQ2.length) txt("No time quests planned.", px + 36, sy + 140, "32px " + VT, "#5A5A5A");
+  if (!TQ2.length) txt("No time quests planned.", px + 36, sy + 140, "32px " + VT, "#665A4E");
   TQ2.forEach(function (q, i) {
     var lg = inW
         .filter(function (d) {
@@ -894,7 +894,7 @@ export function wrapCanvas2(k) {
     var x = px + 36 + i * (cw + 20),
       y = sy + 80,
       ch = sh - 110;
-    g.fillStyle = "#8B8B8B";
+    g.fillStyle = "#9D8B79";
     g.fillRect(x, y, cw, ch);
     txt(q.label.split(/[ \/]/)[0].slice(0, 9), x + 18, y + 36, "13px " + PX, "#FFFFFF");
     txt(hm(sug), x + 18, y + ch - 18, "44px " + VT, "#FFFF55");
@@ -917,7 +917,7 @@ export function doWrap(k, btnEl) {
       var J = r[0],
         c = wrapCanvas(k),
         pdf = new J({ orientation: "portrait", unit: "pt", format: "letter" });
-      pdf.setProperties({ title: "ProductivityCraft wrap-up " + k, author: "ProductivityCraft" });
+      pdf.setProperties({ title: "QuestTime wrap-up " + k, author: "QuestTime" });
       pdf.addImage(c.toDataURL("image/png"), "PNG", 0, 0, 612, 792, undefined, "FAST");
       pdf.addPage("letter", "portrait");
       pdf.addImage(wrapCanvas2(k).toDataURL("image/png"), "PNG", 0, 0, 612, 792, undefined, "FAST");

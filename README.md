@@ -1,4 +1,4 @@
-# ProductivityCraft
+# QuestTime
 
 A pixel-art habit game: daily quests, streaks, subjects, a growing grove. Runs as a web app (PWA) and as an Android app via Capacitor. All data stays on the device.
 
