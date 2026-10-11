@@ -1,4 +1,14 @@
 /* ---- startup: first render, the route, the welcome, and the day-lock timers ---- */
+/* Repair settings saved with a quest twice (see dedupeQuests): saved as an edit, so a signed-in device pushes the fix. */
+(function () {
+  if (!S.cfg || cacheBlock) return;
+  var c0 = clone(S.cfg),
+    n = dedupeQuests(c0);
+  if (!n) return;
+  saveCfg(c0);
+  qSig = "";
+  setSync("Removed " + n + " duplicated quest" + (n === 1 ? "" : "s") + ".");
+})();
 elapsed();
 render();
 calmSync();

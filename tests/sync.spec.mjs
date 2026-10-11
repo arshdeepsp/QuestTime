@@ -380,3 +380,14 @@ test("a day deleted on another device goes here too, unless this device changed 
   expect((await store(page)).days["2026-11-02"].cs).toBe(30);
   await expect.poll(async () => (await docs(page))["users/u1/days/2026-11-02"].cs).toBe(30);
 });
+
+test("settings arriving from a device that saved a quest twice are taken without the copies, and the repair goes back up", async ({ page }) => {
+  await page.addInitScript(fake);
+  await page.addInitScript(() => { if (localStorage.getItem("__fc")) return; localStorage.setItem("pc-account", JSON.stringify({ uid: "u1", email: "arsh@example.com" })); window.__cloud.user = { uid: "u1", email: "arsh@example.com" };
+    const P = { id: "pp", type: "time", label: "Piano Practice", min: 30 }, J = { id: "j", type: "check", label: "Journal" };
+    window.__cloud.put("users/u1/data/cfg", { quests: [P, J, P, P], rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u: 1 }); });
+  await openApp(page, { cfg: { quests: [] } });
+  await expect(page.locator("#quests .q .lbl")).toHaveText(["Piano Practice", "Journal"]);
+  expect((await store(page)).cfg.quests.map((q) => q.id)).toEqual(["pp", "j"]);
+  await expect.poll(async () => (await docs(page))["users/u1/data/cfg"].quests.map((q) => q.id)).toEqual(["pp", "j"]);
+});

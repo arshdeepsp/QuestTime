@@ -128,9 +128,13 @@ function mergeIds(b, l, r, pref) {
       ) !== canon(seq(b, lm)),
     first = movedHere ? l : r,
     second = movedHere ? r : l,
-    ids = first.map(function (x) {
-      return x.id;
-    });
+    ids = first
+      .map(function (x) {
+        return x.id;
+      })
+      .filter(function (id, i, a) {
+        return a.indexOf(id) === i;
+      });
   second.forEach(function (x, i) {
     if (ids.indexOf(x.id) >= 0) return;
     var at = 0;

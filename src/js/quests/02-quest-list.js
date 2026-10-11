@@ -287,25 +287,25 @@ function buildQuests(defs) {
         render();
         return;
       }
-      var ids = defs.map(function (q) {
-          return q.id;
-        }),
-        vis = order.map(function (k) {
-          return ids[k];
-        }),
-        c = clone(cfg()),
-        pos = 0,
-        inVis = {};
-      vis.forEach(function (id) {
-        inVis[id] = 1;
-      });
-      var byId = {};
+      /* Today's list can show quests that are no longer in cfg (a deletion or easing waiting until tomorrow,
+         cfg.lockDay): only quests in cfg take part, so every slot gets a different quest and none is written twice. */
+      var c = clone(cfg()),
+        byId = {},
+        inVis = {},
+        pos = 0;
       c.quests.forEach(function (q) {
         byId[q.id] = q;
       });
+      var vis = order
+        .map(function (k) {
+          return defs[k] && defs[k].id;
+        })
+        .filter(function (id) {
+          if (!byId[id] || inVis[id]) return false;
+          return (inVis[id] = true);
+        });
       c.quests = c.quests.map(function (q) {
-        if (!inVis[q.id]) return q;
-        return byId[vis[pos++]] || q;
+        return inVis[q.id] ? byId[vis[pos++]] : q;
       });
       saveCfg(c);
       qSig = "";

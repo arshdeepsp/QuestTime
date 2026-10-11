@@ -315,7 +315,16 @@ var cloud = (function () {
       rc = id === "refl" ? { map: r.map || {} } : r,
       hr = hashOf(rc);
     function take() {
-      store.adopt(id, id === "refl" ? rc.map : r, ru);
+      var obj = id === "refl" ? rc.map : r;
+      /* A cfg from a device that saved a quest twice: take it without the copies and push the repaired version back. */
+      if (id === "cfg") {
+        var fx = JSON.parse(JSON.stringify(r));
+        if (dedupeQuests(fx)) {
+          obj = fx;
+          queue.cfg = true;
+        }
+      }
+      store.adopt(id, obj, ru);
       agree(id, rc);
       return true;
     }
@@ -344,6 +353,7 @@ var cloud = (function () {
     }
     var mg = merge3(id === "cfg" ? m.cb : id === "refl" ? { map: {} } : {}, l, rc, lu >= ru ? "l" : "r");
     if (id === "cfg") {
+      dedupeQuests(mg);
       S.cfg = mg;
       applyLook();
     } else if (id === "refl") S.refl = mg.map || {};

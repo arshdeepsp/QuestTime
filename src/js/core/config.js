@@ -12,6 +12,19 @@ function uiSet(k, v) {
   c.ui[k] = v;
   saveCfg(c);
 }
+/* A quest id appears once in cfg.quests: keeps the first copy of each id (a drag on a list that showed a quest no longer
+   in cfg could write one quest twice, and the copies synced). Returns how many were dropped. */
+function dedupeQuests(c) {
+  if (!c || !Array.isArray(c.quests)) return 0;
+  var seen = {},
+    out = c.quests.filter(function (q) {
+      if (!q || q.id == null || seen[q.id]) return false;
+      return (seen[q.id] = true);
+    }),
+    n = c.quests.length - out.length;
+  if (n) c.quests = out;
+  return n;
+}
 function cfg() {
   if (!S.cfg) {
     S.cfg = { quests: [], rules: null, start: START_AT.toISOString(), updated: "" };
@@ -21,6 +34,7 @@ function cfg() {
   return S.cfg;
 }
 function saveCfg(nc) {
+  dedupeQuests(nc);
   nc.updated = new Date().toISOString();
   S.cfg = nc;
   cache();

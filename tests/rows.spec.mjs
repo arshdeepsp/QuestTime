@@ -52,6 +52,35 @@ test.describe("compact phone rows", () => {
     await expect.poll(async () => (await store(page)).cfg.quests.map((q) => q.id)).toEqual(["rd", "th", "gym"]);
     await expect(page.locator("#quests .q .lbl")).toHaveText(["Reading", "Thesis", "Gym"]);
   });
+
+  test("dragging next to a quest deleted today (still listed until tomorrow) never writes a quest twice", async ({ page }) => {
+    const P = { id: "pp", type: "time", label: "Piano Practice", min: 30 };
+    await openApp(page, { cfg: { quests: Q, subjects: SUBJ, lockDay: { date: "2026-11-02", defs: { pp: P } } } });
+    await page.clock.pauseAt(Date.parse("2026-11-02T09:00:05-05:00"));
+    await expect(page.locator("#quests .q .lbl")).toHaveText(["Thesis", "Reading", "Gym", "Piano Practice"]);
+    const cdp = await page.context().newCDPSession(page);
+    const box = async (t) => page.locator("#quests .q", { hasText: t }).locator(".lbl").boundingBox();
+    async function drag(from, to) {
+      const a = await box(from), b = await box(to), x = a.x + 5, y = a.y + a.height / 2, y2 = b.y + 4;
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y, id: 1 }] });
+      await page.clock.runFor(450);
+      for (let i = 1; i <= 5; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y + (y2 - y) * i / 5, id: 1 }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await page.waitForTimeout(200);
+    }
+    await drag("Piano Practice", "Thesis");
+    expect((await store(page)).cfg.quests.map((q) => q.id)).toEqual(["th", "rd", "gym"]);
+    await drag("Gym", "Thesis");
+    await expect.poll(async () => (await store(page)).cfg.quests.map((q) => q.id)).toEqual(["gym", "th", "rd"]);
+    await expect(page.locator("#quests .q .lbl")).toHaveCount(4);
+  });
+});
+
+test("settings saved with a quest twice are repaired on launch: one copy each, the others kept", async ({ page }) => {
+  await openApp(page, { cfg: { quests: [Q[0], Q[1], Q[0], Q[2], Q[0]], subjects: SUBJ } });
+  await expect(page.locator("#quests .q .lbl")).toHaveText(["Thesis", "Reading", "Gym"]);
+  expect((await store(page)).cfg.quests.map((q) => q.id)).toEqual(["th", "rd", "gym"]);
+  await expect(page.locator("#sync")).toContainText("Removed 2 duplicated quests");
 });
 
 test("a badge toast raised on launch waits for the first tap", async ({ page }) => {
