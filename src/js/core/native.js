@@ -1,26 +1,28 @@
 /* ---- native app (Capacitor) plugins ---- */
+import { G } from "./g.js";
+
 /* ---- notifications (native app via Capacitor; inert in the browser) ---- */
-function nativeApp() {
+export function nativeApp() {
   try {
     return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   } catch (x) {
     return false;
   }
 }
-function LN() {
-  if (LNp) return LNp;
+export function LN() {
+  if (G.LNp) return G.LNp;
   try {
     if (!nativeApp()) return null;
-    LNp =
+    G.LNp =
       (window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) ||
       (window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin("LocalNotifications") : null);
   } catch (x) {
-    LNp = null;
+    G.LNp = null;
   }
-  return LNp;
+  return G.LNp;
 }
 /* ---- native app glue: files, back button, keep awake, ongoing focus notice ---- */
-function capPlugin(n) {
+export function capPlugin(n) {
   try {
     if (!nativeApp()) return null;
     var C = window.Capacitor;
@@ -29,7 +31,7 @@ function capPlugin(n) {
     return null;
   }
 }
-function toB64(data) {
+export function toB64(data) {
   return new Promise(function (res, rej) {
     if (typeof data === "string") {
       try {

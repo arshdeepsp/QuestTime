@@ -1,13 +1,14 @@
 /* ---- grove (progress forest) ---- */
-var groveEl = document.getElementById("grove"),
-  gcv = document.getElementById("groveCanvas"),
-  gctx = gcv.getContext("2d"),
-  groveOpen = false,
-  groveIdleMode = false,
-  groveRAF = 0,
-  groveBase = null,
-  groveGeo = null;
-function grng(seed) {
+import { G } from "../core/g.js";
+import { S, START_KEY } from "../core/00-state.js";
+import { compute } from "../rules/compute.js";
+import { gold } from "../rules/day-rules.js";
+import { noStreakOn } from "../rules/modes.js";
+import { lastSt } from "../ui/04-render.js";
+
+export var groveEl, gcv, gctx, groveBase, groveGeo, SPAWN0, SPAWNEVERY;
+
+export function grng(seed) {
   var h = 2166136261;
   for (var i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
@@ -21,7 +22,7 @@ function grng(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-function groveStats() {
+export function groveStats() {
   var st = window.__gT != null ? { total: window.__gT, streak: 0 } : lastSt || compute();
   var g =
     window.__gG != null
@@ -31,15 +32,13 @@ function groveStats() {
         }).length;
   return { total: st.total | 0, gold: g | 0 };
 }
-function stageOf(age, center) {
+export function stageOf(age, center) {
   var th = center ? [0, 1, 2, 4, 10, 21, 60] : [0, 1, 3, 6, 12, 25, 50],
     s = -1;
   for (var i = 0; i < th.length; i++) if (age >= th[i]) s = i;
   return s;
 }
-var SPAWN0 = 10,
-  SPAWNEVERY = 4;
-function drawPlant(c, P, x, y, stage, rnd, hueShift) {
+export function drawPlant(c, P, x, y, stage, rnd, hueShift) {
   function px(cx, cy, col) {
     c.fillStyle = col;
     c.fillRect(Math.round((x + cx) * P), Math.round((y + cy) * P), P, P);
@@ -114,7 +113,7 @@ function drawPlant(c, P, x, y, stage, rnd, hueShift) {
       px(fx, fy, "#F2D16B");
     }
 }
-function buildGrove() {
+export function buildGrove() {
   var dpr = Math.min(2, window.devicePixelRatio || 1),
     W = window.innerWidth,
     H = window.innerHeight;
@@ -252,4 +251,18 @@ function buildGrove() {
     '%"></i></div><div class="gline small">' +
     Math.min(tot, 365) +
     ' of 365 days toward a forest \u00b7 gold days grow flowers</div><div class="gline small" id="gTime"></div>';
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  groveEl = document.getElementById("grove");
+  gcv = document.getElementById("groveCanvas");
+  gctx = gcv.getContext("2d");
+  G.groveOpen = false;
+  G.groveIdleMode = false;
+  G.groveRAF = 0;
+  groveBase = null;
+  groveGeo = null;
+  SPAWN0 = 10;
+  SPAWNEVERY = 4;
 }

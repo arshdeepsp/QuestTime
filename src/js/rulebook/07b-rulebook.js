@@ -1,6 +1,15 @@
 /* ---- generic drag-to-reorder ---- */
-var DEFAULT_RULES = [];
-function reviewDate() {
+import { START_AT } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { clone, esc } from "../core/util.js";
+import { reorder, sortable } from "../ui/07-drag.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { swipeMenu } from "../ui/45-gestures.js";
+import { setSync } from "../ui/feedback.js";
+
+export var DEFAULT_RULES, rulesEl, openSec, editSec, LT, LF;
+
+export function reviewDate() {
   var R = new Date(START_AT),
     n0 = new Date();
   do {
@@ -8,7 +17,7 @@ function reviewDate() {
   } while (R <= n0);
   return R.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" });
 }
-function fmtBlock(t) {
+export function fmtBlock(t) {
   var lines = String(t || "")
       .replace(/\{review\}/g, reviewDate())
       .split("\n"),
@@ -165,13 +174,10 @@ function fmtBlock(t) {
   }
   return { html: out, wide: wide };
 }
-var rulesEl = document.getElementById("rules"),
-  openSec = {},
-  editSec = -1;
-function rulesData() {
+export function rulesData() {
   return clone(cfg().rules || DEFAULT_RULES);
 }
-function renderRules() {
+export function renderRules() {
   if (editSec >= 0) return;
   var R = rulesData(),
     h = "";
@@ -286,23 +292,7 @@ function renderRules() {
       renderRules();
     });
 }
-var LT = {
-  p: "Text",
-  ul: "Bullet",
-  ol: "Step",
-  yes: "Allowed",
-  no: "Not allowed",
-  lead: "Highlight",
-  card: "Card",
-  fact: "Fact",
-  chips: "Chips",
-};
-var LF = {
-  card: ["Title", "Description", "Excludes (optional)"],
-  fact: ["Value", "Label"],
-  chips: ["Item, item, item"],
-};
-function parseLines(t) {
+export function parseLines(t) {
   var out = [];
   String(t || "")
     .split("\n")
@@ -352,7 +342,7 @@ function parseLines(t) {
     });
   return out;
 }
-function serLines(items) {
+export function serLines(items) {
   var n = 0,
     out = [];
   items.forEach(function (it) {
@@ -383,7 +373,7 @@ function serLines(items) {
   });
   return out.join("\n");
 }
-function deleteSection(i) {
+export function deleteSection(i) {
   var R2 = rulesData();
   if (!R2[i]) return;
   R2.splice(i, 1);
@@ -393,7 +383,7 @@ function deleteSection(i) {
   renderRules();
   setSync("Section deleted");
 }
-function editSection(i) {
+export function editSection(i) {
   var R = rulesData(),
     sec = R[i],
     body = null,
@@ -586,4 +576,28 @@ function editSection(i) {
     body = b;
     draw();
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  DEFAULT_RULES = [];
+  rulesEl = document.getElementById("rules");
+  openSec = {};
+  editSec = -1;
+  LT = {
+    p: "Text",
+    ul: "Bullet",
+    ol: "Step",
+    yes: "Allowed",
+    no: "Not allowed",
+    lead: "Highlight",
+    card: "Card",
+    fact: "Fact",
+    chips: "Chips",
+  };
+  LF = {
+    card: ["Title", "Description", "Excludes (optional)"],
+    fact: ["Value", "Label"],
+    chips: ["Item, item, item"],
+  };
 }

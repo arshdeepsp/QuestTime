@@ -1,27 +1,35 @@
 /* ---- local notifications: what to schedule (nfPlan) and keeping the device in step (notifSync) ---- */
-var LNp = null;
-var NF_DEF = {
-  on: false,
-  timer: true,
-  sched: true,
-  checkin: true,
-  checkinAt: "19:00",
-  todos: true,
-  risk: true,
-  dl: true,
-  review: true,
-  pace: true,
-};
-function nf() {
+import { G } from "../core/g.js";
+import { DAYF, S } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { add, atMin, dayMidMin, dayWin, parse, todayKey, weekStart } from "../core/days.js";
+import { LN, capPlugin } from "../core/native.js";
+import { esc, hm, hmL } from "../core/util.js";
+import { openTodos } from "../quests/50b-todo-review.js";
+import { midDay, midNeed, perEnd, periodList, rollSum, weekTarget } from "../rules/26-periods.js";
+import { compute } from "../rules/compute.js";
+import { limOf, metQ, ok, planOf } from "../rules/day-rules.js";
+import { rewardsOff } from "../rules/modes.js";
+import { activeDefs, reqOf } from "../rules/quests-on-day.js";
+import { resumeSync, schNotifs } from "../schedule/resume.js";
+import { allTopics, topicStats } from "../subjects/33-topics.js";
+import { timerMin } from "../timer/13-focus-timer.js";
+import { spLabel } from "../timer/43-sprint.js";
+import { lastSt } from "../ui/04-render.js";
+import { setSync } from "../ui/feedback.js";
+
+export var NF_DEF, nfT, chReady;
+
+export function nf() {
   return Object.assign({}, NF_DEF, cfg().nf || {});
 }
-function atTime(k, hhmm) {
+export function atTime(k, hhmm) {
   var p = parse(k),
     a = hhmm.split(":");
   p.setHours(+a[0], +a[1], 0, 0);
   return p;
 }
-function nfPlan() {
+export function nfPlan() {
   var n = nf(),
     now = Date.now(),
     out = [],
@@ -215,9 +223,7 @@ function nfPlan() {
   }
   return out;
 }
-var nfT = 0,
-  nfSig = "";
-function notifSync() {
+export function notifSync() {
   clearTimeout(nfT);
   nfT = setTimeout(function () {
     var ln = LN();
@@ -229,8 +235,8 @@ function notifSync() {
           return [x.id, Math.round(x.schedule.at.getTime() / 60000), x.title, x.body, JSON.stringify(x.extra || {})];
         }),
       );
-    if (sig === nfSig) return;
-    nfSig = sig;
+    if (sig === G.nfSig) return;
+    G.nfSig = sig;
     Promise.resolve(ln.getPending ? ln.getPending() : { notifications: [] })
       .then(function (r) {
         var ours = ((r && r.notifications) || [])
@@ -253,10 +259,7 @@ function notifSync() {
       });
   }, 800);
 }
-document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible") notifSync();
-});
-function notifEnable(on, cb) {
+export function notifEnable(on, cb) {
   var ln = LN();
   if (!on || !ln) {
     cb(on && !ln ? "app" : null);
@@ -270,8 +273,7 @@ function notifEnable(on, cb) {
       cb("denied");
     });
 }
-var chReady = null;
-function ensureChannels() {
+export function ensureChannels() {
   var ln = LN();
   if (!ln || !ln.createChannel) return Promise.resolve();
   if (chReady) return chReady;
@@ -307,7 +309,7 @@ function ensureChannels() {
   ]).catch(function () {});
   return chReady;
 }
-function notifDiag(el) {
+export function notifDiag(el) {
   var ln = LN();
   if (!el || !ln) return;
   el.innerHTML = '<p class="help">Checking\u2026</p>';
@@ -394,7 +396,7 @@ function notifDiag(el) {
           alert(msg);
           setTimeout(function () {
             if (!S.timer && !S.sprint) FN.hide().catch(function () {});
-            ongoingSig = "";
+            G.ongoingSig = "";
           }, 20000);
         })
         .catch(function (e) {
@@ -428,7 +430,7 @@ function notifDiag(el) {
     });
   });
 }
-function notifTest() {
+export function notifTest() {
   var ln = LN();
   if (!ln) {
     setSync("Notifications work in the Android app build.");
@@ -451,4 +453,27 @@ function notifTest() {
     .then(function () {
       setSync("Test notification in 3 seconds.");
     });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  G.LNp = null;
+  NF_DEF = {
+    on: false,
+    timer: true,
+    sched: true,
+    checkin: true,
+    checkinAt: "19:00",
+    todos: true,
+    risk: true,
+    dl: true,
+    review: true,
+    pace: true,
+  };
+  nfT = 0;
+  G.nfSig = "";
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") notifSync();
+  });
+  chReady = null;
 }

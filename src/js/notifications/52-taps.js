@@ -2,13 +2,40 @@
      Every notification opens the app to its own prompt (notifAction). Local notifications arrive through
      localNotificationActionPerformed (quests/50b-todo-review.js); the live timer (901) is read from the native
      FocusNotify.takeTap() when the app opens or comes back to the front. */
-var CALL_IDS = function (id) {
-  return (id >= 2000 && id < 2100) || id === 2200 || id === 2500 || id === 2600 || (id >= 3500 && id < 4000);
-};
-function callLeft() {
+import { CALL_CAP, CALL_MIN, CALL_XP, DAYF, S, dirty } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { add, parse, todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { capPlugin } from "../core/native.js";
+import { cache } from "../core/storage.js";
+import { esc, hm, num, svg } from "../core/util.js";
+import { toast } from "../progress/03-badges.js";
+import { reviewTodos } from "../quests/50b-todo-review.js";
+import { cfgQ, midDay, midNeed, perEnd, periodList, rollNeed, rollSum, weekTarget } from "../rules/26-periods.js";
+import { compute } from "../rules/compute.js";
+import { metQ } from "../rules/day-rules.js";
+import { rewardsOff } from "../rules/modes.js";
+import { dayDefMap } from "../rules/past-days.js";
+import { activeDefs, reqOf } from "../rules/quests-on-day.js";
+import { openSchedule } from "../schedule/page.js";
+import { schTap } from "../schedule/resume.js";
+import { allTopics, topicStats } from "../subjects/33-topics.js";
+import { timerCap, toggleTimer } from "../timer/13-focus-timer.js";
+import { spShow } from "../timer/43-sprint.js";
+import { timerGoal } from "../timer/44b-live-notification.js";
+import { openPick, start5 } from "../tools/28-spark-tools.js";
+import { sfx } from "../ui/01-sound.js";
+import { lastSt, render } from "../ui/04-render.js";
+import { closeG, gEl, openG, qList } from "../ui/18-modal.js";
+import { go } from "../ui/44-navigation.js";
+import { setSync } from "../ui/feedback.js";
+
+export var CALL_IDS;
+
+export function callLeft() {
   return S.call ? S.call.until - Date.now() : 0;
 }
-function callBadge() {
+export function callBadge() {
   var ms = callLeft();
   if (ms <= 0 || rewardsOff()) return "";
   var s = Math.ceil(ms / 1000);
@@ -22,7 +49,7 @@ function callBadge() {
     " XP</p>"
   );
 }
-function callCheck() {
+export function callCheck() {
   var c = S.call;
   S.call = null;
   if (!c || Date.now() > c.until || locked()) return;
@@ -57,7 +84,7 @@ function callCheck() {
     render();
   }, 50);
 }
-function nfCall(title, icon, head, body, btns) {
+export function nfCall(title, icon, head, body, btns) {
   if (!gEl.hidden) closeG();
   sfx("chime");
   var starts = btns.some(function (x) {
@@ -101,7 +128,7 @@ function nfCall(title, icon, head, body, btns) {
       }, 0);
   });
 }
-function nfBar(label, done, goal) {
+export function nfBar(label, done, goal) {
   var pc = goal ? Math.min(100, Math.round((done / goal) * 100)) : 0;
   return (
     '<div class="nfrow"><span>' +
@@ -115,18 +142,18 @@ function nfBar(label, done, goal) {
     '%"></i></div></div>'
   );
 }
-function nfOpen() {
+export function nfOpen() {
   var T = todayKey(),
     e = S.days[T] || {};
   return reqOf(activeDefs(T)).filter(function (q) {
     return q.type !== "limit" && !metQ(q, e);
   });
 }
-function nfGo() {
+export function nfGo() {
   go("today");
   if (!gEl.hidden) closeG();
 }
-function nfJust5(q) {
+export function nfJust5(q) {
   return q
     ? [
         "Just 5 on " + esc(q.label),
@@ -138,7 +165,7 @@ function nfJust5(q) {
       ]
     : null;
 }
-function nfBehind() {
+export function nfBehind() {
   var T = todayKey(),
     e = S.days[T] || {},
     best = null,
@@ -153,7 +180,7 @@ function nfBehind() {
   });
   return best;
 }
-function nfTimer(kind) {
+export function nfTimer(kind) {
   var T = todayKey(),
     t = S.timer;
   if (!t) {
@@ -200,14 +227,14 @@ function nfTimer(kind) {
     ["Keep going", null, "save"],
   ]);
 }
-function nfSprint() {
+export function nfSprint() {
   if (S.sprint) {
     go("today");
     if (!gEl.hidden) closeG();
     spShow();
   } else nfGo();
 }
-function nfQuestsLeft(title, icon, head, extra) {
+export function nfQuestsLeft(title, icon, head, extra) {
   var T = todayKey(),
     e = S.days[T] || {},
     L = nfOpen(),
@@ -224,7 +251,7 @@ function nfQuestsLeft(title, icon, head, extra) {
     [nfJust5(q), ["Schedule", openSchedule], ["Later"]].filter(Boolean),
   );
 }
-function notifAction(id, x) {
+export function notifAction(id, x) {
   x = x || {};
   var now = Date.now();
   S.call =
@@ -239,7 +266,7 @@ function notifAction(id, x) {
   if (id === 1004) {
     timerCap();
     go("today");
-    var cq = cfgQ(extra && extra.q);
+    var cq = cfgQ(x.q);
     setSync("Daily limit reached" + (cq ? " for " + cq.label : "") + ". Timer stopped and logged.");
     return;
   }
@@ -371,7 +398,7 @@ function notifAction(id, x) {
   }
   nfGo();
 }
-function liveTapPoll() {
+export function liveTapPoll() {
   var FN = capPlugin("FocusNotify");
   if (!FN || !FN.takeTap) return;
   FN.takeTap()
@@ -380,7 +407,14 @@ function liveTapPoll() {
     })
     .catch(function () {});
 }
-setTimeout(liveTapPoll, 700);
-document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible") setTimeout(liveTapPoll, 300);
-});
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  CALL_IDS = function (id) {
+    return (id >= 2000 && id < 2100) || id === 2200 || id === 2500 || id === 2600 || (id >= 3500 && id < 4000);
+  };
+  setTimeout(liveTapPoll, 700);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") setTimeout(liveTapPoll, 300);
+  });
+}

@@ -1,11 +1,24 @@
 /* ---- after a streak reset: a card, not a gate ---- The day the streak reset (st.resets' last entry, within the last
      RESET_CARD_DAYS) gets a dismissible card under the HUD: "Streak reset on Tue — what broke it?" with a note that is
      saved to S.refl[day] (visible on that day's past-day modal), or Skip (S.refl[day] = {skip:true}). Challenge only. */
-var RESET_CARD_DAYS = 3,
-  REPAIR_XP = 200;
+import { G } from "../core/g.js";
+import { S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { daysBetween, todayKey } from "../core/days.js";
+import { ro } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { clone, esc, fmtD } from "../core/util.js";
+import { rewardsOff } from "../rules/modes.js";
+import { xpNet } from "../rules/xp.js";
+import { sfx } from "../ui/01-sound.js";
+import { render } from "../ui/04-render.js";
+import { setSync } from "../ui/feedback.js";
+
+export var RESET_CARD_DAYS, REPAIR_XP;
+
 /* Streak repair (Challenge only): within RESET_CARD_DAYS of a reset, REPAIR_XP buys back the day that reset it: that day gets e.rep = true (compute treats it as cleared, marked "repaired"), cfg.xpSpent grows, and the streak carries on from before the miss. */
 /* Only a reset caused by a second missed day can be repaired; a reset from a lost period total can't (the lost days stay lost, and periodCheck would reset again). */
-function canRepair(st) {
+export function canRepair(st) {
   var k = resetCardDay(st);
   return k &&
     st.marks[k] === "miss" &&
@@ -17,7 +30,7 @@ function canRepair(st) {
     ? k
     : null;
 }
-function repairStreak(k) {
+export function repairStreak(k) {
   var c = clone(cfg());
   c.xpSpent = (c.xpSpent | 0) + REPAIR_XP;
   saveCfg(c);
@@ -26,19 +39,19 @@ function repairStreak(k) {
   S.refl = Object.assign({}, S.refl);
   S.refl[k] = { repaired: true, at: new Date().toISOString() };
   cache();
-  clearTimeout(timer);
-  timer = setTimeout(flush, 300);
+  clearTimeout(G.timer);
+  G.timer = setTimeout(flush, 300);
   sfx("level");
-  qSig = "";
+  G.qSig = "";
   render();
   setSync("Streak repaired: " + fmtD(k) + " counts as cleared. \u2212" + REPAIR_XP + " XP.");
 }
-function resetCardDay(st) {
+export function resetCardDay(st) {
   var last = st.resets && st.resets[st.resets.length - 1];
   if (!last || rewardsOff() || S.refl[last]) return null;
   return daysBetween(last, todayKey()) <= RESET_CARD_DAYS ? last : null;
 }
-function renderResetCard(st) {
+export function renderResetCard(st) {
   var el = document.getElementById("resetCard");
   if (!el) {
     el = document.createElement("div");
@@ -106,4 +119,10 @@ function renderResetCard(st) {
     }
     done({ text: t, at: new Date().toISOString() });
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  RESET_CARD_DAYS = 3;
+  REPAIR_XP = 200;
 }

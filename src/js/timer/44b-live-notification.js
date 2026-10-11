@@ -1,13 +1,24 @@
 /* ---- keep-awake and the live timer notification (FocusNotify plugin) ---- */
-var wakeOn = false,
-  wakeLockObj = null,
-  ongoingSig = "";
-function focusActive() {
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { LN, capPlugin } from "../core/native.js";
+import { hmL } from "../core/util.js";
+import { ensureChannels, nf } from "../notifications/35d-plan.js";
+import { drawPlant, grng } from "../progress/41-grove.js";
+import { limOf, planOf } from "../rules/day-rules.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { schLen } from "../schedule/model.js";
+import { topicName } from "../subjects/33-topics.js";
+import { spLabel } from "./43-sprint.js";
+
+export var wakeOn, wakeLockObj, focusArtCache, focusBgCache;
+
+export function focusActive() {
   return !!(S.timer || (S.sprint && S.sprint.phase !== "done"));
 }
-/* Growing sapling in the live notification: grow = {from, dur, art}. The native side picks the stage from (now - from) / dur and re-posts itself at each stage via an alarm. */
-var focusArtCache = null;
-function focusArt() {
+export function focusArt() {
   if (focusArtCache) return focusArtCache;
   var out = [];
   try {
@@ -30,9 +41,7 @@ function focusArt() {
   }
   return (focusArtCache = out);
 }
-/* Pixel scene behind the live notification: day sky with clouds, or night sky with stars, over grass. dark = light text. */
-var focusBgCache = {};
-function focusBg() {
+export function focusBg() {
   var h = new Date().getHours(),
     night = h < 7 || h >= 19,
     key = night ? "n" : "d";
@@ -94,22 +103,22 @@ function focusBg() {
   }
   return (focusBgCache[key] = out);
 }
-function timerGoal(q) {
+export function timerGoal(q) {
   var e = S.days[todayKey()] || {};
   if (q.roll) return schLen(q);
   var pl = planOf(q, e);
   return cfg().showPlan && pl > q.min ? pl : q.min;
 }
-function growFor(from, mins) {
+export function growFor(from, mins) {
   return mins > 0 ? { from: Math.round(from), dur: Math.round(mins * 60000), art: focusArt() } : null;
 }
-function focusOff() {
+export function focusOff() {
   var FN = capPlugin("FocusNotify");
   if (FN && FN.hide) FN.hide().catch(function () {});
   var ln = LN();
   if (ln && ln.cancel) ln.cancel({ notifications: [{ id: 900 }] }).catch(function () {});
 }
-function focusSync(force) {
+export function focusSync(force) {
   var want = focusActive() && cfg().keepAwake !== false && document.visibilityState === "visible";
   if (want !== wakeOn) {
     wakeOn = want;
@@ -231,8 +240,8 @@ function focusSync(force) {
     }
   }
   var sig = t ? [t, b, when, down, grow ? grow.from + "/" + grow.dur : "", (focusBg() || {}).dark].join("|") : "";
-  if (sig === ongoingSig && force !== true) return;
-  ongoingSig = sig;
+  if (sig === G.ongoingSig && force !== true) return;
+  G.ongoingSig = sig;
   if (!t) {
     focusOff();
     return;
@@ -285,12 +294,23 @@ function focusSync(force) {
   }
   legacy();
 }
-setInterval(focusSync, 3000);
-if (!focusActive())
-  setTimeout(function () {
-    focusSync(true);
-  }, 400);
-document.addEventListener("visibilitychange", function () {
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
   wakeOn = false;
-  focusSync();
-});
+  wakeLockObj = null;
+  G.ongoingSig = "";
+  /* Growing sapling in the live notification: grow = {from, dur, art}. The native side picks the stage from (now - from) / dur and re-posts itself at each stage via an alarm. */
+  focusArtCache = null;
+  /* Pixel scene behind the live notification: day sky with clouds, or night sky with stars, over grass. dark = light text. */
+  focusBgCache = {};
+  setInterval(focusSync, 3000);
+  if (!focusActive())
+    setTimeout(function () {
+      focusSync(true);
+    }, 400);
+  document.addEventListener("visibilitychange", function () {
+    wakeOn = false;
+    focusSync();
+  });
+}

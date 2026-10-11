@@ -1,6 +1,10 @@
 /* ---- pop-up menus ---- */
+import { G } from "../core/g.js";
+import { closeQMenu } from "../quests/11-row-menu.js";
+import { haptic } from "./45-gestures.js";
+
 /* popMenu(btn, items): items are [label(html), fn] or [label, fn, {arm:"Confirm label"}]; an armed item changes to its arm label on the first tap and only runs on the second (the menu's Cancel or a tap outside drops it). */
-function popMenu(btn, items) {
+export function popMenu(btn, items) {
   closeQMenu();
   items = items.concat([["Cancel", function () {}]]);
   var m = document.createElement("div");
@@ -34,6 +38,6 @@ function popMenu(btn, items) {
       it[1]();
     });
   });
-  qmenu = m;
+  G.qmenu = m;
   m.querySelector("button").focus();
 }

@@ -1,5 +1,19 @@
 /* ---- trends ---- */
-function svgBars(vals, labs, mx, col, fmt) {
+import { S, START_KEY } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { add, dayWin, daysBetween, parse, todayKey, weekStart } from "../core/days.js";
+import { esc, fmtD, hm, svg } from "../core/util.js";
+import { compute } from "../rules/compute.js";
+import { gold, hasEntry, metQ } from "../rules/day-rules.js";
+import { noStreakOn, rewardsOff } from "../rules/modes.js";
+import { defsOf } from "../rules/quests-on-day.js";
+import { schAll } from "../schedule/model.js";
+import { subjList } from "../subjects/32-subjects.js";
+import { allTopics, topicFlat, topicName, topicStats } from "../subjects/33-topics.js";
+import { topicById } from "../subjects/35-links.js";
+import { lastSt } from "../ui/04-render.js";
+
+export function svgBars(vals, labs, mx, col, fmt) {
   var W = 560,
     H = 170,
     n = vals.length,
@@ -17,7 +31,7 @@ function svgBars(vals, labs, mx, col, fmt) {
   });
   return o + "</svg>";
 }
-function renderTrends() {
+export function renderTrends() {
   var el = document.getElementById("trendsBody");
   if (!el) return;
   var T = todayKey(),
@@ -48,7 +62,7 @@ function renderTrends() {
         );
       });
     if (!bl.length) return null;
-    qs = bl
+    var qs = bl
       .map(function (b) {
         return b.q;
       })

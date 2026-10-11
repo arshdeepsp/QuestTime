@@ -1,145 +1,56 @@
 /* ---- render ---- */
-var statsOpen = !!uiGet("stats");
-document.getElementById("statsToggle").addEventListener("click", function () {
-  statsOpen = !statsOpen;
-  uiSet("stats", statsOpen);
-  render();
-});
-var hudOpen = !!uiGet("hud");
-function hudSync() {
+import { G } from "../core/g.js";
+import { RANKS, S, START_AT, START_KEY, dirty } from "../core/00-state.js";
+import { cfg, uiGet, uiSet } from "../core/config.js";
+import { add, dayKey, daysBetween, parse, todayKey } from "../core/days.js";
+import { locked, ro } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { esc, fmtD, hm, num, svg } from "../core/util.js";
+import { notifSync } from "../notifications/35d-plan.js";
+import { renderBadges, toast } from "../progress/03-badges.js";
+import { renderResetCard } from "../progress/21-reset-card.js";
+import { closeGrove, openGrove } from "../progress/42-grove-sky.js";
+import { wrapBtn, wrapLabel } from "../progress/49-wrap-up.js";
+import { openDayModal } from "../progress/past-day.js";
+import { buildQuests, qEls, qWrap, reqText } from "../quests/02-quest-list.js";
+import { checkFinish, renderShelf } from "../quests/35c-finish-lines.js";
+import { qmgr } from "../quests/38-quest-editor.js";
+import { mobileList } from "../quests/47-phone-rows.js";
+import { cleanDoneTodos, maybeReviewTodos } from "../quests/50b-todo-review.js";
+import { perWord, rollNeed, rollSum, weekFrom, weekTarget } from "../rules/26-periods.js";
+import { compute } from "../rules/compute.js";
+import { bases, gold, limBroken, metQ, ok, overQ, planOf, projSum } from "../rules/day-rules.js";
+import { isPaused, isVac, rewardsOff } from "../rules/modes.js";
+import { lockPast } from "../rules/past-days.js";
+import { renderCarryNote } from "../rules/period-note.js";
+import { qStreak } from "../rules/quest-streaks.js";
+import { activeDefs, defsOf, lateStart, reqOf, scheduled } from "../rules/quests-on-day.js";
+import { level, weekCount, xpNet } from "../rules/xp.js";
+import { schRows } from "../schedule/page.js";
+import { topicName, topicStats } from "../subjects/33-topics.js";
+import { qSubjs, qTopicPool, subjById, topicById } from "../subjects/35-links.js";
+import { renderHeat, rollTimer, timerTick } from "../timer/13-focus-timer.js";
+import { openSprintSetup } from "../timer/43-sprint.js";
+import { renderHudExtras } from "../tools/deadlines-hud.js";
+import { renderPark } from "../tools/park-it.js";
+import { sfx } from "./01-sound.js";
+import { curView, go } from "./44-navigation.js";
+import { applyHide } from "./48-declutter.js";
+import { lockIn } from "./feedback.js";
+
+export var lastEval, lastCleared, page, selDay, lastSt, sndBtn, R, n0, rv;
+
+export function hudSync() {
   var hd = document.querySelector(".hud"),
     hl = document.getElementById("hudLine");
-  hd.classList.toggle("hud-open", hudOpen);
-  hl.setAttribute("aria-expanded", hudOpen);
+  hd.classList.toggle("hud-open", G.hudOpen);
+  hl.setAttribute("aria-expanded", G.hudOpen);
 }
-hudSync();
-document.getElementById("hudLine").addEventListener("click", function () {
-  hudOpen = !hudOpen;
-  uiSet("hud", hudOpen);
-  hudSync();
-});
-document.getElementById("mbNew").addEventListener("click", function () {
-  document.getElementById("nqBtn").click();
-});
-document.getElementById("mbGrove").addEventListener("click", function () {
-  openGrove(false);
-});
-document.getElementById("mbSprint").addEventListener("click", function () {
-  openSprintSetup();
-});
-(function () {
-  var st = document.getElementById("strip"),
-    x0 = null,
-    y0 = null;
-  st.addEventListener(
-    "touchstart",
-    function (e) {
-      var t = e.touches[0];
-      x0 = t.clientX;
-      y0 = t.clientY;
-    },
-    { passive: true },
-  );
-  st.addEventListener(
-    "touchend",
-    function (e) {
-      if (x0 == null) return;
-      var t = e.changedTouches[0],
-        dx = t.clientX - x0,
-        dy = t.clientY - y0;
-      x0 = null;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        var b = document.getElementById(dx > 0 ? "stripPrev" : "stripNext");
-        if (!b.disabled) b.click();
-      }
-    },
-    { passive: true },
-  );
-})();
-var lastEval = { set: false },
-  lastCleared = null,
-  page = 0,
-  selDay = null,
-  lastSt = null;
-var sndBtn = document.getElementById("sndBtn");
-function sndLabel() {
-  sndBtn.textContent = sfxOn ? "SFX on" : "SFX off";
-  sndBtn.setAttribute("aria-pressed", sfxOn);
+export function sndLabel() {
+  sndBtn.textContent = G.sfxOn ? "SFX on" : "SFX off";
+  sndBtn.setAttribute("aria-pressed", G.sfxOn);
 }
-sndLabel();
-sndBtn.addEventListener("click", function () {
-  sfxOn = !sfxOn;
-  uiSet("sfx", sfxOn);
-  sndLabel();
-  if (sfxOn) sfx("base");
-});
-document.getElementById("backToday").addEventListener("click", function () {
-  viewKey = null;
-  selDay = null;
-  document.getElementById("dayInfo").textContent = "";
-  render();
-});
-document.getElementById("stripPrev").addEventListener("click", function () {
-  page++;
-  render();
-});
-document.getElementById("stripNext").addEventListener("click", function () {
-  if (page > 0) page--;
-  render();
-});
-document.getElementById("strip").addEventListener("click", function (ev) {
-  var k = ev.target && ev.target.getAttribute && ev.target.getAttribute("data-k");
-  if (!k) return;
-  selDay = k;
-  viewKey = null;
-  if (k >= START_KEY && k < todayKey())
-    setTimeout(function () {
-      openDayModal(k);
-    }, 0);
-  var info = document.getElementById("dayInfo"),
-    m = k > todayKey() ? "future" : k < START_KEY ? "pre" : lastSt.marks[k] || "pend",
-    e = S.days[k] || {};
-  var label = {
-    lost: "Lost: a weekly total was missed, so this period no longer counts",
-    frozen: "Missed (saved by a streak freeze)",
-    repaired: "Missed (repaired with XP)",
-    rest: isVac(k) ? "Vacation day" : "Rest day (nothing required)",
-    ok: gold(e) ? "Cleared (gold day)" : "Cleared",
-    miss: "Missed",
-    grace: "Missed (grace day)",
-    pend: k === todayKey() ? "In progress" : "Not started",
-    pre: "No data",
-    future: "Coming up",
-  }[m];
-  var parts =
-    m === "future"
-      ? [label, parse(k).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })]
-      : [parse(k).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }), label];
-  if (m !== "pre" && m !== "future" && (m !== "pend" || k === todayKey())) {
-    var dq = defsOf(e);
-    parts.push(bases(e) + "/" + reqOf(dq).length + " done");
-    var d = [];
-    dq.forEach(function (q) {
-      var v = e[q.id];
-      if (v == null || v === "" || v === 0 || v === false) return;
-      d.push(
-        q.type === "wake"
-          ? q.label + " " + v
-          : q.type === "time"
-            ? q.label + " " + hm(v)
-            : q.type === "check"
-              ? q.label
-              : q.type === "scale"
-                ? q.label + " " + v + "/" + (q.scale || 5)
-                : q.label + " " + (q.unit === "min" ? hm(v) : num(v)),
-      );
-    });
-    if (d.length) parts.push(d.join(", "));
-  }
-  info.textContent = parts.join(" \u00b7 ");
-  render();
-});
-function render(fromClick) {
+export function render(fromClick) {
   try {
     lockPast();
     rollTimer();
@@ -153,9 +64,9 @@ function render(fromClick) {
     e = S.days[k] || {},
     off = rewardsOff();
   document.body.classList.toggle("nostreak", off);
-  if (off && (curView === "achievements" || groveOpen))
+  if (off && (curView === "achievements" || G.groveOpen))
     setTimeout(function () {
-      if (groveOpen) closeGrove();
+      if (G.groveOpen) closeGrove();
       if (curView === "achievements") go("today");
     }, 0);
   // HUD
@@ -172,9 +83,9 @@ function render(fromClick) {
   document.getElementById("stTotal").textContent = st.total;
   var ms = document.getElementById("moreStats"),
     stb = document.getElementById("statsToggle");
-  ms.hidden = !statsOpen;
-  stb.textContent = statsOpen ? "Less" : "More";
-  stb.setAttribute("aria-expanded", statsOpen);
+  ms.hidden = !G.statsOpen;
+  stb.textContent = G.statsOpen ? "Less" : "More";
+  stb.setAttribute("aria-expanded", G.statsOpen);
   document.getElementById("stFz").textContent = st.fz;
   var note = document.getElementById("hudNote"),
     nx = null;
@@ -227,19 +138,19 @@ function render(fromClick) {
   var past = ro();
   document.getElementById("mbNew").disabled = locked();
   document.getElementById("questsWrap").hidden = false;
-  if (ro() && mgrOpen) {
-    mgrOpen = false;
+  if (ro() && G.mgrOpen) {
+    G.mgrOpen = false;
     qmgr.hidden = true;
   }
   document.getElementById("qEditBtn").disabled = ro();
   document.getElementById("nqBtn").disabled = locked();
-  document.getElementById("qEditBtn").innerHTML = mgrOpen
+  document.getElementById("qEditBtn").innerHTML = G.mgrOpen
     ? 'Close<span class="lg"> editor</span>'
     : 'Edit<span class="lg"> quests</span>';
   document.getElementById("gui").classList.toggle("ro", past);
   document.getElementById("gui").classList.toggle("noplan", !cfg().showPlan);
   document.getElementById("guiTitleT").textContent = ro()
-    ? parse(viewKey).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })
+    ? parse(G.viewKey).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })
     : "Today's quests";
   document.getElementById("backToday").hidden = !ro();
   lockIn();
@@ -250,8 +161,8 @@ function render(fromClick) {
     S.days[T] = Object.assign({}, S.days[T], { q: defs });
     dirty[T] = true;
     cache();
-    clearTimeout(timer);
-    timer = setTimeout(flush, 700);
+    clearTimeout(G.timer);
+    G.timer = setTimeout(flush, 700);
   }
   defs.forEach(function (q) {
     var el = qEls[q.id];
@@ -564,7 +475,7 @@ function render(fromClick) {
   if (!past) lastEval = { set: true, n: n, ok: isOk, gold: isGold, lim: isLim, lvl: lv.l };
   if (!past) renderBadges(st);
 }
-function elapsed() {
+export function elapsed() {
   var now = new Date(),
     t;
   function u(n, w) {
@@ -607,16 +518,150 @@ function elapsed() {
         minute: "2-digit",
       });
 }
-var R = new Date(START_AT),
-  n0 = new Date();
-do {
-  R.setDate(R.getDate() + 90);
-} while (R <= n0);
-var rv = document.getElementById("review");
-if (rv)
-  rv.textContent = R.toLocaleDateString("en-CA", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "America/Toronto",
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  G.statsOpen = !!uiGet("stats");
+  document.getElementById("statsToggle").addEventListener("click", function () {
+    G.statsOpen = !G.statsOpen;
+    uiSet("stats", G.statsOpen);
+    render();
   });
+  G.hudOpen = !!uiGet("hud");
+  hudSync();
+  document.getElementById("hudLine").addEventListener("click", function () {
+    G.hudOpen = !G.hudOpen;
+    uiSet("hud", G.hudOpen);
+    hudSync();
+  });
+  document.getElementById("mbNew").addEventListener("click", function () {
+    document.getElementById("nqBtn").click();
+  });
+  document.getElementById("mbGrove").addEventListener("click", function () {
+    openGrove(false);
+  });
+  document.getElementById("mbSprint").addEventListener("click", function () {
+    openSprintSetup();
+  });
+  (function () {
+    var st = document.getElementById("strip"),
+      x0 = null,
+      y0 = null;
+    st.addEventListener(
+      "touchstart",
+      function (e) {
+        var t = e.touches[0];
+        x0 = t.clientX;
+        y0 = t.clientY;
+      },
+      { passive: true },
+    );
+    st.addEventListener(
+      "touchend",
+      function (e) {
+        if (x0 == null) return;
+        var t = e.changedTouches[0],
+          dx = t.clientX - x0,
+          dy = t.clientY - y0;
+        x0 = null;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          var b = document.getElementById(dx > 0 ? "stripPrev" : "stripNext");
+          if (!b.disabled) b.click();
+        }
+      },
+      { passive: true },
+    );
+  })();
+  lastEval = { set: false };
+  lastCleared = null;
+  page = 0;
+  selDay = null;
+  lastSt = null;
+  sndBtn = document.getElementById("sndBtn");
+  sndLabel();
+  sndBtn.addEventListener("click", function () {
+    G.sfxOn = !G.sfxOn;
+    uiSet("sfx", G.sfxOn);
+    sndLabel();
+    if (G.sfxOn) sfx("base");
+  });
+  document.getElementById("backToday").addEventListener("click", function () {
+    G.viewKey = null;
+    selDay = null;
+    document.getElementById("dayInfo").textContent = "";
+    render();
+  });
+  document.getElementById("stripPrev").addEventListener("click", function () {
+    page++;
+    render();
+  });
+  document.getElementById("stripNext").addEventListener("click", function () {
+    if (page > 0) page--;
+    render();
+  });
+  document.getElementById("strip").addEventListener("click", function (ev) {
+    var k = ev.target && ev.target.getAttribute && ev.target.getAttribute("data-k");
+    if (!k) return;
+    selDay = k;
+    G.viewKey = null;
+    if (k >= START_KEY && k < todayKey())
+      setTimeout(function () {
+        openDayModal(k);
+      }, 0);
+    var info = document.getElementById("dayInfo"),
+      m = k > todayKey() ? "future" : k < START_KEY ? "pre" : lastSt.marks[k] || "pend",
+      e = S.days[k] || {};
+    var label = {
+      lost: "Lost: a weekly total was missed, so this period no longer counts",
+      frozen: "Missed (saved by a streak freeze)",
+      repaired: "Missed (repaired with XP)",
+      rest: isVac(k) ? "Vacation day" : "Rest day (nothing required)",
+      ok: gold(e) ? "Cleared (gold day)" : "Cleared",
+      miss: "Missed",
+      grace: "Missed (grace day)",
+      pend: k === todayKey() ? "In progress" : "Not started",
+      pre: "No data",
+      future: "Coming up",
+    }[m];
+    var parts =
+      m === "future"
+        ? [label, parse(k).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })]
+        : [parse(k).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }), label];
+    if (m !== "pre" && m !== "future" && (m !== "pend" || k === todayKey())) {
+      var dq = defsOf(e);
+      parts.push(bases(e) + "/" + reqOf(dq).length + " done");
+      var d = [];
+      dq.forEach(function (q) {
+        var v = e[q.id];
+        if (v == null || v === "" || v === 0 || v === false) return;
+        d.push(
+          q.type === "wake"
+            ? q.label + " " + v
+            : q.type === "time"
+              ? q.label + " " + hm(v)
+              : q.type === "check"
+                ? q.label
+                : q.type === "scale"
+                  ? q.label + " " + v + "/" + (q.scale || 5)
+                  : q.label + " " + (q.unit === "min" ? hm(v) : num(v)),
+        );
+      });
+      if (d.length) parts.push(d.join(", "));
+    }
+    info.textContent = parts.join(" \u00b7 ");
+    render();
+  });
+  R = new Date(START_AT);
+  n0 = new Date();
+  do {
+    R.setDate(R.getDate() + 90);
+  } while (R <= n0);
+  rv = document.getElementById("review");
+  if (rv)
+    rv.textContent = R.toLocaleDateString("en-CA", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "America/Toronto",
+    });
+}

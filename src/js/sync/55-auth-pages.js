@@ -4,36 +4,36 @@
      it opens as the gate: no Close, and "Use without account" at the bottom (remembered; Settings › Account can sign in
      later). Signing out, deleting the account, or the session ending elsewhere opens the gate again. A signed-in session
      never expires on its own: fb.js persists it in IndexedDB. All calls go through cloud (sync/54-account.js); errors read via authErr. */
-var acOutArm = 0,
-  eraseArm = 0,
-  eraseForce = false,
-  NOACCT_KEY = "pc-noacct",
-  auPg = null,
-  auView = "login",
-  auGate = false,
-  auNote = "",
-  auEm = "",
-  auArm = 0,
-  auBusy = false;
+import { G } from "../core/g.js";
+import { cloudAccount } from "../core/storage.js";
+import { esc } from "../core/util.js";
+import { maybeReviewTodos } from "../quests/50b-todo-review.js";
+import { renderSettings } from "../settings/10-settings.js";
+import { cloud } from "./54-account.js";
+import { welcomeCheck } from "../ui/24-help.js";
+import { setSync } from "../ui/feedback.js";
+
+export var NOACCT_KEY, auPg, auView, auGate, auNote, auEm, auArm, auBusy, AU_T;
+
 /* "Use without account" holds for this launch only (sessionStorage), so every launch while signed out asks again. */
-function noAcct() {
+export function noAcct() {
   try {
     return !!sessionStorage.getItem(NOACCT_KEY);
   } catch (x) {
     return false;
   }
 }
-function setNoAcct(on) {
+export function setNoAcct(on) {
   try {
     if (on) sessionStorage.setItem(NOACCT_KEY, "1");
     else sessionStorage.removeItem(NOACCT_KEY);
     localStorage.removeItem(NOACCT_KEY);
   } catch (x) {}
 }
-function authOpen() {
+export function authOpen() {
   return !!auPg && !auPg.hidden;
 }
-function authErr(e) {
+export function authErr(e) {
   var c = String((e && e.code) || "");
   if (/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c))
     return auView === "login" ? "Wrong email or password." : "That password isn’t right.";
@@ -46,14 +46,7 @@ function authErr(e) {
   if (/requires-recent-login/.test(c)) return "Please sign in again first.";
   return String((e && e.message) || e || "Something went wrong.");
 }
-var AU_T = {
-  login: "Sign in",
-  signup: "Create account",
-  reset: "Reset password",
-  change: "Change password",
-  delete: "Delete account",
-};
-function auField(id, label, type, ac, val) {
+export function auField(id, label, type, ac, val) {
   var pw = type === "password";
   return (
     '<label for="' +
@@ -79,7 +72,7 @@ function auField(id, label, type, ac, val) {
       : "")
   );
 }
-function openAuth(view, gate, note) {
+export function openAuth(view, gate, note) {
   if (auPg && auPg.hidden) auEm = "";
   auView = view || "login";
   auGate = !!gate;
@@ -103,17 +96,18 @@ function openAuth(view, gate, note) {
   }
   authDraw();
 }
-function closeAuth() {
+export function closeAuth() {
   if (!auPg) return;
   var was = auGate;
   auPg.hidden = true;
   auGate = false;
   document.body.classList.remove("au-open");
   if (was && typeof welcomeCheck === "function") welcomeCheck(0);
-  if (typeof renderSettings === "function" && typeof setTab !== "undefined" && setTab === "account") renderSettings();
+  if (typeof renderSettings === "function" && typeof G.setTab !== "undefined" && G.setTab === "account")
+    renderSettings();
   maybeReviewTodos();
 }
-function authDraw() {
+export function authDraw() {
   var v = auView,
     ac = cloudAccount(),
     body = "",
@@ -218,22 +212,22 @@ function authDraw() {
       } catch (x) {}
     }, 0);
 }
-function keepEm() {
+export function keepEm() {
   var e = auPg && auPg.querySelector("#auEmail");
   if (e) auEm = e.value.trim();
 }
-function auVal(id) {
+export function auVal(id) {
   var x = auPg.querySelector("#" + id);
   return x ? x.value : "";
 }
-function auSay(t, bad) {
+export function auSay(t, bad) {
   var m = auPg.querySelector("#auMsg");
   if (m) {
     m.textContent = t;
     m.className = "cmsg2" + (bad ? " bad" : " ok");
   }
 }
-function authGo() {
+export function authGo() {
   if (auBusy) return;
   var v = auView,
     em = auVal("auEmail").trim(),
@@ -349,14 +343,36 @@ function authGo() {
     }, fail);
   }
 }
-/* Launch: a note left by a sign-in/out reload (pc-authnote), then the gate when nobody is signed in. */
-(function () {
-  var note = "";
-  try {
-    localStorage.removeItem(NOACCT_KEY);
-    note = sessionStorage.getItem("pc-authnote") || "";
-    sessionStorage.removeItem("pc-authnote");
-  } catch (x) {}
-  if (!cloudAccount() && !noAcct()) openAuth("login", true, note);
-  else if (note) setSync(note);
-})();
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  G.acOutArm = 0;
+  G.eraseArm = 0;
+  G.eraseForce = false;
+  NOACCT_KEY = "pc-noacct";
+  auPg = null;
+  auView = "login";
+  auGate = false;
+  auNote = "";
+  auEm = "";
+  auArm = 0;
+  auBusy = false;
+  AU_T = {
+    login: "Sign in",
+    signup: "Create account",
+    reset: "Reset password",
+    change: "Change password",
+    delete: "Delete account",
+  };
+  /* Launch: a note left by a sign-in/out reload (pc-authnote), then the gate when nobody is signed in. */
+  (function () {
+    var note = "";
+    try {
+      localStorage.removeItem(NOACCT_KEY);
+      note = sessionStorage.getItem("pc-authnote") || "";
+      sessionStorage.removeItem("pc-authnote");
+    } catch (x) {}
+    if (!cloudAccount() && !noAcct()) openAuth("login", true, note);
+    else if (note) setSync(note);
+  })();
+}

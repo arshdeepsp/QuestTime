@@ -1,108 +1,168 @@
 /* ---- the schedule page: drawing, footer, drag and resize ---- */
-function schOpen() {
-  return !!schPg && !schPg.hidden;
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { add, daysBetween, nowMinInDay, parse, todayKey, wkOrder } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { esc, fmtD, hm } from "../core/util.js";
+import { DN, qEls } from "../quests/02-quest-list.js";
+import { WDN, WDS } from "../quests/35b-daily-limit.js";
+import { metQ } from "../rules/day-rules.js";
+import { REP_MAX, SCH_AHEAD, SCH_DENSE_MIN, SCH_EDGE, SCH_ROW_DENSE, SCH_ROW_FULL, SCH_STEP } from "./51-schedule.js";
+import {
+  busyAdd,
+  busyById,
+  busyDay,
+  busyForWd,
+  busyRecent,
+  busyRemove,
+  busySave,
+  busyText,
+  busyWeeks,
+} from "./busy.js";
+import {
+  dayOvClear,
+  dayOvSave,
+  hhmmOf,
+  schAdd,
+  schAll,
+  schAt,
+  schAuto,
+  schClash,
+  schCut,
+  schEdit,
+  schEnded,
+  schFloor,
+  schGeo,
+  schK,
+  schLeft,
+  schLen,
+  schList,
+  schMode,
+  schMove,
+  schNext,
+  schOfQ,
+  schPlaced,
+  schQuests,
+  schRemove,
+  schSave,
+  schSplit,
+  schStarted,
+  schTd,
+  schText,
+} from "./model.js";
+import { schDayDone, schDoneIn, schReplan, schShort } from "./progress.js";
+import { repById, repText, schRepCount, schRepDays, schRepEvery, schRepSave, schRepStop } from "./repeats.js";
+import { schLeftIn, schResWord, schResumable } from "./resume.js";
+import { renderSettings } from "../settings/10-settings.js";
+import { toggleTimer } from "../timer/13-focus-timer.js";
+import { render } from "../ui/04-render.js";
+import { go } from "../ui/44-navigation.js";
+import { haptic } from "../ui/45-gestures.js";
+
+export function schOpen() {
+  return !!G.schPg && !G.schPg.hidden;
 }
-function schEnsure() {
-  if (!schPg) {
-    schPg = document.createElement("div");
-    schPg.id = "schPage";
-    schPg.className = "schpage";
-    schPg.setAttribute("role", "dialog");
-    schPg.setAttribute("aria-modal", "true");
-    schPg.setAttribute("aria-labelledby", "schTitle");
-    schPg.innerHTML =
+export function schEnsure() {
+  if (!G.schPg) {
+    G.schPg = document.createElement("div");
+    G.schPg.id = "schPage";
+    G.schPg.className = "schpage";
+    G.schPg.setAttribute("role", "dialog");
+    G.schPg.setAttribute("aria-modal", "true");
+    G.schPg.setAttribute("aria-labelledby", "schTitle");
+    G.schPg.innerHTML =
       '<div class="sch-hd"><div class="sch-hdt"><div class="sch-nav"><button type="button" class="stone mini" id="schDP" aria-label="Previous day">‹</button><h2 id="schTitle">Today</h2><button type="button" class="stone mini" id="schDN" aria-label="Next day">›</button></div><p class="sch-sum"><span id="schSum"></span> <button type="button" class="lnk sch-adjb" id="schAdjB" aria-expanded="false">Adjust today</button></p></div><button type="button" class="stone save" id="schOk">Done</button></div><div class="sch-adj" id="schAdj" hidden></div><div class="sch-tray" id="schTray"></div><div class="sch-scroll" id="schScroll"><div class="sch-tl" id="schTl"></div><button type="button" class="stone sch-nowb" id="schNowBtn" hidden>\u25bc Now</button></div><div class="sch-ft" id="schFt"></div>';
-    document.body.appendChild(schPg);
-    schPg.querySelector("#schOk").addEventListener("click", closeSchedule);
-    schPg.querySelector("#schAdjB").addEventListener("click", function () {
-      schAdj = !schAdj;
+    document.body.appendChild(G.schPg);
+    G.schPg.querySelector("#schOk").addEventListener("click", closeSchedule);
+    G.schPg.querySelector("#schAdjB").addEventListener("click", function () {
+      G.schAdj = !G.schAdj;
       schDraw();
     });
-    schPg.querySelector("#schDP").addEventListener("click", function () {
+    G.schPg.querySelector("#schDP").addEventListener("click", function () {
       schGoDay(-1);
     });
-    schPg.querySelector("#schDN").addEventListener("click", function () {
+    G.schPg.querySelector("#schDN").addEventListener("click", function () {
       schGoDay(1);
     });
     schWire();
   }
-  schPg.hidden = false;
+  G.schPg.hidden = false;
   document.body.classList.add("sch-open");
-  schBody = schPg;
+  G.schBody = G.schPg;
 }
-function schGoDay(n) {
+export function schGoDay(n) {
   var T = todayKey(),
     k = add(schK(), n);
   if (k < T || k > add(T, SCH_AHEAD)) return;
-  schDay = k > T ? k : null;
-  schSel = null;
-  schPick = null;
-  schRep = null;
-  schDet = null;
-  schMsg = "";
-  schAdj = false;
+  G.schDay = k > T ? k : null;
+  G.schSel = null;
+  G.schPick = null;
+  G.schRep = null;
+  G.schDet = null;
+  G.schMsg = "";
+  G.schAdj = false;
   haptic("light");
   schDraw(true);
 }
-function schDayName(k) {
+export function schDayName(k) {
   var T = todayKey();
   return k === T ? "Today" : k === add(T, 1) ? "Tomorrow" : WDS[parse(k).getDay()] + ", " + fmtD(k);
 }
-function openSchedule() {
+export function openSchedule() {
   if (locked()) return;
-  schMd = "today";
-  schDay = null;
-  schBack = false;
-  schSel = null;
-  schQ = null;
-  schPick = null;
-  schAdj = false;
-  schMsg = "";
-  schDet = null;
-  schRep = null;
+  G.schMd = "today";
+  G.schDay = null;
+  G.schBack = false;
+  G.schSel = null;
+  G.schQ = null;
+  G.schPick = null;
+  G.schAdj = false;
+  G.schMsg = "";
+  G.schDet = null;
+  G.schRep = null;
   schEnsure();
   schDraw(true);
 }
-function openBusy(wd, at, back) {
+export function openBusy(wd, at, back) {
   if (locked()) return;
-  schMd = "busy";
-  schWd = wd == null ? parse(todayKey()).getDay() : wd;
-  schBack = !!back;
-  schSel = null;
-  schPick = at == null ? null : at;
-  schAdj = false;
-  schMsg = "";
-  schDet = null;
-  schRep = null;
+  G.schMd = "busy";
+  G.schWd = wd == null ? parse(todayKey()).getDay() : wd;
+  G.schBack = !!back;
+  G.schSel = null;
+  G.schPick = at == null ? null : at;
+  G.schAdj = false;
+  G.schMsg = "";
+  G.schDet = null;
+  G.schRep = null;
   schEnsure();
   schDraw(true);
 }
-function closeSchedule() {
-  if (!schPg) return;
-  if (schMd === "busy" && schBack) {
-    schMd = "today";
-    schBack = false;
-    schSel = null;
-    schPick = null;
-    schMsg = "";
+export function closeSchedule() {
+  if (!G.schPg) return;
+  if (G.schMd === "busy" && G.schBack) {
+    G.schMd = "today";
+    G.schBack = false;
+    G.schSel = null;
+    G.schPick = null;
+    G.schMsg = "";
     schDraw(true);
     return;
   }
-  schPg.hidden = true;
+  G.schPg.hidden = true;
   document.body.classList.remove("sch-open");
-  schBody = null;
-  schDrag = null;
-  schSel = null;
-  schPick = null;
-  schMd = "today";
+  G.schBody = null;
+  G.schDrag = null;
+  G.schSel = null;
+  G.schPick = null;
+  G.schMd = "today";
   render();
-  if (typeof renderSettings === "function" && setTab === "day") renderSettings();
+  if (typeof renderSettings === "function" && G.setTab === "day") renderSettings();
 }
 /* "Now" button: sticky at the bottom of the scroller on today, shown only while the now line is off screen; tapping scrolls the now line a third of the way down. */
-function schNowVis() {
-  var sc = schPg.querySelector("#schScroll"),
-    nb = schPg.querySelector("#schNowBtn"),
-    nw = schPg.querySelector("#schNow");
+export function schNowVis() {
+  var sc = G.schPg.querySelector("#schScroll"),
+    nb = G.schPg.querySelector("#schNowBtn"),
+    nw = G.schPg.querySelector("#schNow");
   if (!nb) return;
   if (!nw) {
     nb.hidden = true;
@@ -114,51 +174,51 @@ function schNowVis() {
   nb.hidden = y >= top && y <= bot;
   nb.textContent = (y < top ? "\u25b2" : "\u25bc") + " Now";
 }
-function schGoNow() {
-  var sc = schPg.querySelector("#schScroll"),
-    nw = schPg.querySelector("#schNow");
+export function schGoNow() {
+  var sc = G.schPg.querySelector("#schScroll"),
+    nw = G.schPg.querySelector("#schNow");
   if (!nw) return;
   sc.scrollTo({ top: Math.max(0, nw.offsetTop - sc.clientHeight / 3), behavior: "smooth" });
   haptic("light");
 }
-function schWire() {
-  var sc = schPg.querySelector("#schScroll"),
-    tl = schPg.querySelector("#schTl"),
+export function schWire() {
+  var sc = G.schPg.querySelector("#schScroll"),
+    tl = G.schPg.querySelector("#schTl"),
     lp = null;
   sc.addEventListener("scroll", schNowVis, { passive: true });
-  schPg.querySelector("#schNowBtn").addEventListener("click", schGoNow);
+  G.schPg.querySelector("#schNowBtn").addEventListener("click", schGoNow);
   tl.addEventListener("click", function (ev) {
-    if (schDrag) return;
+    if (G.schDrag) return;
     var bk = ev.target.closest("[data-sb]");
     if (bk) {
       var id = bk.getAttribute("data-sb");
-      schSel = schSel === id ? null : id;
-      schPick = null;
-      schRep = null;
-      schDet = null;
-      schMsg = "";
+      G.schSel = G.schSel === id ? null : id;
+      G.schPick = null;
+      G.schRep = null;
+      G.schDet = null;
+      G.schMsg = "";
       schDraw();
       return;
     }
     var m = schAt(ev.clientY);
-    if (schRep) {
-      schRep = null;
+    if (G.schRep) {
+      G.schRep = null;
       schDraw();
       return;
     }
     if (
-      schSel &&
-      (schSel.indexOf("z-") === 0 ||
+      G.schSel &&
+      (G.schSel.indexOf("z-") === 0 ||
         schEnded(
           schK(),
           schList().filter(function (x) {
-            return x.id === schSel;
+            return x.id === G.schSel;
           })[0],
         ))
     )
-      schSel = null;
-    else if (schSel) {
-      schMove(schSel, m);
+      G.schSel = null;
+    else if (G.schSel) {
+      schMove(G.schSel, m);
       schDraw();
       return;
     }
@@ -166,9 +226,9 @@ function schWire() {
       schDraw();
       return;
     }
-    schPick = schPick === m ? null : m;
-    schMsg =
-      schPick != null && m < schFloor()
+    G.schPick = G.schPick === m ? null : m;
+    G.schMsg =
+      G.schPick != null && m < schFloor()
         ? "That time has passed. Quests can’t go there, but you can block it as busy."
         : "";
     schDraw();
@@ -221,7 +281,7 @@ function schWire() {
     { passive: true },
   );
 }
-function schAutoScroll(sc, tick) {
+export function schAutoScroll(sc, tick) {
   var y = null,
     y0 = null,
     armed = false,
@@ -255,7 +315,7 @@ function schAutoScroll(sc, tick) {
     },
   };
 }
-function schMoveDrag(bk, y0, kind) {
+export function schMoveDrag(bk, y0, kind) {
   var g = schGeo(),
     id = bk.getAttribute("data-sb"),
     L = schList(),
@@ -265,14 +325,14 @@ function schMoveDrag(bk, y0, kind) {
   if (!bl) return;
   var len = bl.t - bl.f,
     f = bl.f,
-    sc = schPg.querySelector("#schScroll"),
-    tl = schPg.querySelector("#schTl"),
+    sc = G.schPg.querySelector("#schScroll"),
+    tl = G.schPg.querySelector("#schTl"),
     grab = y0 - bk.getBoundingClientRect().top;
-  schDrag = { id: id };
+  G.schDrag = { id: id };
   bk.classList.add("lift");
   function show(y) {
     var r = tl.getBoundingClientRect(),
-      nf = g.s0 + Math.round((y - grab - r.top) / SCH_ROW) * SCH_STEP;
+      nf = g.s0 + Math.round((y - grab - r.top) / G.SCH_ROW) * SCH_STEP;
     nf = Math.max(g.s0, Math.min(g.w.e - len, nf));
     f = nf;
     bk.style.top = g.px(nf) + "px";
@@ -294,12 +354,12 @@ function schMoveDrag(bk, y0, kind) {
         },
         true,
       );
-    else if (f !== bl.f) schMsg = "Can’t drop it there: it overlaps another block or the time has passed.";
-    schSel = sid;
-    schPick = null;
+    else if (f !== bl.f) G.schMsg = "Can’t drop it there: it overlaps another block or the time has passed.";
+    G.schSel = sid;
+    G.schPick = null;
     schDraw();
     setTimeout(function () {
-      schDrag = null;
+      G.schDrag = null;
     }, 0);
   }
   if (kind === "mouse") {
@@ -330,7 +390,7 @@ function schMoveDrag(bk, y0, kind) {
   }
 }
 /* Resize: only from the corner grip of the selected block (the grip isn't drawn otherwise, so scrolling can't start it). */
-function schResize(ev, hd) {
+export function schResize(ev, hd) {
   ev.preventDefault();
   ev.stopPropagation();
   var g = schGeo(),
@@ -342,17 +402,17 @@ function schResize(ev, hd) {
     blk = hd.parentNode,
     cap = schNext(L, id, bl.f + 1, g.w.e),
     t = bl.t,
-    tl = schPg.querySelector("#schTl"),
-    sc = schPg.querySelector("#schScroll"),
+    tl = G.schPg.querySelector("#schTl"),
+    sc = G.schPg.querySelector("#schScroll"),
     grab = ev.clientY - blk.getBoundingClientRect().bottom;
-  schDrag = { id: id };
+  G.schDrag = { id: id };
   try {
     hd.setPointerCapture(ev.pointerId);
   } catch (x) {}
   var lo = Math.max(bl.f + SCH_STEP, schStarted(schK(), bl) ? Math.min(schCut(), bl.t) : -1e9);
   function show(y) {
     var r = tl.getBoundingClientRect();
-    t = Math.max(lo, Math.min(cap, g.s0 + Math.round((y - grab - r.top) / SCH_ROW) * SCH_STEP));
+    t = Math.max(lo, Math.min(cap, g.s0 + Math.round((y - grab - r.top) / G.SCH_ROW) * SCH_STEP));
     blk.style.height = g.px(t) - g.px(bl.f) + "px";
     blk.querySelector("span").textContent = hhmmOf(bl.f) + "–" + hhmmOf(t);
   }
@@ -376,65 +436,65 @@ function schResize(ev, hd) {
         },
         true,
       );
-    schSel = sid;
-    schPick = null;
+    G.schSel = sid;
+    G.schPick = null;
     schDraw();
     setTimeout(function () {
-      schDrag = null;
+      G.schDrag = null;
     }, 0);
   }
   hd.addEventListener("pointermove", mv);
   hd.addEventListener("pointerup", up);
   hd.addEventListener("pointercancel", up);
 }
-function schDraw(first) {
+export function schDraw(first) {
   if (!schOpen()) return;
   var T = schK(),
     FT = T !== todayKey(),
     nw0 = FT ? -1e9 : nowMinInDay(),
     g = schGeo(),
     w = g.w,
-    BZ = schMd === "busy",
+    BZ = G.schMd === "busy",
     Q = BZ ? [] : schQuests(T),
     L = schList(),
     e = S.days[T] || {},
     px = g.px,
     fl = schFloor(),
     now = nowMinInDay();
-  var sum = schPg.querySelector("#schSum"),
-    tray = schPg.querySelector("#schTray"),
-    tl = schPg.querySelector("#schTl"),
-    ft = schPg.querySelector("#schFt");
+  var sum = G.schPg.querySelector("#schSum"),
+    tray = G.schPg.querySelector("#schTray"),
+    tl = G.schPg.querySelector("#schTl"),
+    ft = G.schPg.querySelector("#schFt");
   if (
-    schSel &&
+    G.schSel &&
     !L.some(function (x) {
-      return x.id === schSel;
+      return x.id === G.schSel;
     })
   )
-    schSel = null;
+    G.schSel = null;
   if (
-    schRep &&
+    G.schRep &&
     !L.some(function (x) {
-      return x.id === schRep.id;
+      return x.id === G.schRep.id;
     })
   )
-    schRep = null;
-  if (schDet && schDet.id !== schSel) schDet = null;
-  var adj = schPg.querySelector("#schAdj"),
-    adjB = schPg.querySelector("#schAdjB");
-  schPg.classList.toggle("busymode", BZ);
-  schPg.querySelector("#schTitle").textContent = BZ ? "Busy times" : schDayName(T);
-  var dP = schPg.querySelector("#schDP"),
-    dN = schPg.querySelector("#schDN");
+    G.schRep = null;
+  if (G.schDet && G.schDet.id !== G.schSel) G.schDet = null;
+  var adj = G.schPg.querySelector("#schAdj"),
+    adjB = G.schPg.querySelector("#schAdjB");
+  G.schPg.classList.toggle("busymode", BZ);
+  G.schPg.querySelector("#schTitle").textContent = BZ ? "Busy times" : schDayName(T);
+  var dP = G.schPg.querySelector("#schDP"),
+    dN = G.schPg.querySelector("#schDN");
   dP.hidden = dN.hidden = BZ;
   dP.disabled = !FT;
   dN.disabled = T >= add(todayKey(), SCH_AHEAD);
-  schPg.querySelector("#schOk").textContent = BZ && schBack ? "Back" : "Done";
+  G.schPg.querySelector("#schOk").textContent = BZ && G.schBack ? "Back" : "Done";
   adjB.hidden = BZ || FT;
-  adj.hidden = BZ || FT || !schAdj;
-  adjB.setAttribute("aria-expanded", schAdj);
-  adjB.textContent = schAdj ? "Close" : "Adjust today";
-  if (!BZ && !FT && schAdj) {
+  adj.hidden = BZ || FT || !G.schAdj;
+  adjB.setAttribute("aria-expanded", G.schAdj);
+  adjB.textContent = G.schAdj ? "Close" : "Adjust today";
+  if (!BZ && !FT && G.schAdj) {
     adj.innerHTML =
       '<label>Wake up <input type="time" id="setWakeT" value="' +
       esc(w.wake) +
@@ -472,16 +532,16 @@ function schDraw(first) {
   });
   /* Hour scale: a day with under SCH_DENSE_MIN planned gets the denser scale (less scrolling through empty hours); decided on open or day change so the scale never jumps mid-edit. */
   if (first) {
-    SCH_ROW = !BZ && tot + bz < SCH_DENSE_MIN ? SCH_ROW_DENSE : SCH_ROW_FULL;
+    G.SCH_ROW = !BZ && tot + bz < SCH_DENSE_MIN ? SCH_ROW_DENSE : SCH_ROW_FULL;
     g = schGeo();
     px = g.px;
   }
-  tl.classList.toggle("dense", SCH_ROW === SCH_ROW_DENSE);
-  tl.style.setProperty("--row", SCH_ROW + "px");
-  var smMin = SCH_ROW === SCH_ROW_DENSE ? 45 : 30;
+  tl.classList.toggle("dense", G.SCH_ROW === SCH_ROW_DENSE);
+  tl.style.setProperty("--row", G.SCH_ROW + "px");
+  var smMin = G.SCH_ROW === SCH_ROW_DENSE ? 45 : 30;
   if (BZ) {
     sum.textContent =
-      WDN[schWd] +
+      WDN[G.schWd] +
       " · " +
       (L.length ? L.length + " block" + (L.length === 1 ? "" : "s") + " · " + hm(bz) : "nothing blocked");
     tray.innerHTML =
@@ -491,11 +551,11 @@ function schDraw(first) {
           var n = busyForWd(d).length;
           return (
             '<button type="button" class="stone' +
-            (d === schWd ? " on" : "") +
+            (d === G.schWd ? " on" : "") +
             '" data-wd="' +
             d +
             '" role="tab" aria-selected="' +
-            (d === schWd) +
+            (d === G.schWd) +
             '">' +
             DN[d].slice(0, 2) +
             (n ? "<small>" + n + "</small>" : "") +
@@ -554,14 +614,14 @@ function schDraw(first) {
   if (!BZ && fl > g.s0) h += '<i class="sch-past" style="height:' + Math.min(px(g.e0), px(fl)) + 'px"></i>';
   if (!BZ && !FT && now >= g.s0 && now <= g.e0)
     h += '<i class="sch-now" id="schNow" style="top:' + px(now) + 'px"></i>';
-  if (schPick != null)
+  if (G.schPick != null)
     h +=
       '<i class="sch-ghost" style="top:' +
-      px(schPick) +
+      px(G.schPick) +
       "px;height:" +
-      SCH_ROW * 2 +
+      G.SCH_ROW * 2 +
       'px"><span>' +
-      hhmmOf(schPick) +
+      hhmmOf(G.schPick) +
       "</span></i>";
   var BL = L.filter(function (x) {
     return x.busy;
@@ -592,7 +652,7 @@ function schDraw(first) {
       en = !BZ && !bl.busy && schEnded(T, bl),
       ro = (!BZ && bl.busy) || en,
       cl = clashOf(bl),
-      grip = !(bl.j5 || ro || schSel !== bl.id);
+      grip = !(bl.j5 || ro || G.schSel !== bl.id);
     h +=
       '<div class="sch-b' +
       (bl.lb ? " busy" : "") +
@@ -601,7 +661,7 @@ function schDraw(first) {
       (cl ? " clash" : "") +
       (bl.j5 ? " j5" : "") +
       (bl.rep ? " rep" : "") +
-      (schSel === bl.id ? " on" : "") +
+      (G.schSel === bl.id ? " on" : "") +
       (ok ? " done" : "") +
       (sht ? " short" : "") +
       (bl.t - bl.f < smMin ? " sm" : "") +
@@ -612,7 +672,7 @@ function schDraw(first) {
       ' style="top:' +
       px(bl.f) +
       "px;height:" +
-      Math.max(SCH_ROW, px(bl.t) - px(bl.f)) +
+      Math.max(G.SCH_ROW, px(bl.t) - px(bl.f)) +
       'px"><b>' +
       (bl.rep ? "↻ " : "") +
       (bl.j5 ? "▶ 5 · " : "") +
@@ -631,9 +691,9 @@ function schDraw(first) {
   });
   tl.style.height = px(g.e0) + "px";
   tl.innerHTML = h;
-  var sb = schSel
+  var sb = G.schSel
       ? L.filter(function (x) {
-          return x.id === schSel;
+          return x.id === G.schSel;
         })[0]
       : null,
     f2 = "";
@@ -648,7 +708,7 @@ function schDraw(first) {
       ""
     );
   }
-  var wdn = WDN[schWd];
+  var wdn = WDN[G.schWd];
   if (BZ && sb) {
     var bt = busyById(sb.id),
       wk = bt && bt.until ? Math.max(1, Math.min(REP_MAX, Math.ceil((daysBetween(T, bt.until) + 1) / 7))) : 0;
@@ -690,10 +750,10 @@ function schDraw(first) {
       (wk >= REP_MAX ? " disabled" : "") +
       ">+</button></div>" +
       '<div class="sch-acts"><button type="button" class="stone del" id="schBzRm">Remove</button><button type="button" class="stone sch-x" id="schDesel" aria-label="Deselect">✕</button></div>';
-  } else if (BZ && schPick != null) {
+  } else if (BZ && G.schPick != null) {
     f2 =
       '<p class="sch-ft-h">Busy at <b>' +
-      hhmmOf(schPick) +
+      hhmmOf(G.schPick) +
       "</b> on " +
       wdn +
       '</p><div class="sch-pick">' +
@@ -708,13 +768,13 @@ function schDraw(first) {
       '<p class="help sch-help">Tap a time on ' +
       wdn +
       " to block it: lectures, meetings, work. Blocks repeat every week on their days, starting the day you add them. Quests already scheduled on top stay for that day; new ones go around them.</p>";
-  } else if (schRep) {
+  } else if (G.schRep) {
     var rb = L.filter(function (x) {
-        return x.id === schRep.id;
+        return x.id === G.schRep.id;
       })[0],
       okd = schRepDays(rb),
-      n = schRepCount(rb, schRep.dows, schRep.weeks),
-      u = add(T, schRep.weeks * 7 - 1);
+      n = schRepCount(rb, G.schRep.dows, G.schRep.weeks),
+      u = add(T, G.schRep.weeks * 7 - 1);
     f2 =
       '<p class="sch-ft-h">Repeat <b>' +
       esc(nameOf(rb)) +
@@ -725,7 +785,7 @@ function schDraw(first) {
       '</p><div class="sch-days" role="group" aria-label="Repeat on">' +
       wkOrder()
         .map(function (d) {
-          var on = schRep.dows.indexOf(d) >= 0,
+          var on = G.schRep.dows.indexOf(d) >= 0,
             ok = okd.indexOf(d) >= 0;
           return (
             '<button type="button" class="stone' +
@@ -744,13 +804,13 @@ function schDraw(first) {
         .join("") +
       "</div>" +
       '<div class="sch-wk"><span>For</span><button type="button" class="stone" id="schWkM" aria-label="Fewer weeks"' +
-      (schRep.weeks <= 1 ? " disabled" : "") +
+      (G.schRep.weeks <= 1 ? " disabled" : "") +
       '>−</button><b id="schWkN">' +
-      schRep.weeks +
+      G.schRep.weeks +
       " week" +
-      (schRep.weeks === 1 ? "" : "s") +
+      (G.schRep.weeks === 1 ? "" : "s") +
       '</b><button type="button" class="stone" id="schWkP" aria-label="More weeks"' +
-      (schRep.weeks >= REP_MAX ? " disabled" : "") +
+      (G.schRep.weeks >= REP_MAX ? " disabled" : "") +
       ">+</button></div>" +
       '<p class="help sch-help" id="schRepSum">' +
       (n ? n + " time" + (n === 1 ? "" : "s") + ", until " + fmtD(u) : "Pick at least one day.") +
@@ -807,7 +867,7 @@ function schDraw(first) {
       '<button type="button" class="stone sch-x" id="schDesel" aria-label="Deselect">✕</button></div>';
   } else if (sb) {
     var rp = sb.rep ? repById(sb.rep) : null,
-      det = schDet && schDet.id === sb.id,
+      det = G.schDet && G.schDet.id === sb.id,
       cz = clashOf(sb),
       sht0 = schShort(T, sb),
       lf0 = schLeftIn(T, sb),
@@ -865,14 +925,14 @@ function schDraw(first) {
           (sb.q && !sb.j5 ? '<button type="button" class="stone" id="schSplit">Split</button>' : "") +
           '<button type="button" class="stone del" id="schRm">Remove</button>') +
       '<button type="button" class="stone sch-x" id="schDesel" aria-label="Deselect">✕</button></div>';
-  } else if (schPick != null) {
-    var past = schPick < fl,
+  } else if (G.schPick != null) {
+    var past = G.schPick < fl,
       open = Q.slice().sort(function (a, b) {
         return (schLeft(T, b) > 0) - (schLeft(T, a) > 0);
       });
     f2 =
       '<p class="sch-ft-h">' +
-      (past ? "Earlier today, <b>" + hhmmOf(schPick) + "</b>" : "Add at <b>" + hhmmOf(schPick) + "</b>") +
+      (past ? "Earlier today, <b>" + hhmmOf(G.schPick) + "</b>" : "Add at <b>" + hhmmOf(G.schPick) + "</b>") +
       "</p>" +
       (past
         ? ""
@@ -945,44 +1005,44 @@ function schDraw(first) {
         : "") +
       "</div>";
   }
-  ft.innerHTML = (schMsg ? '<p class="cmsg2" id="schMsg">' + esc(schMsg) + "</p>" : "") + f2;
+  ft.innerHTML = (G.schMsg ? '<p class="cmsg2" id="schMsg">' + esc(G.schMsg) + "</p>" : "") + f2;
   function on(id, fn) {
     var x = ft.querySelector("#" + id);
     if (x) x.addEventListener("click", fn);
   }
   tray.querySelectorAll("[data-wd]").forEach(function (x) {
     x.addEventListener("click", function () {
-      schWd = +x.getAttribute("data-wd");
-      schSel = null;
-      schPick = null;
-      schMsg = "";
+      G.schWd = +x.getAttribute("data-wd");
+      G.schSel = null;
+      G.schPick = null;
+      G.schMsg = "";
       haptic("light");
       schDraw(true);
     });
   });
   ft.querySelectorAll("[data-sm]").forEach(function (x) {
     x.addEventListener("click", function () {
-      schMode(schSel, x.getAttribute("data-sm") === "j5");
+      schMode(G.schSel, x.getAttribute("data-sm") === "j5");
       schDraw();
     });
   });
   ft.querySelectorAll("[data-pk]").forEach(function (x) {
     x.addEventListener("click", function () {
-      var m2 = schPick;
-      schPick = null;
+      var m2 = G.schPick;
+      G.schPick = null;
       schAdd(x.getAttribute("data-pk"), m2);
       schDraw();
     });
   });
   ft.querySelectorAll("[data-bz]").forEach(function (x) {
     x.addEventListener("click", function () {
-      busyAdd(x.getAttribute("data-bz"), schPick);
+      busyAdd(x.getAttribute("data-bz"), G.schPick);
       schDraw();
     });
   });
   ft.querySelectorAll("[data-bd]").forEach(function (x) {
     x.addEventListener("click", function () {
-      busyDay(schSel, +x.getAttribute("data-bd"));
+      busyDay(G.schSel, +x.getAttribute("data-bd"));
       haptic("light");
       schDraw();
     });
@@ -990,9 +1050,9 @@ function schDraw(first) {
   ft.querySelectorAll("[data-rd]").forEach(function (x) {
     x.addEventListener("click", function () {
       var d = +x.getAttribute("data-rd"),
-        k = schRep.dows.indexOf(d);
-      if (k >= 0) schRep.dows.splice(k, 1);
-      else schRep.dows.push(d);
+        k = G.schRep.dows.indexOf(d);
+      if (k >= 0) G.schRep.dows.splice(k, 1);
+      else G.schRep.dows.push(d);
       haptic("light");
       schDraw();
     });
@@ -1001,19 +1061,19 @@ function schDraw(first) {
     var bt3 = busyById(sb.id),
       wk3 = bt3 && bt3.until ? Math.max(1, Math.ceil((daysBetween(T, bt3.until) + 1) / 7)) : 0;
     on("schBzAlways", function () {
-      busyWeeks(schSel, 0);
+      busyWeeks(G.schSel, 0);
       schDraw();
     });
     on("schWkM", function () {
-      busyWeeks(schSel, Math.max(1, (wk3 || 5) - 1));
+      busyWeeks(G.schSel, Math.max(1, (wk3 || 5) - 1));
       schDraw();
     });
     on("schWkP", function () {
-      busyWeeks(schSel, Math.min(REP_MAX, (wk3 || 3) + 1));
+      busyWeeks(G.schSel, Math.min(REP_MAX, (wk3 || 3) + 1));
       schDraw();
     });
     var nm = ft.querySelector("#schBzName"),
-      nmId = schSel,
+      nmId = G.schSel,
       nm0 = nm.value,
       nmT = null;
     function nmSave() {
@@ -1042,33 +1102,33 @@ function schDraw(first) {
     });
   } else {
     on("schWkM", function () {
-      schRep.weeks = Math.max(1, schRep.weeks - 1);
+      G.schRep.weeks = Math.max(1, G.schRep.weeks - 1);
       schDraw();
     });
     on("schWkP", function () {
-      schRep.weeks = Math.min(REP_MAX, schRep.weeks + 1);
+      G.schRep.weeks = Math.min(REP_MAX, G.schRep.weeks + 1);
       schDraw();
     });
   }
   on("schBzRm", function () {
-    busyRemove(schSel);
+    busyRemove(G.schSel);
     schDraw();
   });
   on("schRepNo", function () {
-    schRep = null;
+    G.schRep = null;
     schDraw();
   });
   on("schRepOk", function () {
-    schRepSave(schRep.id, schRep.dows, schRep.weeks, schRep.weeks === schRep.w0);
+    schRepSave(G.schRep.id, G.schRep.dows, G.schRep.weeks, G.schRep.weeks === G.schRep.w0);
     schDraw();
   });
   on("schRepB", function () {
     var b = L.filter(function (x) {
-        return x.id === schSel;
+        return x.id === G.schSel;
       })[0],
       r = b && (b.rep || b.src) ? repById(b.rep || b.src) : null;
-    schRep = {
-      id: schSel,
+    G.schRep = {
+      id: G.schSel,
       dows: r
         ? r.dows.slice()
         : [parse(T).getDay()].filter(function (d) {
@@ -1076,8 +1136,8 @@ function schDraw(first) {
           }),
       weeks: r ? Math.max(1, Math.min(REP_MAX, Math.ceil((daysBetween(T, r.until) + 1) / 7))) : 4,
     };
-    schRep.w0 = r ? schRep.weeks : -1;
-    schMsg = "";
+    G.schRep.w0 = r ? G.schRep.weeks : -1;
+    G.schMsg = "";
     schDraw();
   });
   on("schEvery", function () {
@@ -1098,7 +1158,7 @@ function schDraw(first) {
   on("schRes", function () {
     resume(
       L.filter(function (x) {
-        return x.id === schSel;
+        return x.id === G.schSel;
       })[0],
     );
   });
@@ -1108,56 +1168,56 @@ function schDraw(first) {
   });
   on("schStop", function () {
     var b = L.filter(function (x) {
-      return x.id === schSel;
+      return x.id === G.schSel;
     })[0];
     if (b && b.rep) schRepStop(b.rep);
     schDraw();
   });
   on("schPkNo", function () {
-    schPick = null;
-    schMsg = "";
+    G.schPick = null;
+    G.schMsg = "";
     schDraw();
   });
   on("schBzB", function () {
-    openBusy(parse(T).getDay(), schPick, true);
+    openBusy(parse(T).getDay(), G.schPick, true);
   });
   on("schBzOpen", function () {
     openBusy(parse(T).getDay(), null, true);
   });
   on("schBzEdit", function () {
     var b = L.filter(function (x) {
-      return x.id === schSel;
+      return x.id === G.schSel;
     })[0];
     openBusy(parse(T).getDay(), null, true);
     if (b && b.busy) {
-      schSel = b.busy;
+      G.schSel = b.busy;
       schDraw();
     }
   });
   on("schBzAdd", function () {
-    busyAdd(ft.querySelector("#schBzIn").value, schPick);
+    busyAdd(ft.querySelector("#schBzIn").value, G.schPick);
     schDraw();
   });
   var bzi = ft.querySelector("#schBzIn");
   if (bzi)
     bzi.addEventListener("keydown", function (ev) {
       if (ev.key === "Enter") {
-        busyAdd(bzi.value, schPick);
+        busyAdd(bzi.value, G.schPick);
         schDraw();
       }
     });
   on("schSplit", function () {
-    schSplit(schSel);
+    schSplit(G.schSel);
     schDraw();
   });
   on("schRm", function () {
-    schRemove(schSel);
+    schRemove(G.schSel);
     schDraw();
   });
   on("schDesel", function () {
-    schSel = null;
-    schDet = null;
-    schMsg = "";
+    G.schSel = null;
+    G.schDet = null;
+    G.schMsg = "";
     schDraw();
   });
   on("schAuto", function () {
@@ -1165,7 +1225,7 @@ function schDraw(first) {
     schDraw();
   });
   on("schRpl", function () {
-    schReplan(schSel);
+    schReplan(G.schSel);
     schDraw();
   });
   on("schRplA", function () {
@@ -1201,32 +1261,32 @@ function schDraw(first) {
           return x.f < nw0;
         });
       });
-      schSel = null;
-      schMsg =
+      G.schSel = null;
+      G.schMsg =
         (FT ? "Cleared this day." : "Cleared what’s left today. Blocks already started stay.") +
         (rr.length ? " Repeats continue next time." : "");
       schDraw();
     });
-  var sc0 = schPg.querySelector("#schScroll"),
+  var sc0 = G.schPg.querySelector("#schScroll"),
     onB = tl.querySelector(".sch-b.on");
-  if (onB && schSel !== schShown && !schDrag) {
+  if (onB && G.schSel !== G.schShown && !G.schDrag) {
     var bb = onB.offsetTop + onB.offsetHeight,
       vb = sc0.scrollTop + sc0.clientHeight;
     if (bb > sc0.scrollTop + sc0.clientHeight * 0.6)
       sc0.scrollTop = Math.min(onB.offsetTop - 8, bb - Math.round(sc0.clientHeight * 0.55));
     else if (onB.offsetTop < sc0.scrollTop) sc0.scrollTop = onB.offsetTop - 8;
   }
-  schShown = schSel;
+  G.schShown = G.schSel;
   if (first) {
     var nw = tl.querySelector("#schNow"),
-      sc = schPg.querySelector("#schScroll");
+      sc = G.schPg.querySelector("#schScroll");
     sc.scrollTop = 0;
     if (nw) sc.scrollTop = Math.max(0, nw.offsetTop - sc.clientHeight / 3);
-    else if (schPick != null) sc.scrollTop = Math.max(0, px(schPick) - sc.clientHeight / 3);
+    else if (G.schPick != null) sc.scrollTop = Math.max(0, px(G.schPick) - sc.clientHeight / 3);
   }
   schNowVis();
 }
-function schRows(defs, k) {
+export function schRows(defs, k) {
   defs.forEach(function (q) {
     var el = qEls[q.id];
     if (!el || q.type !== "time") return;

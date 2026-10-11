@@ -5,7 +5,8 @@
      two devices editing different quests (or subjects, busy times, repeats, settings) both keep their edits, and an item
      removed on one side stays removed unless the other side edited it. Days and reflections merge two-way (union of
      fields). Where both sides changed the same field, `pref` decides ("l" = this device, "r" = remote). */
-function canon(o) {
+
+export function canon(o) {
   if (o === undefined) return "~";
   if (o === null || typeof o !== "object") return JSON.stringify(o);
   if (Array.isArray(o)) return "[" + o.map(canon).join(",") + "]";
@@ -24,7 +25,7 @@ function canon(o) {
   );
 }
 /* cyrb53: a 53-bit string hash; plenty to tell versions of one document apart. */
-function hashOf(o) {
+export function hashOf(o) {
   var s = canon(o),
     h1 = 0xdeadbeef,
     h2 = 0x41c6ce57;
@@ -37,13 +38,13 @@ function hashOf(o) {
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
-function mgSame(a, b) {
+export function mgSame(a, b) {
   return canon(a) === canon(b);
 }
-function mgObj(x) {
+export function mgObj(x) {
   return !!x && typeof x === "object" && !Array.isArray(x);
 }
-function mgIds(a) {
+export function mgIds(a) {
   return (
     Array.isArray(a) &&
     a.every(function (x) {
@@ -51,7 +52,7 @@ function mgIds(a) {
     })
   );
 }
-function mgFlat(a) {
+export function mgFlat(a) {
   return (
     Array.isArray(a) &&
     a.every(function (x) {
@@ -59,7 +60,7 @@ function mgFlat(a) {
     })
   );
 }
-function merge3(b, l, r, pref) {
+export function merge3(b, l, r, pref) {
   if (mgSame(l, r)) return l;
   if (mgSame(l, b)) return r;
   if (mgSame(r, b)) return l;
@@ -90,7 +91,7 @@ function merge3(b, l, r, pref) {
 /* Lists of {id,…} (quests, subjects, busy times, repeats…): each item merges on its own; an item added on either side is
      kept; one removed on a side stays removed unless the other side changed it. Order: this device's if it was
      reordered here, else the remote's; items only the other side has go after their neighbour there. */
-function mergeIds(b, l, r, pref) {
+export function mergeIds(b, l, r, pref) {
   var bm = {},
     lm = {},
     rm = {};
@@ -155,7 +156,7 @@ function mergeIds(b, l, r, pref) {
   return out;
 }
 /* Lists of plain ids/values (ignore list…): union, minus what either side removed. */
-function mergeSet(b, l, r) {
+export function mergeSet(b, l, r) {
   var gone = b.filter(function (x) {
       return l.indexOf(x) < 0 || r.indexOf(x) < 0;
     }),

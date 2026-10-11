@@ -1,5 +1,18 @@
 /* ---- haptics, tap-to-type, swipe, calm mode ---- */
-function haptic(k, quiet) {
+import { cfg } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { commit, entry, locked, ro } from "../core/entries.js";
+import { capPlugin } from "../core/native.js";
+import { openQMenu } from "../quests/11-row-menu.js";
+import { toggleTodo } from "../quests/14-todos.js";
+import { ignoredOn, rewardsOff, setIgnore } from "../rules/modes.js";
+import { tapSound } from "./01-sound.js";
+import { calmSync } from "./look.js";
+import { popMenu } from "./menus.js";
+
+export var lowBatt;
+
+export function haptic(k, quiet) {
   if (!quiet) tapSound(k);
   if (cfg().haptics === false) return;
   var H = capPlugin("Haptics");
@@ -13,16 +26,7 @@ function haptic(k, quiet) {
     }
   } catch (x) {}
 }
-document.addEventListener(
-  "click",
-  function (e) {
-    var t = e.target;
-    if (t && t.closest && t.closest(".ctr .stone,.sw,.stone.sc,.wkbtn,.tdbtn,.tmr,.pp,.mainnav button"))
-      haptic("light");
-  },
-  true,
-);
-function swipeRow(row, q) {
+export function swipeRow(row, q) {
   var x0 = null,
     y0 = 0,
     dx = 0,
@@ -108,7 +112,7 @@ function swipeRow(row, q) {
 /* swipeMenu(el, items, skipSel): swipe left on any list row opens its popMenu (same gesture as a quest row). items is a
      function returning popMenu items so labels reflect the state at the time of the swipe; touches that start on a control
      (inputs, links, `.stone` buttons, pips, drag grips, or skipSel) never swipe; a row-wide toggle button such as a subject's fold header does. Horizontal only: a vertical drift cancels, so scrolling is untouched. */
-function swipeMenu(el, items, skipSel) {
+export function swipeMenu(el, items, skipSel) {
   var x0 = null,
     y0 = 0,
     act = false,
@@ -172,7 +176,7 @@ function swipeMenu(el, items, skipSel) {
   });
 }
 /* swipeLR(el, onRight, onLeft, skipSel): a row that answers a two-way swipe (the to-do review: right = keep, left = delete). Same thresholds as the quest rows; the row shows .sw-r / .sw-l past the point of no return. */
-function swipeLR(el, onRight, onLeft, skipSel) {
+export function swipeLR(el, onRight, onLeft, skipSel) {
   var x0 = null,
     y0 = 0,
     act = false,
@@ -239,19 +243,32 @@ function swipeLR(el, onRight, onLeft, skipSel) {
     el.classList.remove("sw-r", "sw-l");
   });
 }
-var lowBatt = false;
-try {
-  if (navigator.getBattery)
-    navigator
-      .getBattery()
-      .then(function (bt) {
-        function u() {
-          lowBatt = bt.level <= 0.2 && !bt.charging;
-          calmSync();
-        }
-        u();
-        bt.addEventListener("levelchange", u);
-        bt.addEventListener("chargingchange", u);
-      })
-      .catch(function () {});
-} catch (x) {}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  document.addEventListener(
+    "click",
+    function (e) {
+      var t = e.target;
+      if (t && t.closest && t.closest(".ctr .stone,.sw,.stone.sc,.wkbtn,.tdbtn,.tmr,.pp,.mainnav button"))
+        haptic("light");
+    },
+    true,
+  );
+  lowBatt = false;
+  try {
+    if (navigator.getBattery)
+      navigator
+        .getBattery()
+        .then(function (bt) {
+          function u() {
+            lowBatt = bt.level <= 0.2 && !bt.charging;
+            calmSync();
+          }
+          u();
+          bt.addEventListener("levelchange", u);
+          bt.addEventListener("chargingchange", u);
+        })
+        .catch(function () {});
+  } catch (x) {}
+}

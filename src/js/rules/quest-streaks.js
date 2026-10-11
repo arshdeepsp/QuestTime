@@ -1,8 +1,16 @@
 /* ---- per-quest streaks (display only) ---- */
-function qStreakable(q) {
+import { S, START_KEY, STREAK_TYPES } from "../core/00-state.js";
+import { add } from "../core/days.js";
+import { cfgQ } from "./26-periods.js";
+import { metQ } from "./day-rules.js";
+import { isPaused } from "./modes.js";
+import { dayDefMap, firstSeen } from "./past-days.js";
+import { scheduled } from "./quests-on-day.js";
+
+export function qStreakable(q) {
   return !!q && STREAK_TYPES[q.type] && !q.roll;
 }
-function qDayState(id, d) {
+export function qDayState(id, d) {
   var cq = cfgQ(id),
     from = cq ? cq.addedOn || firstSeen(id) : null;
   if (from && d < from) return null;
@@ -15,7 +23,7 @@ function qDayState(id, d) {
   if (q.off || q.ign || !scheduled(q, d)) return "skip";
   return metQ(q, S.days[d] || {}) ? "met" : "miss";
 }
-function qStreak(id, k) {
+export function qStreak(id, k) {
   var n = 0,
     d = k,
     st = qDayState(id, k);
@@ -29,7 +37,7 @@ function qStreak(id, k) {
   }
   return n;
 }
-function qConsist(id, k) {
+export function qConsist(id, k) {
   var met = 0,
     sch = 0;
   for (var i = 0; i < 30; i++) {

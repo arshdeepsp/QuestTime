@@ -1,16 +1,23 @@
 /* ---- status line, toasts and the locks-soon note ---- */
-function setSync(t) {
+import { G } from "../core/g.js";
+import { LOCK_SOON } from "../core/49b-boot.js";
+import { dayEnd } from "../core/days.js";
+import { ro } from "../core/entries.js";
+import { esc, svg } from "../core/util.js";
+import { TOAST_HOLD, bootAt, toast, userActed } from "../progress/03-badges.js";
+
+export function setSync(t) {
   var el = document.getElementById("sync");
   el.textContent = t;
-  clearTimeout(syncT);
+  clearTimeout(G.syncT);
   if (t)
-    syncT = setTimeout(function () {
+    G.syncT = setTimeout(function () {
       if (el.textContent === t) el.textContent = "";
     }, 6000);
 }
-function showToast(a) {
+export function showToast(a) {
   if (!userActed && Date.now() - bootAt < TOAST_HOLD) {
-    toastQ = a;
+    G.toastQ = a;
     return;
   }
   toast.innerHTML =
@@ -28,7 +35,7 @@ function showToast(a) {
     toast.classList.remove("show");
   }, 5000);
 }
-function lockIn() {
+export function lockIn() {
   var el = document.getElementById("lockIn");
   if (ro()) {
     el.textContent = "Locked";

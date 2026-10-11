@@ -2,42 +2,26 @@
      D.ach = 20 badges in D.groups. badgeStats() reads the whole history once; BADGE_RULE maps each badge to
      [have, need, unit]. Earned badges are stored in cfg.badges = {id: "YYYY-MM-DD"} and stay earned, even if a
      streak breaks or a rating drops later. Certificates are drawn on demand (certPDF), nothing is embedded. */
-var grid = document.getElementById("achGrid"),
-  toast = document.getElementById("toast"),
-  cards = {},
-  badgeSig = "";
-(function () {
-  var h = "";
-  D.groups.forEach(function (g) {
-    h +=
-      '<h3 class="ach-sub" data-bg="' +
-      g.id +
-      '">' +
-      esc(g.name) +
-      ' <small></small></h3><div class="ach-grid" data-bgrid="' +
-      g.id +
-      '"></div>';
-  });
-  grid.innerHTML = h;
-  D.ach.forEach(function (a) {
-    var el = document.createElement("div");
-    el.className = "ach px locked";
-    el.setAttribute("data-bid", a.id);
-    el.innerHTML =
-      '<div class="slot">' +
-      svg(a.icon) +
-      '</div><div class="ab"><div class="t2"></div><div class="t3"></div><div class="abar"><i></i></div><div class="st"></div><button type="button" hidden>Certificate</button></div>';
-    el.querySelector(".t2").textContent = a.title;
-    el.querySelector(".t3").textContent = a.desc;
-    var b = el.querySelector("button");
-    b.addEventListener("click", function () {
-      certPDF(a, b);
-    });
-    grid.querySelector('[data-bgrid="' + a.group + '"]').appendChild(el);
-    cards[a.id] = el;
-  });
-})();
-function badgeStats(st) {
+import { G } from "../core/g.js";
+import { D, S, START_KEY } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, parse, todayKey, weekStart } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { clone, esc, fmtD, hm, svg } from "../core/util.js";
+import { loadPDF } from "./49-wrap-up.js";
+import { perStart, periodList } from "../rules/26-periods.js";
+import { compute } from "../rules/compute.js";
+import { gold, metQ } from "../rules/day-rules.js";
+import { noStreakOn, rewardsOff } from "../rules/modes.js";
+import { defsOf } from "../rules/quests-on-day.js";
+import { schAll } from "../schedule/model.js";
+import { subjList } from "../subjects/32-subjects.js";
+import { go } from "../ui/44-navigation.js";
+import { setSync, showToast } from "../ui/feedback.js";
+
+export var grid, toast, cards, badgeSig, BADGE_RULE, STREAKY, TOAST_HOLD, bootAt, userActed;
+
+export function badgeStats(st) {
   var T = todayKey(),
     o = {
       best: st.best || 0,
@@ -123,72 +107,10 @@ function badgeStats(st) {
   }).length;
   return o;
 }
-function badgeStreak(st) {
+export function badgeStreak(st) {
   return { best: st.best || 0, total: st.total || 0, streak: st.streak || 0, resets: (st.resets || []).length };
 }
-var BADGE_RULE = {
-  week: function (o) {
-    return [o.best, 7, "d"];
-  },
-  "3weeks": function (o) {
-    return [o.best, 21, "d"];
-  },
-  "3months": function (o) {
-    return [o.best, 90, "d"];
-  },
-  "1year": function (o) {
-    return [o.best, 365, "d"];
-  },
-  comeback: function (o) {
-    return [o.resets ? o.streak : 0, 7, "d"];
-  },
-  clear50: function (o) {
-    return [o.total, 50, "d"];
-  },
-  gold10: function (o) {
-    return [o.gold, 10, "n"];
-  },
-  finisher: function (o) {
-    return [o.finished, 1, "n"];
-  },
-  focus10: function (o) {
-    return [o.focus, 600, "m"];
-  },
-  focus100: function (o) {
-    return [o.focus, 6000, "m"];
-  },
-  deep: function (o) {
-    return [o.sess, 90, "m"];
-  },
-  bigweek: function (o) {
-    return [o.week, 900, "m"];
-  },
-  topics5: function (o) {
-    return [o.topics, 5, "n"];
-  },
-  levelup: function (o) {
-    return [o.levelup, 1, "n"];
-  },
-  goal: function (o) {
-    return [o.goal, 1, "n"];
-  },
-  expert: function (o) {
-    return [o.maxp, 5, "p"];
-  },
-  special: function (o) {
-    return [o.maxtt, 1200, "m"];
-  },
-  plankept: function (o) {
-    return [o.plan, 1, "n"];
-  },
-  architect: function (o) {
-    return [o.plan, 10, "n"];
-  },
-  oncall: function (o) {
-    return [o.calls, 10, "n"];
-  },
-};
-function badgeProg(a, o) {
+export function badgeProg(a, o) {
   var r = BADGE_RULE[a.id](o),
     h = Math.min(r[0], r[1]);
   return {
@@ -205,10 +127,10 @@ function badgeProg(a, o) {
             : h + " of " + r[1],
   };
 }
-function badgesEarned() {
+export function badgesEarned() {
   return cfg().badges || {};
 }
-function nextBadge(o) {
+export function nextBadge(o) {
   var E = badgesEarned(),
     best = null;
   D.ach.forEach(function (a) {
@@ -218,10 +140,7 @@ function nextBadge(o) {
   });
   return best;
 }
-/* Streak badges are only awarded from settled days: up to yesterday and before any total's period still running,
-     since a missed checkpoint can still take those days back. */
-var STREAKY = { week: 1, "3weeks": 1, "3months": 1, "1year": 1, comeback: 1, clear50: 1 };
-function settledAsOf() {
+export function settledAsOf() {
   var T = todayKey(),
     a = add(T, -1);
   periodList(T).forEach(function (q) {
@@ -230,7 +149,7 @@ function settledAsOf() {
   });
   return a;
 }
-function renderBadges(st) {
+export function renderBadges(st) {
   var o = badgeStats(st),
     E = badgesEarned(),
     T = todayKey(),
@@ -289,7 +208,7 @@ function renderBadges(st) {
       : wait[a.id]
         ? "Earned once this period's totals are in"
         : p.txt;
-    el.querySelector("button").hidden = !(u && (dl || dlChecked));
+    el.querySelector("button").hidden = !(u && (G.dl || G.dlChecked));
   });
   D.groups.forEach(function (g) {
     var L = D.ach.filter(function (a) {
@@ -324,26 +243,7 @@ function renderBadges(st) {
   }
   return o;
 }
-/* A toast raised in the first TOAST_HOLD ms after launch, before the person has touched anything (badges earned retroactively on open, say), waits for the first tap or key, so it never covers the header on launch. */
-var TOAST_HOLD = 3000,
-  bootAt = Date.now(),
-  toastQ = null,
-  userActed = false;
-["pointerdown", "keydown"].forEach(function (ev) {
-  document.addEventListener(
-    ev,
-    function () {
-      userActed = true;
-      if (toastQ) {
-        var a = toastQ;
-        toastQ = null;
-        showToast(a);
-      }
-    },
-    { capture: true, passive: true },
-  );
-});
-function certPDF(a, btn) {
+export function certPDF(a, btn) {
   var on = badgesEarned()[a.id] || todayKey();
   btn.disabled = true;
   setSync("Building certificate…");
@@ -439,8 +339,8 @@ function certPDF(a, btn) {
       pdf.addImage(c.toDataURL("image/png"), "PNG", 0, 0, 792, 612, undefined, "FAST");
       var blob = pdf.output("blob"),
         name = "badge-" + a.id + ".pdf";
-      if (dl)
-        return dl.save({ filename: name, data: blob }).then(
+      if (G.dl)
+        return G.dl.save({ filename: name, data: blob }).then(
           function () {
             setSync("Certificate saved");
           },
@@ -466,4 +366,127 @@ function certPDF(a, btn) {
     .finally(function () {
       btn.disabled = false;
     });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  grid = document.getElementById("achGrid");
+  toast = document.getElementById("toast");
+  cards = {};
+  badgeSig = "";
+  (function () {
+    var h = "";
+    D.groups.forEach(function (g) {
+      h +=
+        '<h3 class="ach-sub" data-bg="' +
+        g.id +
+        '">' +
+        esc(g.name) +
+        ' <small></small></h3><div class="ach-grid" data-bgrid="' +
+        g.id +
+        '"></div>';
+    });
+    grid.innerHTML = h;
+    D.ach.forEach(function (a) {
+      var el = document.createElement("div");
+      el.className = "ach px locked";
+      el.setAttribute("data-bid", a.id);
+      el.innerHTML =
+        '<div class="slot">' +
+        svg(a.icon) +
+        '</div><div class="ab"><div class="t2"></div><div class="t3"></div><div class="abar"><i></i></div><div class="st"></div><button type="button" hidden>Certificate</button></div>';
+      el.querySelector(".t2").textContent = a.title;
+      el.querySelector(".t3").textContent = a.desc;
+      var b = el.querySelector("button");
+      b.addEventListener("click", function () {
+        certPDF(a, b);
+      });
+      grid.querySelector('[data-bgrid="' + a.group + '"]').appendChild(el);
+      cards[a.id] = el;
+    });
+  })();
+  BADGE_RULE = {
+    week: function (o) {
+      return [o.best, 7, "d"];
+    },
+    "3weeks": function (o) {
+      return [o.best, 21, "d"];
+    },
+    "3months": function (o) {
+      return [o.best, 90, "d"];
+    },
+    "1year": function (o) {
+      return [o.best, 365, "d"];
+    },
+    comeback: function (o) {
+      return [o.resets ? o.streak : 0, 7, "d"];
+    },
+    clear50: function (o) {
+      return [o.total, 50, "d"];
+    },
+    gold10: function (o) {
+      return [o.gold, 10, "n"];
+    },
+    finisher: function (o) {
+      return [o.finished, 1, "n"];
+    },
+    focus10: function (o) {
+      return [o.focus, 600, "m"];
+    },
+    focus100: function (o) {
+      return [o.focus, 6000, "m"];
+    },
+    deep: function (o) {
+      return [o.sess, 90, "m"];
+    },
+    bigweek: function (o) {
+      return [o.week, 900, "m"];
+    },
+    topics5: function (o) {
+      return [o.topics, 5, "n"];
+    },
+    levelup: function (o) {
+      return [o.levelup, 1, "n"];
+    },
+    goal: function (o) {
+      return [o.goal, 1, "n"];
+    },
+    expert: function (o) {
+      return [o.maxp, 5, "p"];
+    },
+    special: function (o) {
+      return [o.maxtt, 1200, "m"];
+    },
+    plankept: function (o) {
+      return [o.plan, 1, "n"];
+    },
+    architect: function (o) {
+      return [o.plan, 10, "n"];
+    },
+    oncall: function (o) {
+      return [o.calls, 10, "n"];
+    },
+  };
+  /* Streak badges are only awarded from settled days: up to yesterday and before any total's period still running,
+     since a missed checkpoint can still take those days back. */
+  STREAKY = { week: 1, "3weeks": 1, "3months": 1, "1year": 1, comeback: 1, clear50: 1 };
+  /* A toast raised in the first TOAST_HOLD ms after launch, before the person has touched anything (badges earned retroactively on open, say), waits for the first tap or key, so it never covers the header on launch. */
+  TOAST_HOLD = 3000;
+  bootAt = Date.now();
+  G.toastQ = null;
+  userActed = false;
+  ["pointerdown", "keydown"].forEach(function (ev) {
+    document.addEventListener(
+      ev,
+      function () {
+        userActed = true;
+        if (G.toastQ) {
+          var a = G.toastQ;
+          G.toastQ = null;
+          showToast(a);
+        }
+      },
+      { capture: true, passive: true },
+    );
+  });
 }

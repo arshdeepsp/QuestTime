@@ -1,14 +1,12 @@
 /* ---- splash: on launch, and on return after SPLASH_AWAY away. A sapling grows while a bar fills; tap skips. ---- */
-var SPLASH_AWAY = 30 * 60000,
-  splHiddenAt = 0,
-  splT = [];
-/* pc-quick (sessionStorage, one use) = a refresh the app asked for: no splash. */
-var splQuick = false;
-try {
-  splQuick = !!sessionStorage.getItem("pc-quick");
-  sessionStorage.removeItem("pc-quick");
-} catch (x) {}
-function splashOff() {
+import { S } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { drawPlant, grng } from "../progress/41-grove.js";
+import { rewardsOff } from "../rules/modes.js";
+
+export var SPLASH_AWAY, splHiddenAt, splT, splQuick;
+
+export function splashOff() {
   if (splQuick) {
     splQuick = false;
     return true;
@@ -19,7 +17,7 @@ function splashOff() {
     return false;
   }
 }
-function splashStatus() {
+export function splashStatus() {
   if (S.timer) return "Focusing on " + S.timer.label;
   if (S.sprint) return "Sprint in progress";
   var hl = document.querySelector("#hudLine b"),
@@ -28,7 +26,7 @@ function splashStatus() {
   if (!q) return "";
   return (hl && !rewardsOff() ? "Streak " + hl.textContent + " · " : "") + (xt ? xt.textContent : "");
 }
-function splashDraw(stage) {
+export function splashDraw(stage) {
   var cv = document.getElementById("splCv");
   if (!cv) return;
   var c = cv.getContext("2d");
@@ -39,7 +37,7 @@ function splashDraw(stage) {
     drawPlant(c, 1, 12, 33, stage, grng("focus-sapling"), 0);
   } catch (x) {}
 }
-function hideSplash() {
+export function hideSplash() {
   var el = document.getElementById("splash");
   splT.forEach(clearTimeout);
   splT = [];
@@ -52,7 +50,7 @@ function hideSplash() {
     }, 200),
   );
 }
-function showSplash() {
+export function showSplash() {
   var el = document.getElementById("splash");
   if (!el) return;
   if (splashOff()) {
@@ -87,13 +85,26 @@ function showSplash() {
     })(s);
   splT.push(setTimeout(hideSplash, 1250));
 }
-document.getElementById("splash").addEventListener("click", hideSplash);
-document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "hidden") {
-    splHiddenAt = Date.now();
-    return;
-  }
-  if (splHiddenAt && Date.now() - splHiddenAt >= SPLASH_AWAY) showSplash();
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  SPLASH_AWAY = 30 * 60000;
   splHiddenAt = 0;
-});
-showSplash();
+  splT = [];
+  /* pc-quick (sessionStorage, one use) = a refresh the app asked for: no splash. */
+  splQuick = false;
+  try {
+    splQuick = !!sessionStorage.getItem("pc-quick");
+    sessionStorage.removeItem("pc-quick");
+  } catch (x) {}
+  document.getElementById("splash").addEventListener("click", hideSplash);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") {
+      splHiddenAt = Date.now();
+      return;
+    }
+    if (splHiddenAt && Date.now() - splHiddenAt >= SPLASH_AWAY) showSplash();
+    splHiddenAt = 0;
+  });
+  showSplash();
+}

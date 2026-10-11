@@ -1,11 +1,11 @@
 /* ---- generic modal ---- */
-var gEl = document.getElementById("gModal"),
-  gBody = document.getElementById("gBody"),
-  gTitle = document.getElementById("gTitle"),
-  gScrim = document.getElementById("modalScrim"),
-  gLast = null,
-  gOnClose = null;
-function openG(title, build, onClose) {
+import { esc, hm, hmL, num } from "../core/util.js";
+import { eKey, perOf, perWord, rollSum, weekTarget } from "../rules/26-periods.js";
+import { metQ } from "../rules/day-rules.js";
+
+export var gEl, gBody, gTitle, gScrim, gLast, gOnClose;
+
+export function openG(title, build, onClose) {
   gLast = document.activeElement;
   gTitle.textContent = title;
   gBody.innerHTML = "";
@@ -16,7 +16,7 @@ function openG(title, build, onClose) {
   var f = gBody.querySelector("input,textarea,select,button");
   if (f) f.focus();
 }
-function closeG() {
+export function closeG() {
   if (gEl.hidden) return;
   gEl.hidden = true;
   if (document.getElementById("nqModal").hidden) gScrim.hidden = true;
@@ -25,14 +25,7 @@ function closeG() {
   if (cb) cb();
   if (gLast && gLast.focus && document.contains(gLast)) gLast.focus();
 }
-document.getElementById("gClose").addEventListener("click", closeG);
-gScrim.addEventListener("click", function () {
-  if (!gEl.hidden) closeG();
-});
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && !gEl.hidden) closeG();
-});
-function fmtVal(q, e) {
+export function fmtVal(q, e) {
   var v = e[q.id];
   if (q.type === "wake") return v || "\u2014";
   if (q.type === "time" && q.roll) {
@@ -48,7 +41,7 @@ function fmtVal(q, e) {
   if (q.type === "scale") return v ? v + "/" + (q.scale || 5) : "\u2014";
   return v ? "Done" : "Not done";
 }
-function qList(e, defs) {
+export function qList(e, defs) {
   return (
     '<div class="mlist">' +
     defs
@@ -71,4 +64,21 @@ function qList(e, defs) {
       .join("") +
     "</div>"
   );
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  gEl = document.getElementById("gModal");
+  gBody = document.getElementById("gBody");
+  gTitle = document.getElementById("gTitle");
+  gScrim = document.getElementById("modalScrim");
+  gLast = null;
+  gOnClose = null;
+  document.getElementById("gClose").addEventListener("click", closeG);
+  gScrim.addEventListener("click", function () {
+    if (!gEl.hidden) closeG();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !gEl.hidden) closeG();
+  });
 }

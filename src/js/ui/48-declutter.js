@@ -1,5 +1,15 @@
 /* ---- today-page declutter ---- */
-function hideOpts() {
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { cfg, uiGet, uiSet } from "../core/config.js";
+import { locked } from "../core/entries.js";
+import { closeG, openG } from "./18-modal.js";
+import { curView, go } from "./44-navigation.js";
+import { haptic } from "./45-gestures.js";
+import { measureBars } from "./46-phone-bars.js";
+import { setSync } from "./feedback.js";
+
+export function hideOpts() {
   return [
     ["req", "Quest descriptions"],
     ["grip", "Drag handles"],
@@ -10,30 +20,26 @@ function hideOpts() {
     ["prog", "Progress bar"],
   ];
 }
-var focusView = !!uiGet("focus");
-function applyHide() {
-  if (S.timer && !focusView) focusView = true;
+export function applyHide() {
+  if (S.timer && !G.focusView) G.focusView = true;
   var h = cfg().hide || {},
     b = document.body;
   hideOpts().forEach(function (o) {
     b.classList.toggle("hide-" + o[0], !!h[o[0]]);
   });
-  b.classList.toggle("focusview", focusView);
+  b.classList.toggle("focusview", G.focusView);
   if (typeof measureBars === "function") setTimeout(measureBars, 0);
-  if (focusView && typeof curView !== "undefined" && curView !== "today" && typeof go === "function")
+  if (G.focusView && typeof curView !== "undefined" && curView !== "today" && typeof go === "function")
     setTimeout(function () {
       go("today");
     }, 0);
   var fb = document.getElementById("focusBtn");
   if (fb) {
-    fb.setAttribute("aria-pressed", focusView);
-    fb.textContent = focusView ? (window.innerWidth <= 720 ? "All" : "Show all") : "Minimal";
+    fb.setAttribute("aria-pressed", G.focusView);
+    fb.textContent = G.focusView ? (window.innerWidth <= 720 ? "All" : "Show all") : "Minimal";
   }
 }
-document.getElementById("hdrEdit").addEventListener("click", function () {
-  document.getElementById("qEditBtn").click();
-});
-function openAddSheet() {
+export function openAddSheet() {
   if (locked()) return;
   openG("Add", function (b) {
     b.innerHTML =
@@ -61,25 +67,33 @@ function openAddSheet() {
     });
   });
 }
-document.getElementById("fabAdd").addEventListener("click", openAddSheet);
-document.getElementById("hdrAdd").addEventListener("click", openAddSheet);
-document.getElementById("tdToggle").addEventListener("click", function () {
-  var on = !document.body.classList.contains("tdopen");
-  document.body.classList.toggle("tdopen", on);
-  if (on)
-    setTimeout(function () {
-      var i = document.getElementById("tdNew");
-      if (i) i.focus();
-    }, 50);
-});
-function toggleFocusView() {
-  if (S.timer && focusView) {
+export function toggleFocusView() {
+  if (S.timer && G.focusView) {
     setSync("Stop the timer to leave Minimal view.");
     return;
   }
-  focusView = !focusView;
-  uiSet("focus", focusView);
+  G.focusView = !G.focusView;
+  uiSet("focus", G.focusView);
   applyHide();
   haptic("light");
 }
-document.getElementById("focusBtn").addEventListener("click", toggleFocusView);
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  G.focusView = !!uiGet("focus");
+  document.getElementById("hdrEdit").addEventListener("click", function () {
+    document.getElementById("qEditBtn").click();
+  });
+  document.getElementById("fabAdd").addEventListener("click", openAddSheet);
+  document.getElementById("hdrAdd").addEventListener("click", openAddSheet);
+  document.getElementById("tdToggle").addEventListener("click", function () {
+    var on = !document.body.classList.contains("tdopen");
+    document.body.classList.toggle("tdopen", on);
+    if (on)
+      setTimeout(function () {
+        var i = document.getElementById("tdNew");
+        if (i) i.focus();
+      }, 50);
+  });
+  document.getElementById("focusBtn").addEventListener("click", toggleFocusView);
+}

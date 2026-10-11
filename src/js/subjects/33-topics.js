@@ -1,5 +1,21 @@
 /* ---- topic time + review ---- */
-function allTopics() {
+import { G } from "../core/g.js";
+import { RERATE_MIN, S, dirty } from "../core/00-state.js";
+import { add, daysBetween, todayKey, weekStart } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { esc, hm } from "../core/util.js";
+import { runBox } from "../quests/47-phone-rows.js";
+import { PROF, PROF_DO, pips, renderSubjects, saveSubj, setRating, subjList } from "./32-subjects.js";
+import { qTopicPool, topicById } from "./35-links.js";
+import { focusSync } from "../timer/44b-live-notification.js";
+import { render } from "../ui/04-render.js";
+import { haptic } from "../ui/45-gestures.js";
+import { setSync } from "../ui/feedback.js";
+
+export var STALL_MIN, STALL_DAYS, rrPick, rrWeek;
+
+export function allTopics() {
   var out = [];
   subjList().forEach(function (s) {
     (s.topics || []).forEach(function (t) {
@@ -8,13 +24,13 @@ function allTopics() {
   });
   return out;
 }
-function topicName(tid) {
+export function topicName(tid) {
   var x = allTopics().filter(function (o) {
     return o.t.id === tid;
   })[0];
   return x ? x.t.name : "";
 }
-function addTopicTime(T, tid, m) {
+export function addTopicTime(T, tid, m) {
   if (!tid || m < 1) return;
   var e = Object.assign({}, S.days[T] || {});
   e.tt = Object.assign({}, e.tt || {});
@@ -22,10 +38,10 @@ function addTopicTime(T, tid, m) {
   S.days[T] = e;
   dirty[T] = true;
   cache();
-  clearTimeout(timer);
-  timer = setTimeout(flush, 300);
+  clearTimeout(G.timer);
+  G.timer = setTimeout(flush, 300);
 }
-function topicStats(t) {
+export function topicStats(t) {
   var tot = 0,
     mo = 0,
     last = null,
@@ -44,7 +60,7 @@ function topicStats(t) {
   var age = last ? daysBetween(last, T) : t.created ? daysBetween(t.created, T) : 0;
   return { tot: tot, mo: mo, last: last, due: age >= 14 };
 }
-function topicSelect(id, sel) {
+export function topicSelect(id, sel) {
   var A = allTopics();
   if (!A.length) return "";
   return (
@@ -67,10 +83,7 @@ function topicSelect(id, sel) {
     "</select></label>"
   );
 }
-/* Effort without progress: STALL_MIN+ minutes on a topic in the last STALL_DAYS days, and no rise in its rating over that span. */
-var STALL_MIN = 300,
-  STALL_DAYS = 28;
-function topicFlat(t) {
+export function topicFlat(t) {
   if (!t || (t.p || 0) >= 5) return null;
   var T = todayKey(),
     from = add(T, -(STALL_DAYS - 1)),
@@ -88,7 +101,7 @@ function topicFlat(t) {
     base = before ? before.p : h.length ? h[0].p : t.p || 0;
   return (t.p || 0) > base ? null : { m: m };
 }
-function topicOrder(L) {
+export function topicOrder(L) {
   var last = {};
   Object.keys(S.days).forEach(function (d) {
     var tt = (S.days[d] || {}).tt || {};
@@ -113,16 +126,16 @@ function topicOrder(L) {
       return x.id;
     });
 }
-function defaultTopic(q) {
+export function defaultTopic(q) {
   return topicOrder(qTopicPool(q))[0] || null;
 }
-function timerTopicStart(q) {
+export function timerTopicStart(q) {
   if (!S.timer) return;
   S.timer.topic = defaultTopic(q);
   S.timer.tAt = S.timer.start;
   S.timer.tacc = {};
 }
-function switchTopic(tid) {
+export function switchTopic(tid) {
   var t = S.timer;
   if (!t || t.topic === tid || !topicById(tid)) return;
   var now = Date.now();
@@ -135,7 +148,7 @@ function switchTopic(tid) {
   setTimeout(focusSync, 0);
   setSync("Now on " + topicName(tid));
 }
-function topicSplit(t, end) {
+export function topicSplit(t, end) {
   var acc = Object.assign({}, t.tacc || {});
   if (t.topic) acc[t.topic] = (acc[t.topic] || 0) + end - (t.tAt || t.start);
   var m = Math.round((end - t.start) / 60000),
@@ -155,7 +168,7 @@ function topicSplit(t, end) {
   }
   return out;
 }
-function weekTop() {
+export function weekTop() {
   var ws = add(weekStart(todayKey()), -7),
     acc = {};
   for (var d = ws; d <= add(ws, 6); d = add(d, 1)) {
@@ -179,7 +192,7 @@ function weekTop() {
 /* Due once a week: not shown since this week began, and not in the last 2 days (so moving the week start doesn't ask twice).
      Waits for timers, sprints, other modals and full-screen pages (schedule, quest editor, help, grove). */
 /* Weekly check-in: once a week (pc-rerate = the day it was last answered or skipped; due when that's before this week's start and 2+ days ago), the top 3 topics by last week's time (RERATE_MIN each) get a rating card at the top of Subjects (rerateCard/wireRerate, drawn by renderSubjects). Save writes setRating only for ratings changed; Skip just stamps the week. It never blocks another page. */
-function rerateDue() {
+export function rerateDue() {
   var last = "",
     T = todayKey();
   try {
@@ -188,9 +201,7 @@ function rerateDue() {
   if (last >= weekStart(T) || (last && daysBetween(last, T) < 2) || locked()) return false;
   return weekTop().length > 0;
 }
-var rrPick = null,
-  rrWeek = "";
-function rerateCard() {
+export function rerateCard() {
   if (!rerateDue()) return "";
   var L = weekTop(),
     ws = weekStart(todayKey());
@@ -227,7 +238,7 @@ function rerateCard() {
     '</div><div class="edrow end"><button type="button" class="stone" id="rrSkip">Skip this week</button><button type="button" class="stone save" id="rrSave">Save</button></div></section>'
   );
 }
-function wireRerate(el) {
+export function wireRerate(el) {
   var card = el.querySelector("#rrCard");
   if (!card) return;
   function stamp() {
@@ -261,4 +272,13 @@ function wireRerate(el) {
     render();
     renderSubjects();
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  /* Effort without progress: STALL_MIN+ minutes on a topic in the last STALL_DAYS days, and no rise in its rating over that span. */
+  STALL_MIN = 300;
+  STALL_DAYS = 28;
+  rrPick = null;
+  rrWeek = "";
 }

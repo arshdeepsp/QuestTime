@@ -1,29 +1,49 @@
 /* ---- settings panel ---- */
-/* Settings: a home list of categories, each opening its own page of rows (srow: title + one-line hint + control).
-     Toggles use the same .sw switch as Today. Longer explanations live in How it works; group headers link there with "?". */
-var setTab = null;
-var SET_CATS = [
-  ["day", "Your day", "sprout"],
-  ["quests", "Quests & rules", "dumbbell"],
-  ["alerts", "Notifications", "flame"],
-  ["look", "Look", "star"],
-  ["sound", "Sound & touch", "note"],
-  ["extras", "Extras", "trophy"],
-  ["account", "Account", "star"],
-  ["data", "Your data", "metronome"],
-];
+import { G } from "../core/g.js";
+import { DAYF, DAY_DEF, S, START_KEY, dirty, setStart } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, dayEnd, dayWin, lockHour, parse, todayKey, winErr, wkS } from "../core/days.js";
+import { LN, nativeApp } from "../core/native.js";
+import { cache, cloudAccount, flush } from "../core/storage.js";
+import { clone, esc, fmtD, svg } from "../core/util.js";
+import { nf, notifDiag, notifEnable, notifSync, notifTest } from "../notifications/35d-plan.js";
+import { idleReset } from "../progress/42-grove-sky.js";
+import { PACKS, applyPack, packsHidden } from "../quests/07c-starter-packs.js";
+import { WDN, WDS, busiest, capOf, overDays } from "../quests/35b-daily-limit.js";
+import { openMgr } from "../quests/38-quest-editor.js";
+import { easeInfo } from "../rules/easing.js";
+import { curVac, noStreakOn, rewardsOff } from "../rules/modes.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { busyDaysText } from "../schedule/busy.js";
+import { openBusy } from "../schedule/page.js";
+import { STYLES, applyStyle, styleCards } from "./27-work-styles.js";
+import { cloud } from "../sync/54-account.js";
+import { authErr, openAuth } from "../sync/55-auth-pages.js";
+import { focusSync } from "../timer/44b-live-notification.js";
+import { elapsed, render } from "../ui/04-render.js";
+import { applyTheme } from "../ui/08-themes.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { openHelp } from "../ui/24-help.js";
+import { go } from "../ui/44-navigation.js";
+import { haptic } from "../ui/45-gestures.js";
+import { applyHide, hideOpts } from "../ui/48-declutter.js";
+import { lockIn, setSync } from "../ui/feedback.js";
+import { calmSync } from "../ui/look.js";
+
+export var SET_CATS, THEME_NAMES;
+
 /* cloud (sync/54-account.js) runs after this file; during startup renders fall back to the stored account and an "off" state. */
-function cl() {
+export function cl() {
   return typeof cloud !== "undefined" && cloud
     ? cloud
     : { account: cloudAccount, state: { status: "off", err: "", last: 0 } };
 }
-function bind(id, ev, fn) {
+export function bind(id, ev, fn) {
   var x = document.getElementById(id);
   if (x) x.addEventListener(ev, fn);
 }
 /* Streaks and rewards on/off, asymmetric: pausing takes effect today (today becomes a paused day right away), resuming takes effect tomorrow (today during setup), so switching back can never rescue a failing day or earn today's XP. Pausing opens a cfg.noStreak range from today (or reopens one ending today or later, e.g. a pending resume); resuming closes the open range at tomorrow. The switch shows tomorrow's state. */
-function setStreaks(on) {
+export function setStreaks(on) {
   var c2 = clone(cfg()),
     T = todayKey(),
     L = (c2.noStreak || []).slice(),
@@ -50,8 +70,8 @@ function setStreaks(on) {
   if (L.length) c2.noStreak = L;
   else delete c2.noStreak;
   saveCfg(c2);
-  qSig = "";
-  nfSig = "";
+  G.qSig = "";
+  G.nfSig = "";
   render();
   if (typeof renderSettings === "function") renderSettings();
   setSync(
@@ -60,7 +80,7 @@ function setStreaks(on) {
       : "Casual mode: XP and levels, no streak or checkpoints.",
   );
 }
-function swc(id, on, label, attr) {
+export function swc(id, on, label, attr) {
   return (
     '<button type="button" class="sw" role="switch" ' +
     (id ? 'id="' + id + '" ' : "") +
@@ -72,7 +92,7 @@ function swc(id, on, label, attr) {
     '"><span></span></button>'
   );
 }
-function srow(title, hint, ctrl, cls) {
+export function srow(title, hint, ctrl, cls) {
   return (
     '<div class="srow' +
     (cls ? " " + cls : "") +
@@ -85,7 +105,7 @@ function srow(title, hint, ctrl, cls) {
     "</div>"
   );
 }
-function sgroup(title, rows, help) {
+export function sgroup(title, rows, help) {
   return (
     '<section class="sgroup">' +
     (title
@@ -106,7 +126,7 @@ function sgroup(title, rows, help) {
     "</div></section>"
   );
 }
-function opt(list, cur) {
+export function opt(list, cur) {
   return list
     .map(function (o) {
       return (
@@ -115,21 +135,7 @@ function opt(list, cur) {
     })
     .join("");
 }
-var THEME_NAMES = {
-  "": "Auto",
-  cycle: "Every hour",
-  grass: "Grass",
-  day: "Day",
-  night: "Night",
-  snow: "Snow",
-  ocean: "Ocean",
-  lava: "Lava",
-  nether: "Nether",
-  city: "City skyline",
-  mountains: "Mountains",
-  village: "Village",
-};
-function setSummary(id) {
+export function setSummary(id) {
   var c = cfg(),
     w = dayWin(todayKey()),
     n = nf();
@@ -159,7 +165,7 @@ function setSummary(id) {
   if (id === "alerts") return n.on ? "On · check-in " + n.checkinAt : "Off";
   if (id === "look") return (THEME_NAMES[c.theme || ""] || "Auto") + " theme";
   if (id === "sound")
-    return (sfxOn ? "Sound on" : "Sound off") + " · vibration " + (c.haptics !== false ? "on" : "off");
+    return (G.sfxOn ? "Sound on" : "Sound off") + " · vibration " + (c.haptics !== false ? "on" : "off");
   if (id === "extras") {
     var on = [c.sparkTools && "Quick-start", c.addShare && "Share week", c.addTrends && "Trends"].filter(Boolean);
     return on.length ? on.join(", ") : "No add-ons";
@@ -191,14 +197,14 @@ function setSummary(id) {
   }
   return "";
 }
-function renderSettings() {
+export function renderSettings() {
   var el = document.getElementById("settingsBody");
   if (!el) return;
   var c = cfg(),
     T = todayKey(),
     v = curVac(),
     h = "";
-  if (!setTab) {
+  if (!G.setTab) {
     h =
       '<div class="shome">' +
       SET_CATS.map(function (k) {
@@ -218,7 +224,7 @@ function renderSettings() {
     el.innerHTML = h;
     el.querySelectorAll("[data-st]").forEach(function (b) {
       b.addEventListener("click", function () {
-        setTab = b.getAttribute("data-st");
+        G.setTab = b.getAttribute("data-st");
         renderSettings();
         window.scrollTo(0, 0);
       });
@@ -232,13 +238,13 @@ function renderSettings() {
   }
   var cat =
     SET_CATS.filter(function (k) {
-      return k[0] === setTab;
+      return k[0] === G.setTab;
     })[0] || SET_CATS[0];
   h =
     '<div class="shead"><button type="button" class="stone mini sback" id="setBack" aria-label="Back to all settings">‹ All</button><h2 class="stitle">' +
     cat[1] +
     "</h2></div>";
-  if (setTab === "day") {
+  if (G.setTab === "day") {
     var dwU = Object.assign({}, DAY_DEF, c.day || {}),
       lk = lockHour(dwU.bed, dwU.wake);
     h += sgroup(
@@ -343,7 +349,7 @@ function renderSettings() {
       "Start",
       srow("Started on", "Days before this are ignored", '<input type="date" id="setStart" value="' + START_KEY + '">'),
     );
-  } else if (setTab === "quests") {
+  } else if (G.setTab === "quests") {
     var lkc = null,
       lockedC = false,
       bz = busiest();
@@ -435,7 +441,7 @@ function renderSettings() {
           "swrap",
         ),
       );
-  } else if (setTab === "alerts") {
+  } else if (G.setTab === "alerts") {
     var nfc = nf(),
       natv = nativeApp();
     h += sgroup(
@@ -470,7 +476,7 @@ function renderSettings() {
       );
       h += '<div id="nfExact"></div><div id="nfDiag" class="sdiag"></div>';
     }
-  } else if (setTab === "look") {
+  } else if (G.setTab === "look") {
     h += sgroup(
       "Theme",
       srow(
@@ -525,10 +531,10 @@ function renderSettings() {
         })
         .join(""),
     );
-  } else if (setTab === "sound") {
+  } else if (G.setTab === "sound") {
     h += sgroup(
       "",
-      srow("Sound", "Game sounds and chimes", swc("setSfx", sfxOn, "Sound")) +
+      srow("Sound", "Game sounds and chimes", swc("setSfx", G.sfxOn, "Sound")) +
         srow("Tap sounds", "A click with every tap", swc("setTapSnd", c.tapSound !== false, "Tap sounds")) +
         srow("Vibration", "", swc("setHap", c.haptics !== false, "Vibration")) +
         srow(
@@ -537,7 +543,7 @@ function renderSettings() {
           swc("setAwake", c.keepAwake !== false, "Keep screen on"),
         ),
     );
-  } else if (setTab === "extras") {
+  } else if (G.setTab === "extras") {
     h += sgroup(
       "Add-ons",
       srow(
@@ -548,7 +554,7 @@ function renderSettings() {
         srow("Share week", "A summary card to send", swc("setShare", c.addShare, "Share week")) +
         srow("Trends page", "Weekly charts in the nav", swc("setTrends", c.addTrends, "Trends page")),
     );
-  } else if (setTab === "account") {
+  } else if (G.setTab === "account") {
     var ac = cl().account(),
       cs = cl().state;
     var cu = cl().user && cl().user(),
@@ -567,7 +573,7 @@ function renderSettings() {
             "Signed in as",
             esc(ac.email) + (unv ? ' \u00b7 <span class="bad">not verified</span>' : ""),
             '<button type="button" class="stone mini" id="acOut">' +
-              (acOutArm && Date.now() - acOutArm < 5000 ? "Sign out anyway" : "Sign out") +
+              (G.acOutArm && Date.now() - G.acOutArm < 5000 ? "Sign out anyway" : "Sign out") +
               "</button>",
           ) +
             (unv
@@ -612,7 +618,7 @@ function renderSettings() {
             ),
         ) +
         '<p class="help sfoot">You stay signed in until you sign out. Signing out removes this account\u2019s data from this device; it stays in your account.</p>';
-  } else if (setTab === "data") {
+  } else if (G.setTab === "data") {
     h +=
       sgroup(
         "Backup",
@@ -642,8 +648,8 @@ function renderSettings() {
             ? "Signs you out and removes all app data here; your account keeps its data"
             : "Removes all app data here; export a backup first to keep a copy",
           '<button type="button" class="stone mini del" id="setErase">' +
-            (eraseArm && Date.now() - eraseArm < 5000
-              ? eraseForce
+            (G.eraseArm && Date.now() - G.eraseArm < 5000
+              ? G.eraseForce
                 ? "Erase anyway"
                 : "Tap again to erase"
               : "Erase\u2026") +
@@ -659,7 +665,7 @@ function renderSettings() {
   }
   el.innerHTML = h;
   bind("setBack", "click", function () {
-    setTab = null;
+    G.setTab = null;
     renderSettings();
     window.scrollTo(0, 0);
   });
@@ -683,7 +689,7 @@ function renderSettings() {
     c2.start = iso;
     saveCfg(c2);
     elapsed();
-    qSig = "";
+    G.qSig = "";
     render();
     setSync("Start date set to " + fmtD(v2));
   });
@@ -706,10 +712,10 @@ function renderSettings() {
         elapsed();
       }
       saveCfg(c2);
-      lastDay = todayKey();
+      G.lastDay = todayKey();
       lockIn();
-      nfSig = "";
-      qSig = "";
+      G.nfSig = "";
+      G.qSig = "";
       render();
       renderSettings();
       setSync("Your day: " + w + " to " + bd);
@@ -730,7 +736,7 @@ function renderSettings() {
       var c2 = clone(cfg());
       c2.nf = Object.assign({}, nf(), p);
       saveCfg(c2);
-      nfSig = "";
+      G.nfSig = "";
       notifSync();
       renderSettings();
     }
@@ -761,7 +767,7 @@ function renderSettings() {
             ln0
               .changeExactNotificationSetting()
               .then(function () {
-                nfSig = "";
+                G.nfSig = "";
                 notifSync();
                 renderSettings();
               })
@@ -793,10 +799,10 @@ function renderSettings() {
       S.days[T2] = Object.assign({}, S.days[T2], { q: activeDefs(T2) });
       dirty[T2] = true;
       cache();
-      clearTimeout(timer);
-      timer = setTimeout(flush, 300);
+      clearTimeout(G.timer);
+      G.timer = setTimeout(flush, 300);
     }
-    qSig = "";
+    G.qSig = "";
     render();
     renderSettings();
   }
@@ -827,7 +833,7 @@ function renderSettings() {
         dirty[T2] = true;
         cache();
       }
-      qSig = "";
+      G.qSig = "";
       render();
       renderSettings();
     });
@@ -839,8 +845,8 @@ function renderSettings() {
     if (+this.value === 0) c2.weekStart = 0;
     else delete c2.weekStart;
     saveCfg(c2);
-    qSig = "";
-    nfSig = "";
+    G.qSig = "";
+    G.nfSig = "";
     render();
     renderSettings();
     setSync("Weeks now start on " + DAYF[wkS()]);
@@ -923,7 +929,7 @@ function renderSettings() {
         var c2 = clone(cfg());
         c2.cap = v;
         saveCfg(c2);
-        qSig = "";
+        G.qSig = "";
         render();
         renderSettings();
         setSync("Daily limit set to " + v + " quests");
@@ -971,23 +977,23 @@ function renderSettings() {
   });
   bind("setErase", "click", function () {
     var b = document.getElementById("setErase"),
-      armed = eraseArm && Date.now() - eraseArm < 5000;
+      armed = G.eraseArm && Date.now() - G.eraseArm < 5000;
     if (!armed) {
-      eraseArm = Date.now();
-      eraseForce = false;
+      G.eraseArm = Date.now();
+      G.eraseForce = false;
       if (b) b.textContent = "Tap again to erase";
       setSync("This erases everything on this device" + (cl().account() ? " and signs you out." : "."));
       return;
     }
-    eraseArm = 0;
+    G.eraseArm = 0;
     cl()
-      .eraseDevice(eraseForce)
+      .eraseDevice(G.eraseForce)
       .catch(function (e) {
         var c = e && e.code;
         if (c === "app/timer") setSync("Stop the timer first.");
         else if (c === "app/unsynced") {
-          eraseArm = Date.now();
-          eraseForce = true;
+          G.eraseArm = Date.now();
+          G.eraseForce = true;
           b = document.getElementById("setErase");
           if (b) b.textContent = "Erase anyway";
           setSync("Some changes haven\u2019t synced yet. Erasing now loses them.");
@@ -1002,15 +1008,15 @@ function renderSettings() {
   });
   bind("acOut", "click", function () {
     var b = document.getElementById("acOut"),
-      force = acOutArm && Date.now() - acOutArm < 5000;
-    acOutArm = 0;
+      force = G.acOutArm && Date.now() - G.acOutArm < 5000;
+    G.acOutArm = 0;
     cl()
       .signOut(force)
       .catch(function (e) {
         var c = e && e.code;
         if (c === "app/timer") setSync("Stop the timer first.");
         else if (c === "app/unsynced") {
-          acOutArm = Date.now();
+          G.acOutArm = Date.now();
           b = document.getElementById("acOut");
           if (b) b.textContent = "Sign out anyway";
           setSync("Some changes haven\u2019t synced yet. Signing out now loses them.");
@@ -1149,9 +1155,40 @@ function renderSettings() {
       dirty[T2] = true;
       cache();
     }
-    qSig = "";
+    G.qSig = "";
     render();
     renderSettings();
     setSync("Break added: " + fmtD(a) + " to " + fmtD(b));
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  /* Settings: a home list of categories, each opening its own page of rows (srow: title + one-line hint + control).
+     Toggles use the same .sw switch as Today. Longer explanations live in How it works; group headers link there with "?". */
+  G.setTab = null;
+  SET_CATS = [
+    ["day", "Your day", "sprout"],
+    ["quests", "Quests & rules", "dumbbell"],
+    ["alerts", "Notifications", "flame"],
+    ["look", "Look", "star"],
+    ["sound", "Sound & touch", "note"],
+    ["extras", "Extras", "trophy"],
+    ["account", "Account", "star"],
+    ["data", "Your data", "metronome"],
+  ];
+  THEME_NAMES = {
+    "": "Auto",
+    cycle: "Every hour",
+    grass: "Grass",
+    day: "Day",
+    night: "Night",
+    snow: "Snow",
+    ocean: "Ocean",
+    lava: "Lava",
+    nether: "Nether",
+    city: "City skyline",
+    mountains: "Mountains",
+    village: "Village",
+  };
 }

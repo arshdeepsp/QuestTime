@@ -1,13 +1,15 @@
 /* ---- daily quest limit (cfg.cap): required quests per weekday ---- */
-function capOf() {
+import { cfg } from "../core/config.js";
+
+export var WDN, WDS;
+
+export function capOf() {
   return cfg().cap || 10;
 }
-var WDN = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"],
-  WDS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-function countsOnDay(q) {
+export function countsOnDay(q) {
   return q && q.type !== "todo" && q.type !== "weekly" && !q.completed && !q.opt;
 }
-function dayLoad(L) {
+export function dayLoad(L) {
   var c = [0, 0, 0, 0, 0, 0, 0];
   (L || cfg().quests).forEach(function (q) {
     if (!countsOnDay(q)) return;
@@ -18,7 +20,7 @@ function dayLoad(L) {
   });
   return c;
 }
-function overDays(L, cap) {
+export function overDays(L, cap) {
   var c = dayLoad(L),
     k = cap || capOf(),
     out = [];
@@ -27,7 +29,7 @@ function overDays(L, cap) {
   });
   return out;
 }
-function busiest(L) {
+export function busiest(L) {
   var c = dayLoad(L),
     m = 0,
     w = 1;
@@ -39,7 +41,7 @@ function busiest(L) {
   });
   return { w: w, n: m };
 }
-function overMsg(ov, cap) {
+export function overMsg(ov, cap) {
   return (
     ov
       .map(function (o) {
@@ -51,7 +53,13 @@ function overMsg(ov, cap) {
     " per day). Untick some days, make one optional, or complete one first."
   );
 }
-function wouldExceed(newQ) {
+export function wouldExceed(newQ) {
   var L = cfg().quests.concat([newQ]);
   return overDays(L);
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  WDN = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+  WDS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 }

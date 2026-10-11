@@ -1,7 +1,12 @@
 /* ---- 8-bit sound ---- */
-var AC = null,
-  sfxOn = uiGet("sfx", true) !== false;
-function tone(f, t0, dur, type, vol) {
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { uiGet } from "../core/config.js";
+import { haptic } from "./45-gestures.js";
+
+export var AC, TAPS;
+
+export function tone(f, t0, dur, type, vol) {
   var o = AC.createOscillator(),
     g = AC.createGain();
   o.type = type || "square";
@@ -13,14 +18,14 @@ function tone(f, t0, dur, type, vol) {
   o.start(AC.currentTime + t0);
   o.stop(AC.currentTime + t0 + dur + 0.02);
 }
-function sfx(kind) {
+export function sfx(kind) {
   try {
     if (kind === "base") haptic("medium", true);
     else if (kind === "clear" || kind === "level" || kind === "chime") haptic("success", true);
     else if (kind === "stop") haptic("heavy", true);
     else if (kind === "fail") haptic("error", true);
   } catch (x) {}
-  if (!sfxOn) return;
+  if (!G.sfxOn) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     if (AC.state === "suspended") AC.resume();
@@ -56,14 +61,20 @@ function sfx(kind) {
     });
   }
 }
-/* Tap sounds: a short 8-bit click that goes with every haptic tap. Off with Settings › Tap sounds, or with Sound off. */
-var TAPS = { light: [1568, 0.03, 0.025], medium: [1175, 0.05, 0.035], heavy: [784, 0.07, 0.045] };
-function tapSound(k) {
+export function tapSound(k) {
   var t = TAPS[k];
-  if (!t || !sfxOn || (S.cfg && S.cfg.tapSound === false)) return;
+  if (!t || !G.sfxOn || (S.cfg && S.cfg.tapSound === false)) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     if (AC.state === "suspended") AC.resume();
     tone(t[0], 0, t[1], "square", t[2]);
   } catch (x) {}
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  AC = null;
+  G.sfxOn = uiGet("sfx", true) !== false;
+  /* Tap sounds: a short 8-bit click that goes with every haptic tap. Off with Settings › Tap sounds, or with Sound off. */
+  TAPS = { light: [1568, 0.03, 0.025], medium: [1175, 0.05, 0.035], heavy: [784, 0.07, 0.045] };
 }

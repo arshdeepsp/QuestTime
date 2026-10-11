@@ -1,11 +1,14 @@
 /* ---- small helpers: cloning, numbers, escaping, time formatting ---- */
-function clone(x) {
+import { D } from "./00-state.js";
+import { parse } from "./days.js";
+
+export function clone(x) {
   return JSON.parse(JSON.stringify(x));
 }
-function num(v) {
+export function num(v) {
   return Math.round((+v || 0) * 100) / 100;
 }
-function svg(name) {
+export function svg(name) {
   var ic = D.icons[name],
     r = "";
   ic.rows.forEach(function (row, y) {
@@ -16,20 +19,20 @@ function svg(name) {
   });
   return '<svg viewBox="0 0 16 16" aria-hidden="true">' + r + "</svg>";
 }
-function hm(m) {
+export function hm(m) {
   m = m | 0;
   var h = Math.floor(m / 60),
     r = m % 60;
   return h ? h + "h" + (r ? " " + r + "m" : "") : r + "m";
 }
-function hmL(m) {
+export function hmL(m) {
   m = m | 0;
   return m >= 60 && m % 60 === 0 ? m / 60 + " hour" + (m > 60 ? "s" : "") : m >= 60 ? hm(m) : m + " min";
 }
-function fmtD(k) {
+export function fmtD(k) {
   return parse(k).toLocaleDateString("en-CA", { month: "short", day: "numeric" });
 }
-function esc(x) {
+export function esc(x) {
   return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
   });

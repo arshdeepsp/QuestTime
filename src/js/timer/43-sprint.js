@@ -1,19 +1,37 @@
 /* ---- sprint / marathon mode ---- */
-var spEl = document.getElementById("sprint"),
-  spBody = document.getElementById("spBody"),
-  spPill = document.getElementById("spPill"),
-  spMin = false;
-var SP_BREAK = 15,
-  SP_LONG = 30;
-function spDefs() {
+import { G } from "../core/g.js";
+import { MAXM, S, dirty } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { esc, hm } from "../core/util.js";
+import { notifSync } from "../notifications/35d-plan.js";
+import { callCheck } from "../notifications/52-taps.js";
+import { planOf } from "../rules/day-rules.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { STYLES } from "../settings/27-work-styles.js";
+import { addTopicTime, topicName, topicSelect } from "../subjects/33-topics.js";
+import { stopTimer } from "./13-focus-timer.js";
+import { focusSync } from "./44b-live-notification.js";
+import { addSession } from "./sessions.js";
+import { parkAdd } from "../tools/park-it.js";
+import { sfx } from "../ui/01-sound.js";
+import { render } from "../ui/04-render.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { setSync } from "../ui/feedback.js";
+
+export var spEl, spBody, spPill, spMin, SP_BREAK, SP_LONG, spArm, SP_ARM_MS;
+
+export function spDefs() {
   return activeDefs(todayKey()).filter(function (q) {
     return q.type === "time";
   });
 }
-function spTarget(q, e) {
+export function spTarget(q, e) {
   return cfg().showPlan ? planOf(q, e) : q.min;
 }
-function spSuggest(ids, lastId) {
+export function spSuggest(ids, lastId) {
   var T = todayKey(),
     e = S.days[T] || {},
     defs = spDefs().filter(function (q) {
@@ -31,7 +49,7 @@ function spSuggest(ids, lastId) {
   });
   return pool[0] ? pool[0].id : null;
 }
-function spLabel(id) {
+export function spLabel(id) {
   var q = spDefs()
     .concat(cfg().quests)
     .filter(function (x) {
@@ -39,7 +57,7 @@ function spLabel(id) {
     })[0];
   return q ? q.label : "Quest";
 }
-function spAdd(id, m) {
+export function spAdd(id, m) {
   if (m < 1) return 0;
   var T = todayKey();
   var e = Object.assign({}, S.days[T] || {});
@@ -54,12 +72,12 @@ function spAdd(id, m) {
   S.days[T] = e;
   dirty[T] = true;
   cache();
-  clearTimeout(timer);
-  timer = setTimeout(flush, 300);
+  clearTimeout(G.timer);
+  G.timer = setTimeout(flush, 300);
   render(true);
   return m;
 }
-function spFmt(ms) {
+export function spFmt(ms) {
   ms = Math.max(0, ms);
   var s = Math.ceil(ms / 1000),
     h = Math.floor(s / 3600),
@@ -67,14 +85,14 @@ function spFmt(ms) {
     x = s % 60;
   return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0");
 }
-function spSave() {
+export function spSave() {
   cache();
   notifSync();
   setTimeout(function () {
     if (typeof focusSync === "function") focusSync(!S.sprint || S.sprint.phase === "done");
   }, 0);
 }
-function openSprintSetup() {
+export function openSprintSetup() {
   if (locked()) {
     setSync("This day is locked.");
     return;
@@ -232,20 +250,20 @@ function openSprintSetup() {
     draw();
   });
 }
-function spShow() {
+export function spShow() {
   if (!S.sprint) return;
   spMin = false;
   spEl.hidden = false;
   spPill.hidden = true;
   spRender();
 }
-function spHide() {
+export function spHide() {
   spMin = true;
   spEl.hidden = true;
   spPill.hidden = !S.sprint;
   spRender();
 }
-function spFinish(logPartial) {
+export function spFinish(logPartial) {
   var sp = S.sprint;
   if (!sp) return;
   if (logPartial && sp.phase === "focus") {
@@ -261,7 +279,7 @@ function spFinish(logPartial) {
   spSave();
   spShow();
 }
-function spTick() {
+export function spTick() {
   var sp = S.sprint;
   if (!sp) {
     spEl.hidden = true;
@@ -311,13 +329,10 @@ function spTick() {
   }
   spRender();
 }
-/* The panel is rebuilt every second (the countdown is in its markup), so the Stop button's "Confirm" arming lives outside the render: spArm = when it was armed, good for SP_ARM_MS. */
-var spArm = 0,
-  SP_ARM_MS = 4000;
-function spArmed() {
+export function spArmed() {
   return spArm && Date.now() - spArm < SP_ARM_MS;
 }
-function spRender() {
+export function spRender() {
   var sp = S.sprint;
   if (!sp) return;
   var now = Date.now(),
@@ -458,7 +473,7 @@ function spRender() {
     }
   }
 }
-function spParkHtml() {
+export function spParkHtml() {
   var L = cfg().park || [];
   return (
     '<div class="park"><div class="edrow"><input id="parkIn" maxlength="120" placeholder="Park a stray thought (Enter)"><button type="button" class="stone" id="parkAdd">Park</button></div>' +
@@ -466,7 +481,7 @@ function spParkHtml() {
     "</div>"
   );
 }
-function spWirePark() {
+export function spWirePark() {
   var i = spBody.querySelector("#parkIn"),
     b = spBody.querySelector("#parkAdd");
   if (!i) return;
@@ -484,7 +499,7 @@ function spWirePark() {
     if (e.key === "Enter") go_();
   });
 }
-function spWire() {
+export function spWire() {
   var sp = S.sprint,
     g = function (id) {
       return spBody.querySelector("#" + id);
@@ -570,11 +585,24 @@ function spWire() {
       setSync("Sprint saved to today\u2019s quests");
     });
 }
-document.getElementById("spBtn").addEventListener("click", openSprintSetup);
-spPill.addEventListener("click", spShow);
-setInterval(spTick, 1000);
-if (S.sprint) {
-  spMin = true;
-  spTick();
-  spPill.hidden = false;
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  spEl = document.getElementById("sprint");
+  spBody = document.getElementById("spBody");
+  spPill = document.getElementById("spPill");
+  spMin = false;
+  SP_BREAK = 15;
+  SP_LONG = 30;
+  /* The panel is rebuilt every second (the countdown is in its markup), so the Stop button's "Confirm" arming lives outside the render: spArm = when it was armed, good for SP_ARM_MS. */
+  spArm = 0;
+  SP_ARM_MS = 4000;
+  document.getElementById("spBtn").addEventListener("click", openSprintSetup);
+  spPill.addEventListener("click", spShow);
+  setInterval(spTick, 1000);
+  if (S.sprint) {
+    spMin = true;
+    spTick();
+    spPill.hidden = false;
+  }
 }

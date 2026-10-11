@@ -1,5 +1,20 @@
 /* ---- resume a block under way, its notification, and block reminders ---- */
-function schLeftIn(T, b, strict) {
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { add, atMin, nowMinInDay, todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { hm } from "../core/util.js";
+import { ensureChannels, nf, notifSync } from "../notifications/35d-plan.js";
+import { nfGo } from "../notifications/52-taps.js";
+import { SCH_AHEAD } from "./51-schedule.js";
+import { hhmmOf, schAll, schOfQ, schQuests, schText } from "./model.js";
+import { schDayDone, schDoneIn } from "./progress.js";
+import { timerMin, toggleTimer } from "../timer/13-focus-timer.js";
+import { start5 } from "../tools/28-spark-tools.js";
+import { go } from "../ui/44-navigation.js";
+import { setSync } from "../ui/feedback.js";
+
+export function schLeftIn(T, b, strict) {
   var nw = nowMinInDay();
   if (T !== todayKey() || !b || !b.q || b.lb || b.j5 || nw < b.f || nw >= b.t || (S.timer && S.timer.id === b.q))
     return 0;
@@ -12,12 +27,12 @@ function schLeftIn(T, b, strict) {
   var l = Math.min(b.t - b.f - d, b.t - nw);
   return l >= 1 ? l : 0;
 }
-function schResWord(T, b) {
+export function schResWord(T, b) {
   return schDoneIn(T, b) >= 1 ? "Resume" : "Start";
 }
 /* End of the latest timed stretch inside the block. A block edited after that (shortened, moved, delayed) means you've
      re-planned it yourself, so there's nothing to resume until you work in it again. */
-function schLastIn(T, b) {
+export function schLastIn(T, b) {
   var s0 = atMin(T, b.f),
     s1 = atMin(T, b.t),
     m = 0;
@@ -26,7 +41,7 @@ function schLastIn(T, b) {
   });
   return m;
 }
-function schResumable(T, strict) {
+export function schResumable(T, strict) {
   var best = null;
   schAll(T).forEach(function (b) {
     var l = schLeftIn(T, b, strict);
@@ -34,16 +49,16 @@ function schResumable(T, strict) {
   });
   return best;
 }
-function resumeSync(ln) {
+export function resumeSync(ln) {
   var T = todayKey(),
     n0 = nf(),
     r = locked() || !n0.on || !n0.sched ? null : schResumable(T, true),
     k = r ? T + r.b.id + "|" + r.left : "";
-  clearTimeout(resT);
-  if (r) resT = setTimeout(notifSync, Math.max(1000, atMin(T, r.b.t) - Date.now() + 1000));
-  if (k === resKey) return;
-  var was = resKey;
-  resKey = k;
+  clearTimeout(G.resT);
+  if (r) G.resT = setTimeout(notifSync, Math.max(1000, atMin(T, r.b.t) - Date.now() + 1000));
+  if (k === G.resKey) return;
+  var was = G.resKey;
+  G.resKey = k;
   var p = Promise.resolve();
   if (was)
     p = p
@@ -84,7 +99,7 @@ function resumeSync(ln) {
     console.warn("resume notif", err);
   });
 }
-function schNotifs(T, e, push) {
+export function schNotifs(T, e, push) {
   var Q = schQuests(T);
   schAll(T).forEach(function (bl, i) {
     var q = Q.filter(function (x) {
@@ -125,7 +140,7 @@ function schNotifs(T, e, push) {
   }
 }
 /* A reminder tap only starts a timer if that quest still has a block today (or, for 905, is still resumable). */
-function schTap(x) {
+export function schTap(x) {
   var T = todayKey(),
     q = schQuests(T).filter(function (z) {
       return z.id === x.sched;

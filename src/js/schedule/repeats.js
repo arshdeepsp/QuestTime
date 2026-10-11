@@ -1,22 +1,32 @@
 /* ---- weekly repeats of quest blocks (cfg.rep) ---- */
-function schReps() {
+import { G } from "../core/g.js";
+import { DAYF } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, nowMinInDay, parse, todayKey, wkOrder } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { clone, fmtD } from "../core/util.js";
+import { notifSync } from "../notifications/35d-plan.js";
+import { DN } from "../quests/02-quest-list.js";
+import { schAll, schClash, schK, schName, schNewId, schQuests, schSave } from "./model.js";
+
+export function schReps() {
   return cfg().rep || [];
 }
-function repById(id) {
+export function repById(id) {
   return schReps().filter(function (r) {
     return r.id === id;
   })[0];
 }
-function repOn(r, k) {
+export function repOn(r, k) {
   return k >= r.from && k <= r.until && r.dows.indexOf(parse(k).getDay()) >= 0;
 }
-function wkSort(L) {
+export function wkSort(L) {
   var o = wkOrder();
   return L.slice().sort(function (a, b) {
     return o.indexOf(a) - o.indexOf(b);
   });
 }
-function repText(r) {
+export function repText(r) {
   var d = wkSort(r.dows),
     w =
       d.length === 7
@@ -30,7 +40,7 @@ function repText(r) {
               .join(", ");
   return w + " until " + fmtD(r.until);
 }
-function schRepDays(b) {
+export function schRepDays(b) {
   var q = b.q
     ? schQuests(schK()).filter(function (x) {
         return x.id === b.q;
@@ -38,7 +48,7 @@ function schRepDays(b) {
     : null;
   return q && q.days && q.days.length ? q.days : [0, 1, 2, 3, 4, 5, 6];
 }
-function schRepCount(b, dows, weeks) {
+export function schRepCount(b, dows, weeks) {
   var T = schK(),
     u = add(T, weeks * 7 - 1),
     ok = schRepDays(b),
@@ -50,7 +60,7 @@ function schRepCount(b, dows, weeks) {
   return n;
 }
 /* First clash a repeat would hit on a day after today (other blocks, repeats or busy times), as {b, k}. */
-function repClash(rid, f, t, dows, until, qd) {
+export function repClash(rid, f, t, dows, until, qd) {
   var T = schK();
   for (var d = add(T, 1); d <= until; d = add(d, 1)) {
     var w = parse(d).getDay();
@@ -67,11 +77,11 @@ function repClash(rid, f, t, dows, until, qd) {
   }
   return null;
 }
-function repClashMsg(c) {
+export function repClashMsg(c) {
   return "That clashes with " + schName(c.b) + " on " + DAYF[parse(c.k).getDay()].slice(0, 3) + " " + fmtD(c.k) + ".";
 }
 /* keep = the week count wasn't touched, so an existing series keeps its end date. Days the quest doesn't run on are dropped. */
-function schRepSave(id, dows, weeks, keep) {
+export function schRepSave(id, dows, weeks, keep) {
   var T = schK(),
     b = schAll(T).filter(function (x) {
       return x.id === id;
@@ -94,8 +104,8 @@ function schRepSave(id, dows, weeks, keep) {
     u = keep && r0 ? r0.until : add(T, weeks * 7 - 1);
   var cl = repClash(rid, b.f, b.t, dows, u, b.q ? schRepDays(b) : null);
   if (cl) {
-    schMsg = repClashMsg(cl);
-    schRep = null;
+    G.schMsg = repClashMsg(cl);
+    G.schRep = null;
     return;
   }
   if (rid) {
@@ -142,14 +152,14 @@ function schRepSave(id, dows, weeks, keep) {
       L.push(x);
     });
   }
-  schSel = keep || (b.rep || today ? "r-" + rid : id);
-  schRep = null;
-  schDet = null;
-  schMsg = "Repeats " + repText(repById(rid)) + ".";
-  nfSig = "";
+  G.schSel = keep || (b.rep || today ? "r-" + rid : id);
+  G.schRep = null;
+  G.schDet = null;
+  G.schMsg = "Repeats " + repText(repById(rid)) + ".";
+  G.nfSig = "";
   notifSync();
 }
-function schRepStop(rid) {
+export function schRepStop(rid) {
   var T = schK(),
     b = schAll(T).filter(function (x) {
       return x.rep === rid;
@@ -174,14 +184,14 @@ function schRepStop(rid) {
       L.push(x);
     }
   });
-  schSel = null;
-  schDet = null;
-  schMsg = "Stopped repeating.";
-  nfSig = "";
+  G.schSel = null;
+  G.schDet = null;
+  G.schMsg = "Stopped repeating.";
+  G.nfSig = "";
   notifSync();
 }
-function schRepEvery() {
-  var d = schDet;
+export function schRepEvery() {
+  var d = G.schDet;
   if (!d) return;
   var b = schAll(schK()).filter(function (x) {
       return x.id === d.id;
@@ -190,7 +200,7 @@ function schRepEvery() {
   if (!b || !r0) return;
   var cl = repClash(d.rep, b.f, b.t, r0.dows, r0.until, b.q ? schRepDays(b) : null);
   if (cl) {
-    schMsg = repClashMsg(cl);
+    G.schMsg = repClashMsg(cl);
     return;
   }
   var c2 = clone(cfg());
@@ -211,9 +221,9 @@ function schRepEvery() {
       return x.id !== d.id;
     });
   });
-  schSel = "r-" + d.rep;
-  schDet = null;
-  schMsg = "Changed every week.";
-  nfSig = "";
+  G.schSel = "r-" + d.rep;
+  G.schDet = null;
+  G.schMsg = "Changed every week.";
+  G.nfSig = "";
   notifSync();
 }

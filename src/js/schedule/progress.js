@@ -1,4 +1,12 @@
 /* ---- how much of each block was done, and re-planning what's short ---- */
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { atMin, dayWin, nowMinInDay, todayKey } from "../core/days.js";
+import { hm } from "../core/util.js";
+import { metQ } from "../rules/day-rules.js";
+import { SCH_STEP } from "./51-schedule.js";
+import { hhmmOf, schAll, schFree, schLeft, schLen, schNewId, schOfQ, schQuests, schSave } from "./model.js";
+
 /* Start/resume a block under way: now inside it, no timer on its quest, time left (what's left of the block, never more
      than the time until its end). "Resume" once some minutes were timed inside it, else "Start". Once its end has passed (or you pull the end in to finish early) there's nothing to resume.
      The schedule footer (with or without the block selected) and the quest row offer Resume whenever that holds. The persistent
@@ -7,7 +15,7 @@
 /* Minutes credited to a block: every timed stretch of its quest (sessions, plus a running timer) that overlaps it gives
      the block the overlap; the part outside all of that quest's blocks goes to the block it overlaps most. So starting late
      or running over still counts for the block, and nothing is counted twice. Stretches that touch no block credit none. */
-function schSess(T, qid) {
+export function schSess(T, qid) {
   var L = ((S.days[T] || {}).sess || [])
     .filter(function (z) {
       return z.id === qid;
@@ -18,7 +26,7 @@ function schSess(T, qid) {
   if (S.timer && S.timer.id === qid && S.timer.day === T) L.push({ s: S.timer.start, e: Date.now() });
   return L;
 }
-function schDoneIn(T, b) {
+export function schDoneIn(T, b) {
   if (!b || !b.q) return 0;
   var Bs = schOfQ(T, b.q),
     ix = -1,
@@ -46,7 +54,7 @@ function schDoneIn(T, b) {
 /* After a block ends short: what's missing from it, but never more than the quest still needs today (share/minimum minus
      time logged and blocks still ahead). Blocks already re-planned for it (rf = the short block's id) count against it, so
      removing one brings the shortfall back. Re-plan places that in the next free time. */
-function schShort(T, b) {
+export function schShort(T, b) {
   if (T !== todayKey() || !b || !b.q || b.j5 || nowMinInDay() < b.t) return 0;
   var q = schQuests(T).filter(function (x) {
     return x.id === b.q;
@@ -58,7 +66,7 @@ function schShort(T, b) {
     s = Math.min(b.t - b.f - schDoneIn(T, b) - rp, schLeft(T, q));
   return s >= 5 ? s : 0;
 }
-function schReplan(id) {
+export function schReplan(id) {
   var T = todayKey(),
     b = schAll(T).filter(function (x) {
       return x.id === id;
@@ -94,8 +102,8 @@ function schReplan(id) {
       left -= len;
     }
   });
-  schSel = null;
-  schMsg = put.length
+  G.schSel = null;
+  G.schMsg = put.length
     ? "Re-planned " +
       hm(amt) +
       ": " +
@@ -107,6 +115,6 @@ function schReplan(id) {
       "."
     : "No free time left today to re-plan it.";
 }
-function schDayDone(q, e, k) {
+export function schDayDone(q, e, k) {
   return q.roll ? ((e || {})[q.id] | 0) >= schLen(q, k) : metQ(q, e);
 }

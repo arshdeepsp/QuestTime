@@ -1,6 +1,13 @@
 /* ---- period totals: what this week (or 2 weeks / month) still needs ---- */
+import { DAYF } from "../core/00-state.js";
+import { parse, todayKey } from "../core/days.js";
+import { esc, fmtD, hm } from "../core/util.js";
+import { midDay, midNeed, perEnd, perOf, periodList, rollNeed, rollSum, weekTarget } from "./26-periods.js";
+import { rewardsOff } from "./modes.js";
+import { closeG, openG } from "../ui/18-modal.js";
+
 /* Before the halfway checkpoint the goal shown is a third of the target by that day; after it, the full target by period end. */
-function periodStatus(T) {
+export function periodStatus(T) {
   return periodList(T)
     .map(function (q) {
       var s = rollSum(q.id, T, q),
@@ -14,7 +21,7 @@ function periodStatus(T) {
       return x.full > 0;
     });
 }
-function openCarryInfo() {
+export function openCarryInfo() {
   openG("Weekly totals", function (b) {
     var P = periodStatus(todayKey());
     b.innerHTML =
@@ -46,7 +53,7 @@ function openCarryInfo() {
     b.querySelector("#ciOk").addEventListener("click", closeG);
   });
 }
-function renderCarryNote() {
+export function renderCarryNote() {
   var el = document.getElementById("carryNote");
   if (!el) return;
   var T = todayKey(),

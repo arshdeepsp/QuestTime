@@ -1,17 +1,28 @@
 /* ---- busy times (a weekday template in cfg.busy) ---- */
+import { G } from "../core/g.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, parse, todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { clone, fmtD } from "../core/util.js";
+import { DN } from "../quests/02-quest-list.js";
+import { WDN } from "../quests/35b-daily-limit.js";
+import { SCH_STEP } from "./51-schedule.js";
+import { schClash, schName, schNewId, schNext, schWin } from "./model.js";
+import { wkSort } from "./repeats.js";
+
 /* ---- busy-time template ---- */
-function busyList() {
+export function busyList() {
   return cfg().busy || [];
 }
-function busyById(id) {
+export function busyById(id) {
   return busyList().filter(function (b) {
     return b.id === id;
   })[0];
 }
-function busyOn(b, k) {
+export function busyOn(b, k) {
   return k >= b.from && (!b.until || k <= b.until) && b.dows.indexOf(parse(k).getDay()) >= 0;
 }
-function busyDaysText(dows) {
+export function busyDaysText(dows) {
   var d = wkSort(dows);
   return d.length === 7
     ? "Every day"
@@ -23,10 +34,10 @@ function busyDaysText(dows) {
           })
           .join(", ");
 }
-function busyText(b) {
+export function busyText(b) {
   return busyDaysText(b.dows) + (b.until ? " until " + fmtD(b.until) : ", every week");
 }
-function busyKey(wd) {
+export function busyKey(wd) {
   var T = todayKey();
   for (var i = 1; i <= 7; i++) {
     var k = add(T, i);
@@ -34,7 +45,7 @@ function busyKey(wd) {
   }
   return T;
 }
-function busyForWd(wd) {
+export function busyForWd(wd) {
   var T = todayKey();
   return busyList()
     .filter(function (b) {
@@ -47,7 +58,7 @@ function busyForWd(wd) {
       return a.f - b.f;
     });
 }
-function busySave(fn) {
+export function busySave(fn) {
   if (locked()) return;
   var c2 = clone(cfg()),
     T0 = todayKey();
@@ -58,10 +69,10 @@ function busySave(fn) {
   if (r) c2.busy = r;
   if (!c2.busy.length) delete c2.busy;
   saveCfg(c2);
-  nfSig = "";
-  qSig = "";
+  G.nfSig = "";
+  G.qSig = "";
 }
-function busyRecent() {
+export function busyRecent() {
   var out = [];
   function a(x) {
     if (x && out.indexOf(x) < 0) out.push(x);
@@ -74,45 +85,45 @@ function busyRecent() {
   });
   return out.slice(0, 6);
 }
-function busyAdd(lb, m) {
+export function busyAdd(lb, m) {
   var T = todayKey(),
     w = schWin(),
-    L = busyForWd(schWd),
+    L = busyForWd(G.schWd),
     f = m,
     t = Math.min(w.e, f + 60);
   lb = (lb || "").trim().slice(0, 30);
   if (!lb) {
-    schMsg = "Give it a name.";
+    G.schMsg = "Give it a name.";
     return false;
   }
   var nx = schNext(L, null, f, w.e);
   if (nx < t) t = nx;
   var c = schClash(L, null, f, t);
   if (c || t - f < SCH_STEP) {
-    schMsg = "That overlaps " + schName(c) + ". Pick a free time.";
+    G.schMsg = "That overlaps " + schName(c) + ". Pick a free time.";
     return false;
   }
   var id = "z" + schNewId();
   busySave(function (B) {
-    B.push({ id: id, lb: lb, f: f, t: t, dows: [schWd], from: T });
+    B.push({ id: id, lb: lb, f: f, t: t, dows: [G.schWd], from: T });
   });
-  schMsg = schWd === parse(T).getDay() ? "Applies from today." : "";
-  schSel = id;
-  schPick = null;
+  G.schMsg = G.schWd === parse(T).getDay() ? "Applies from today." : "";
+  G.schSel = id;
+  G.schPick = null;
   return true;
 }
-function busyDay(id, d) {
+export function busyDay(id, d) {
   var b = busyById(id);
   if (!b) return;
   var on = b.dows.indexOf(d) >= 0;
   if (on && b.dows.length === 1) {
-    schMsg = "It needs at least one day. Use Remove to delete it.";
+    G.schMsg = "It needs at least one day. Use Remove to delete it.";
     return;
   }
   if (!on) {
     var c = schClash(busyForWd(d), id, b.f, b.t);
     if (c) {
-      schMsg = "That clashes with " + c.lb + " on " + WDN[d] + ".";
+      G.schMsg = "That clashes with " + c.lb + " on " + WDN[d] + ".";
       return;
     }
   }
@@ -126,9 +137,9 @@ function busyDay(id, d) {
       else x.dows = x.dows.concat([d]);
     });
   });
-  schMsg = "";
+  G.schMsg = "";
 }
-function busyWeeks(id, n) {
+export function busyWeeks(id, n) {
   var T = todayKey();
   busySave(function (B) {
     B.forEach(function (x) {
@@ -138,12 +149,12 @@ function busyWeeks(id, n) {
     });
   });
 }
-function busyRemove(id) {
+export function busyRemove(id) {
   busySave(function (B) {
     return B.filter(function (x) {
       return x.id !== id;
     });
   });
-  schSel = null;
-  schMsg = "Removed.";
+  G.schSel = null;
+  G.schMsg = "Removed.";
 }

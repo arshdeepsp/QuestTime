@@ -1,5 +1,15 @@
 /* ---- grove sky: sun, moon, day/night ---- */
-function skyState(now) {
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { cfg, uiGet, uiSet } from "../core/config.js";
+import { buildGrove, gctx, gcv, groveBase, groveEl, groveGeo } from "./41-grove.js";
+import { closeQMenu } from "../quests/11-row-menu.js";
+import { rewardsOff } from "../rules/modes.js";
+import { spMin } from "../timer/43-sprint.js";
+
+export var idleT;
+
+export function skyState(now) {
   var h = window.__gHour != null ? window.__gHour : now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   var start = new Date(now.getFullYear(), 0, 0),
     doy = Math.floor((now - start) / 864e5),
@@ -64,7 +74,7 @@ function skyState(now) {
     mrise: mrise,
   };
 }
-function mixC(a, b, k) {
+export function mixC(a, b, k) {
   k = Math.max(0, Math.min(1, k));
   var pa = [parseInt(a.slice(1, 3), 16), parseInt(a.slice(3, 5), 16), parseInt(a.slice(5, 7), 16)],
     pb = [parseInt(b.slice(1, 3), 16), parseInt(b.slice(3, 5), 16), parseInt(b.slice(5, 7), 16)];
@@ -78,7 +88,7 @@ function mixC(a, b, k) {
     ")"
   );
 }
-function skyColors(alt) {
+export function skyColors(alt) {
   var DAY = ["#5DB3EC", "#BFE6FA"],
     GOLD = ["#3F6FB0", "#FFB070"],
     TWI = ["#1B2350", "#9A5A7A"],
@@ -95,7 +105,7 @@ function skyColors(alt) {
   var k3 = (alt + 0.45) / 0.25;
   return [mixC(NIGHT[0], TWI[0], k3), mixC(NIGHT[1], TWI[1], k3)];
 }
-function hhmm(x) {
+export function hhmm(x) {
   x = (x + 24) % 24;
   var hh = Math.floor(x),
     mm = Math.round((x - hh) * 60);
@@ -107,8 +117,8 @@ function hhmm(x) {
     h12 = hh % 12 || 12;
   return h12 + ":" + String(mm).padStart(2, "0") + " " + ap;
 }
-function groveFrame(t) {
-  if (!groveOpen) return;
+export function groveFrame(t) {
+  if (!G.groveOpen) return;
   var g = groveGeo,
     c = gctx,
     P = g.P,
@@ -214,21 +224,21 @@ function groveFrame(t) {
       sky.moonName +
       (sky.moonP != null ? " (up)" : "");
   if (!reduce)
-    groveRAF = setTimeout(function () {
+    G.groveRAF = setTimeout(function () {
       requestAnimationFrame(groveFrame);
     }, 66);
   else
-    groveRAF = setTimeout(function () {
+    G.groveRAF = setTimeout(function () {
       requestAnimationFrame(groveFrame);
     }, 30000);
 }
-function openGrove(idle) {
-  if (groveOpen) {
-    groveIdleMode = groveIdleMode && idle;
+export function openGrove(idle) {
+  if (G.groveOpen) {
+    G.groveIdleMode = G.groveIdleMode && idle;
     return;
   }
-  groveOpen = true;
-  groveIdleMode = !!idle;
+  G.groveOpen = true;
+  G.groveIdleMode = !!idle;
   closeQMenu && closeQMenu();
   groveEl.hidden = false;
   document.body.classList.add("grove-on");
@@ -237,51 +247,26 @@ function openGrove(idle) {
   requestAnimationFrame(groveFrame);
   if (!idle) document.getElementById("groveBack").focus();
 }
-function closeGrove() {
-  if (!groveOpen) return;
-  groveOpen = false;
-  clearTimeout(groveRAF);
+export function closeGrove() {
+  if (!G.groveOpen) return;
+  G.groveOpen = false;
+  clearTimeout(G.groveRAF);
   groveEl.hidden = true;
   document.body.classList.remove("grove-on");
   idleReset();
 }
-document.getElementById("groveBtn").addEventListener("click", function () {
-  openGrove(false);
-});
-document.getElementById("groveBack").addEventListener("click", closeGrove);
-function groveInfoSync() {
+export function groveInfoSync() {
   var tg = document.getElementById("groveInfoTg"),
     on = uiGet("groveInfo", true) !== false;
   groveEl.classList.toggle("info-off", !on);
   tg.textContent = on ? "Hide info" : "Show info";
   tg.setAttribute("aria-expanded", on);
 }
-groveInfoSync();
-document.getElementById("groveInfoTg").addEventListener("click", function (e) {
-  e.stopPropagation();
-  uiSet("groveInfo", !(uiGet("groveInfo", true) !== false));
-  groveInfoSync();
-});
-groveEl.addEventListener("click", function (e) {
-  if (
-    groveIdleMode &&
-    e.target !== document.getElementById("groveBack") &&
-    e.target !== document.getElementById("groveInfoTg")
-  )
-    closeGrove();
-});
-document.addEventListener("keydown", function (e) {
-  if (groveOpen && (e.key === "Escape" || groveIdleMode)) closeGrove();
-});
-window.addEventListener("resize", function () {
-  if (groveOpen) buildGrove();
-});
-var idleT = 0;
-function idleMins() {
+export function idleMins() {
   var v = cfg().idleGrove;
   return v == null ? 3 : +v;
 }
-function idleReset() {
+export function idleReset() {
   clearTimeout(idleT);
   var m = idleMins();
   if (!m) return;
@@ -293,7 +278,7 @@ function idleReset() {
     if (
       document.visibilityState === "visible" &&
       !anyModal &&
-      !groveOpen &&
+      !G.groveOpen &&
       !rewardsOff() &&
       !(S.sprint && !spMin) &&
       !document.querySelector("#quests input:focus,#tdNew:focus,.t3i:focus")
@@ -302,13 +287,42 @@ function idleReset() {
     else idleReset();
   }, m * 60000);
 }
-["pointerdown", "keydown", "scroll", "touchstart"].forEach(function (ev) {
-  window.addEventListener(
-    ev,
-    function () {
-      if (!groveOpen) idleReset();
-    },
-    { passive: true },
-  );
-});
-idleReset();
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  document.getElementById("groveBtn").addEventListener("click", function () {
+    openGrove(false);
+  });
+  document.getElementById("groveBack").addEventListener("click", closeGrove);
+  groveInfoSync();
+  document.getElementById("groveInfoTg").addEventListener("click", function (e) {
+    e.stopPropagation();
+    uiSet("groveInfo", !(uiGet("groveInfo", true) !== false));
+    groveInfoSync();
+  });
+  groveEl.addEventListener("click", function (e) {
+    if (
+      G.groveIdleMode &&
+      e.target !== document.getElementById("groveBack") &&
+      e.target !== document.getElementById("groveInfoTg")
+    )
+      closeGrove();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (G.groveOpen && (e.key === "Escape" || G.groveIdleMode)) closeGrove();
+  });
+  window.addEventListener("resize", function () {
+    if (G.groveOpen) buildGrove();
+  });
+  idleT = 0;
+  ["pointerdown", "keydown", "scroll", "touchstart"].forEach(function (ev) {
+    window.addEventListener(
+      ev,
+      function () {
+        if (!G.groveOpen) idleReset();
+      },
+      { passive: true },
+    );
+  });
+  idleReset();
+}

@@ -1,6 +1,9 @@
 /* ---- time-of-day sky for scenic themes ---- */
-var SKYT = ["mountains", "village", "city", "ocean"];
-function updateSky() {
+import { skyColors, skyState } from "../progress/42-grove-sky.js";
+
+export var SKYT;
+
+export function updateSky() {
   var fx = document.getElementById("fx");
   if (!fx) return;
   var sun = fx.querySelector(".sun"),
@@ -73,4 +76,9 @@ function updateSky() {
       : "drop-shadow(0 0 22px rgba(255,224,102,.55))";
   place(moon, sk.moonP != null && sk.illum > 0.05 ? sk.moonP : null, 64, horizon, top0 + 6);
   moon.style.opacity = alt > 0.1 ? ".55" : "1";
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  SKYT = ["mountains", "village", "city", "ocean"];
 }

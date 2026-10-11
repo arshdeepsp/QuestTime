@@ -1,12 +1,29 @@
 /* quest manager */
-var qmgr = document.getElementById("qmgr"),
-  qDraft = null,
-  mgrOpen = false;
-var mqOpenId = null,
-  mgrSheet = document.getElementById("mgrSheet");
-document.getElementById("mgrBody").appendChild(qmgr);
+import { G } from "../core/g.js";
+import { MAXM, S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, todayKey, wkOrder, wkSpan } from "../core/days.js";
+import { ro } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { clone, esc, fmtD, hm, hmL, num } from "../core/util.js";
+import { DN, reqText } from "./02-quest-list.js";
+import { WDN, capOf, overDays } from "./35b-daily-limit.js";
+import { renderRules } from "../rulebook/07b-rulebook.js";
+import { perOf, perWord } from "../rules/26-periods.js";
+import { easeNote, easedIds, guardEasing } from "../rules/easing.js";
+import { isPaused } from "../rules/modes.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { renderSettings } from "../settings/10-settings.js";
+import { subjList } from "../subjects/32-subjects.js";
+import { LV, qSubjs, qTopics, subjById, topicPick, wireTopicPick } from "../subjects/35-links.js";
+import { render } from "../ui/04-render.js";
+import { applyTheme } from "../ui/08-themes.js";
+import { setSync } from "../ui/feedback.js";
+
+export var qmgr, qDraft, mqOpenId, mgrSheet, mqMore, TN, LIB;
+
 /* One-line summary of a quest's folded options, for the More options button: what's set beyond name and goal. */
-function moreSum(q) {
+export function moreSum(q) {
   var p = [];
   if (q.startOn && q.startOn > todayKey()) p.push("starts " + fmtD(q.startOn));
   if (q.lim) p.push("up to " + hmL(q.lim) + "/day");
@@ -19,10 +36,9 @@ function moreSum(q) {
   if (q.note) p.push("note");
   return p.length ? p.join(" \u00b7 ") : "starts today, no limit, no topics";
 }
-var mqMore = {};
-function openMgr() {
+export function openMgr() {
   if (ro()) return;
-  mgrOpen = true;
+  G.mgrOpen = true;
   mqOpenId = null;
   mqMore = {};
   qDraft = clone(cfg().quests);
@@ -32,71 +48,15 @@ function openMgr() {
   document.body.classList.add("mgr-on");
   document.getElementById("mgrBody").scrollTop = 0;
 }
-function closeMgr() {
-  mgrOpen = false;
+export function closeMgr() {
+  G.mgrOpen = false;
   qmgr.hidden = true;
   mgrSheet.hidden = true;
   document.body.classList.remove("mgr-on");
   qDraft = null;
   render();
 }
-document.getElementById("mgrSaveTop").addEventListener("click", function () {
-  var b = qmgr.querySelector("[data-msave]");
-  if (b) b.click();
-});
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && !mgrSheet.hidden && document.getElementById("gModal").hidden) {
-    var b = qmgr.querySelector("[data-mcancel]");
-    if (b) b.click();
-    else closeMgr();
-  }
-});
-document.getElementById("mgrCancelTop").addEventListener("click", function () {
-  var b = qmgr.querySelector("[data-mcancel]");
-  if (b) b.click();
-  else closeMgr();
-});
-var TN = {
-  time: "Time",
-  target: "Target",
-  limit: "Limit",
-  check: "Check",
-  todo: "To-do",
-  weekly: "Weekly",
-  wake: "Clock time",
-  scale: "Rating",
-};
-var LIB = [
-  { label: "Wake up on time", type: "wake", from: "06:00", to: "07:30" },
-  { label: "In bed on time", type: "wake", from: "21:00", to: "23:00", note: "log it when you get into bed" },
-  { label: "Workout", type: "time", min: 30 },
-  { label: "Study", type: "time", min: 60 },
-  { label: "Read", type: "time", min: 20 },
-  { label: "Practice an instrument", type: "time", min: 30 },
-  { label: "Learn a language", type: "time", min: 15 },
-  { label: "Meditate", type: "time", min: 10 },
-  { label: "Deep work", type: "time", min: 90 },
-  { label: "Steps", type: "target", min: 8000, ul: "steps", step: 500 },
-  { label: "Drink water", type: "target", min: 8, ul: "glasses", step: 1 },
-  { label: "Vegetables", type: "target", min: 5, ul: "servings", step: 1 },
-  { label: "Pages read", type: "target", min: 20, ul: "pages", step: 5 },
-  { label: "Distance", type: "target", min: 5, ul: "km", step: 0.5 },
-  { label: "Journal", type: "check" },
-  { label: "Make the bed", type: "check" },
-  { label: "Tidy up", type: "check" },
-  { label: "Plan tomorrow", type: "check" },
-  { label: "No alcohol", type: "check" },
-  { label: "Call a friend or family", type: "check", opt: true },
-  { label: "Screen time", type: "limit", max: 120, unit: "min" },
-  { label: "Social media", type: "limit", max: 30, unit: "min" },
-  { label: "Caffeine", type: "limit", max: 2, ul: "cups" },
-  { label: "Snacks", type: "limit", max: 1, ul: "snacks" },
-  { label: "Spending", type: "limit", max: 20, ul: "$" },
-  { label: "Mood", type: "scale", scale: 5, min: 3, opt: true },
-  { label: "Energy", type: "scale", scale: 5, min: 3, opt: true },
-  { label: "Focus", type: "scale", scale: 10, min: 6 },
-];
-function drawMgr(msg) {
+export function drawMgr(msg) {
   var T = todayKey(),
     h =
       '<div class="mgrtop"><div class="edrow end">' +
@@ -637,7 +597,7 @@ function drawMgr(msg) {
     x.addEventListener("click", saveMgr);
   });
 }
-function saveMgr() {
+export function saveMgr() {
   var T = todayKey();
   var ovm = overDays(qDraft);
   if (ovm.length) {
@@ -689,10 +649,10 @@ function saveMgr() {
       S.days[T] = Object.assign({}, S.days[T], { q: activeDefs(T) });
       dirty[T] = true;
       cache();
-      clearTimeout(timer);
-      timer = setTimeout(flush, 300);
+      clearTimeout(G.timer);
+      G.timer = setTimeout(flush, 300);
     }
-    qSig = "";
+    G.qSig = "";
     closeMgr();
     setSync(
       g.eased
@@ -707,9 +667,76 @@ function saveMgr() {
     );
   }
 }
-document.getElementById("qEditBtn").addEventListener("click", function () {
-  mgrOpen ? closeMgr() : openMgr();
-});
-renderRules();
-applyTheme();
-renderSettings();
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  qmgr = document.getElementById("qmgr");
+  qDraft = null;
+  G.mgrOpen = false;
+  mqOpenId = null;
+  mgrSheet = document.getElementById("mgrSheet");
+  document.getElementById("mgrBody").appendChild(qmgr);
+  mqMore = {};
+  document.getElementById("mgrSaveTop").addEventListener("click", function () {
+    var b = qmgr.querySelector("[data-msave]");
+    if (b) b.click();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !mgrSheet.hidden && document.getElementById("gModal").hidden) {
+      var b = qmgr.querySelector("[data-mcancel]");
+      if (b) b.click();
+      else closeMgr();
+    }
+  });
+  document.getElementById("mgrCancelTop").addEventListener("click", function () {
+    var b = qmgr.querySelector("[data-mcancel]");
+    if (b) b.click();
+    else closeMgr();
+  });
+  TN = {
+    time: "Time",
+    target: "Target",
+    limit: "Limit",
+    check: "Check",
+    todo: "To-do",
+    weekly: "Weekly",
+    wake: "Clock time",
+    scale: "Rating",
+  };
+  LIB = [
+    { label: "Wake up on time", type: "wake", from: "06:00", to: "07:30" },
+    { label: "In bed on time", type: "wake", from: "21:00", to: "23:00", note: "log it when you get into bed" },
+    { label: "Workout", type: "time", min: 30 },
+    { label: "Study", type: "time", min: 60 },
+    { label: "Read", type: "time", min: 20 },
+    { label: "Practice an instrument", type: "time", min: 30 },
+    { label: "Learn a language", type: "time", min: 15 },
+    { label: "Meditate", type: "time", min: 10 },
+    { label: "Deep work", type: "time", min: 90 },
+    { label: "Steps", type: "target", min: 8000, ul: "steps", step: 500 },
+    { label: "Drink water", type: "target", min: 8, ul: "glasses", step: 1 },
+    { label: "Vegetables", type: "target", min: 5, ul: "servings", step: 1 },
+    { label: "Pages read", type: "target", min: 20, ul: "pages", step: 5 },
+    { label: "Distance", type: "target", min: 5, ul: "km", step: 0.5 },
+    { label: "Journal", type: "check" },
+    { label: "Make the bed", type: "check" },
+    { label: "Tidy up", type: "check" },
+    { label: "Plan tomorrow", type: "check" },
+    { label: "No alcohol", type: "check" },
+    { label: "Call a friend or family", type: "check", opt: true },
+    { label: "Screen time", type: "limit", max: 120, unit: "min" },
+    { label: "Social media", type: "limit", max: 30, unit: "min" },
+    { label: "Caffeine", type: "limit", max: 2, ul: "cups" },
+    { label: "Snacks", type: "limit", max: 1, ul: "snacks" },
+    { label: "Spending", type: "limit", max: 20, ul: "$" },
+    { label: "Mood", type: "scale", scale: 5, min: 3, opt: true },
+    { label: "Energy", type: "scale", scale: 5, min: 3, opt: true },
+    { label: "Focus", type: "scale", scale: 10, min: 6 },
+  ];
+  document.getElementById("qEditBtn").addEventListener("click", function () {
+    G.mgrOpen ? closeMgr() : openMgr();
+  });
+  renderRules();
+  applyTheme();
+  renderSettings();
+}

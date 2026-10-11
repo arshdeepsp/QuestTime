@@ -1,5 +1,12 @@
 /* ---- which quests are on a day, and which are required ---- */
-function slim(q) {
+import { LEGACY, S } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { dayMidMin, nowMinInDay, parse, todayKey } from "../core/days.js";
+import { hasEntry } from "./day-rules.js";
+import { ignoredOn, isPaused, isVac } from "./modes.js";
+import { dlMin } from "../tools/deadline-breakdown.js";
+
+export function slim(q) {
   var o = { id: q.id, type: q.type, label: q.label };
   [
     "min",
@@ -31,10 +38,10 @@ function slim(q) {
   });
   return o;
 }
-function scheduled(q, k) {
+export function scheduled(q, k) {
   return !q.days || !q.days.length || q.days.indexOf(parse(k).getDay()) >= 0;
 }
-function activeDefs(k) {
+export function activeDefs(k) {
   var vc = isVac(k),
     c0 = cfg(),
     LD = c0.lockDay && c0.lockDay.date === k ? c0.lockDay.defs : null,
@@ -78,12 +85,12 @@ function activeDefs(k) {
       return o;
     });
 }
-function stampAdded(q) {
+export function stampAdded(q) {
   q.addedOn = todayKey();
   q.addedMin = nowMinInDay();
   return q;
 }
-function lateStart(q, k) {
+export function lateStart(q, k) {
   if (!q.addedOn || q.type === "todo" || q.type === "weekly") return false;
   if (q.startOn) return false;
   if (q.type === "time" && q.roll) return false;
@@ -91,16 +98,16 @@ function lateStart(q, k) {
 }
 /* Required each day: not optional, not X-times-a-week, not a to-do, and not a period total (q.roll): totals are judged
      once, at the end of their period (see periodCheck in compute). */
-function reqOf(d) {
+export function reqOf(d) {
   return d.filter(function (q) {
     return !q.opt && q.type !== "weekly" && q.type !== "todo" && !(q.type === "time" && q.roll);
   });
 }
-function reqDefsFor(k) {
+export function reqDefsFor(k) {
   if (isVac(k)) return [];
   var e = S.days[k];
   return reqOf(e && e.q ? e.q : hasEntry(e) ? LEGACY : activeDefs(k));
 }
-function defsOf(e) {
+export function defsOf(e) {
   return (e && e.q) || (hasEntry(e) ? LEGACY : activeDefs(todayKey()));
 }

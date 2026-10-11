@@ -1,12 +1,38 @@
 /* ---- focus timer ---- */
-function fmtT(ms) {
+import { G } from "../core/g.js";
+import { MAXM, S, dirty } from "../core/00-state.js";
+import { cfg, uiGet } from "../core/config.js";
+import { add, atMin, dayEnd, todayKey } from "../core/days.js";
+import { locked, ro } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { fmtD, hm, hmL } from "../core/util.js";
+import { notifSync } from "../notifications/35d-plan.js";
+import { callCheck } from "../notifications/52-taps.js";
+import { qEls, qWrap } from "../quests/02-quest-list.js";
+import { runBox } from "../quests/47-phone-rows.js";
+import { cfgQ } from "../rules/26-periods.js";
+import { limOf, planOf } from "../rules/day-rules.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { schLen } from "../schedule/model.js";
+import { addTopicTime, timerTopicStart, topicSplit } from "../subjects/33-topics.js";
+import { focusSync } from "./44b-live-notification.js";
+import { addSession, heat } from "./sessions.js";
+import { sfx } from "../ui/01-sound.js";
+import { render } from "../ui/04-render.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { applyHide } from "../ui/48-declutter.js";
+import { setSync, showToast } from "../ui/feedback.js";
+
+export var ROLL_GRACE;
+
+export function fmtT(ms) {
   var s = Math.floor(ms / 1000),
     m = Math.floor(s / 60);
   return (
     (m >= 60 ? Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") : m) + ":" + String(s % 60).padStart(2, "0")
   );
 }
-function toggleTimer(q) {
+export function toggleTimer(q) {
   if (locked()) return;
   var now = Date.now(),
     T = todayKey();
@@ -51,12 +77,12 @@ function toggleTimer(q) {
       planHit: lg >= planOf(q, e0),
       first: first || null,
       quick: quick,
-      autoFocus: !focusView,
+      autoFocus: !G.focusView,
     };
     timerTopicStart(q);
     callCheck();
-    if (!focusView) {
-      focusView = true;
+    if (!G.focusView) {
+      G.focusView = true;
       applyHide();
     }
     cache();
@@ -68,7 +94,7 @@ function toggleTimer(q) {
   startNow("");
 }
 /* stopTimer(end): end defaults to now; timerCap passes the moment the daily limit was reached so nothing past it is logged. */
-function stopTimer(end) {
+export function stopTimer(end) {
   rollTimer();
   var t = S.timer;
   if (!t) return;
@@ -79,7 +105,7 @@ function stopTimer(end) {
     focusSync(true);
   }, 0);
   if (t.autoFocus) {
-    focusView = !!uiGet("focus");
+    G.focusView = !!uiGet("focus");
     applyHide();
   }
   var at = end || Date.now(),
@@ -105,7 +131,7 @@ function stopTimer(end) {
   render();
 }
 /* Log a running timer's minutes from t.start to end onto day k: session, topic time and the quest's minutes. */
-function logTimer(t, k, end) {
+export function logTimer(t, k, end) {
   var m = Math.round((end - t.start) / 60000);
   if (m < 1) return false;
   var e0 = S.days[k] || {},
@@ -130,16 +156,11 @@ function logTimer(t, k, end) {
   S.days[k] = e;
   dirty[k] = true;
   cache();
-  clearTimeout(timer);
-  timer = setTimeout(flush, 300);
+  clearTimeout(G.timer);
+  G.timer = setTimeout(flush, 300);
   return true;
 }
-/* A timer still running when its day locks keeps counting for the day it started for ROLL_GRACE minutes, so a session
-     that runs a little past midnight/bedtime is logged whole on that day. Past the grace it's treated as left running:
-     the minutes up to the lock go to that day and the rest start fresh on today (from today's start, so a timer forgotten
-     for days doesn't pile the gap onto today). */
-var ROLL_GRACE = 60;
-function rollTimer() {
+export function rollTimer() {
   var t = S.timer,
     T = todayKey();
   if (!t || !t.day || t.day >= T) return;
@@ -164,11 +185,11 @@ function rollTimer() {
 }
 /* The first goal a running timer celebrates: a daily quest's minimum, or a period total's daily share (its own min field
      is only a leftover default and means nothing for totals). */
-function timerMin(q) {
+export function timerMin(q) {
   return q.roll ? schLen(q) : q.min;
 }
 /* Daily limit: once today's logged minutes plus the running timer reach q.lim, stop the timer at that exact moment and log it (sound "stop"). Returns true if it did. Also run from the Time's up notification (1004). */
-function timerCap() {
+export function timerCap() {
   var t = S.timer,
     T = todayKey();
   if (!t) return false;
@@ -193,7 +214,7 @@ function timerCap() {
   } catch (x) {}
   return true;
 }
-function timerGoals() {
+export function timerGoals() {
   var t = S.timer;
   if (!t) return;
   if (timerCap()) return;
@@ -239,7 +260,7 @@ function timerGoals() {
     el.tmr.classList.toggle("gold", !!t.planHit && pl > q.min && tot >= pl);
   }
 }
-function timerTick() {
+export function timerTick() {
   var tmOn = !!(S.timer && qEls[S.timer.id] && !ro());
   qWrap.classList.toggle("timing", tmOn);
   document.getElementById("gui").classList.toggle("timing", tmOn);
@@ -254,11 +275,7 @@ function timerTick() {
     el.tmr.setAttribute("aria-label", (on ? "Stop" : "Start") + " focus timer");
   });
 }
-setInterval(function () {
-  if (S.timer) timerTick();
-  renderHeat();
-}, 1000);
-function renderHeat() {
+export function renderHeat() {
   var el = document.getElementById("heatBar");
   if (!el) return;
   var h = heat(),
@@ -267,4 +284,17 @@ function renderHeat() {
   el.querySelector("i").style.width = pc + "%";
   el.className = "heat " + (h >= 120 ? "h3" : h >= 60 ? "h2" : h >= 20 ? "h1" : "h0");
   document.getElementById("heatLab").textContent = "Momentum: " + lab;
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  /* A timer still running when its day locks keeps counting for the day it started for ROLL_GRACE minutes, so a session
+     that runs a little past midnight/bedtime is logged whole on that day. Past the grace it's treated as left running:
+     the minutes up to the lock go to that day and the rest start fresh on today (from today's start, so a timer forgotten
+     for days doesn't pile the gap onto today). */
+  ROLL_GRACE = 60;
+  setInterval(function () {
+    if (S.timer) timerTick();
+    renderHeat();
+  }, 1000);
 }

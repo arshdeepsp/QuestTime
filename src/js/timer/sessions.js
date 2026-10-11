@@ -1,5 +1,9 @@
 /* ---- timed sessions and the focus heat map ---- */
-function addSession(T, id, start, end) {
+import { S, dirty } from "../core/00-state.js";
+import { todayKey } from "../core/days.js";
+import { cache } from "../core/storage.js";
+
+export function addSession(T, id, start, end) {
   var e = Object.assign({}, S.days[T] || {}),
     ss = (e.sess || []).slice(),
     m = Math.round((end - start) / 60000);
@@ -14,7 +18,7 @@ function addSession(T, id, start, end) {
   dirty[T] = true;
   cache();
 }
-function heat() {
+export function heat() {
   var T = todayKey(),
     now = Date.now(),
     h = 0,

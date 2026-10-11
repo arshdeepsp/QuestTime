@@ -1,5 +1,24 @@
 /* ---- spark tools ---- */
-function pickPool() {
+import { S } from "../core/00-state.js";
+import { todayKey } from "../core/days.js";
+import { commit, entry, locked } from "../core/entries.js";
+import { cache } from "../core/storage.js";
+import { esc, hm } from "../core/util.js";
+import { reqText } from "../quests/02-quest-list.js";
+import { toggleTodo } from "../quests/14-todos.js";
+import { runBox } from "../quests/47-phone-rows.js";
+import { metQ } from "../rules/day-rules.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { allTopics, topicStats } from "../subjects/33-topics.js";
+import { qSubjs, qTopicPool, topicById } from "../subjects/35-links.js";
+import { toggleTimer } from "../timer/13-focus-timer.js";
+import { spFmt } from "../timer/43-sprint.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { setSync } from "../ui/feedback.js";
+
+export var lastPick, batchT;
+
+export function pickPool() {
   var T = todayKey(),
     e = S.days[T] || {},
     out = [];
@@ -11,7 +30,7 @@ function pickPool() {
   });
   return out;
 }
-function behindTime() {
+export function behindTime() {
   var T = todayKey(),
     e = S.days[T] || {},
     L = activeDefs(T).filter(function (q) {
@@ -23,7 +42,7 @@ function behindTime() {
   });
   return open[0] || L[0];
 }
-function allTimeDone() {
+export function allTimeDone() {
   var T = todayKey(),
     e = S.days[T] || {},
     L = activeDefs(T).filter(function (q) {
@@ -36,7 +55,7 @@ function allTimeDone() {
     })
   );
 }
-function openBonus5(after) {
+export function openBonus5(after) {
   var T = todayKey(),
     e = S.days[T] || {},
     L = activeDefs(T).filter(function (q) {
@@ -69,7 +88,7 @@ function openBonus5(after) {
     });
   });
 }
-function start5(q, after) {
+export function start5(q, after) {
   if (locked()) return;
   if (!q && allTimeDone()) {
     openBonus5(after);
@@ -102,7 +121,7 @@ function start5(q, after) {
   }
   go("");
 }
-function markDone(q) {
+export function markDone(q) {
   var T = todayKey();
   if (q.type === "todo") {
     toggleTodo(q);
@@ -112,8 +131,7 @@ function markDone(q) {
   e[q.id] = true;
   commit();
 }
-var lastPick = null;
-function openPick() {
+export function openPick() {
   if (locked()) return;
   openG("Pick for me", function (b) {
     function roll() {
@@ -212,8 +230,7 @@ function openPick() {
     roll();
   });
 }
-var batchT = 0;
-function openBatch() {
+export function openBatch() {
   if (locked()) return;
   var T = todayKey(),
     start = Date.now(),
@@ -291,4 +308,10 @@ function openBatch() {
         );
     },
   );
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  lastPick = null;
+  batchT = 0;
 }

@@ -79,5 +79,6 @@ test("Time's up is scheduled on its own channel at the limit; tapping it stops a
   await page.evaluate(() => window.__tap({ notification: { id: 1004, extra: { q: "rd" } } }));
   await expect(page.locator("#quests .q.running")).toHaveCount(0);
   await expect(page.locator("#toast .t1")).toHaveText("Time’s up");
+  await expect(page.locator("#sync")).toHaveText("Daily limit reached for Reading. Timer stopped and logged.");
   expect((await store(page)).days["2026-11-02"].rd).toBe(60);
 });

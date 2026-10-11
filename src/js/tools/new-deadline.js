@@ -1,5 +1,16 @@
 /* 5a. new deadline */
-function openDeadlineModal() {
+import { G } from "../core/g.js";
+import { S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { cache } from "../core/storage.js";
+import { clone, num } from "../core/util.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { render } from "../ui/04-render.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { setSync } from "../ui/feedback.js";
+
+export function openDeadlineModal() {
   openG("New deadline", function (b) {
     b.innerHTML =
       '<div class="ed"><label>Name<input id="ndT" maxlength="40" placeholder="Thesis draft due"></label><label>Date<input type="date" id="ndD"></label><p class="sh2">Break it down (optional)</p><div class="edrow"><label>Total amount<input type="number" id="ndAmt" min="0" step="any" placeholder="10"></label><label>Unit<input id="ndUnit" maxlength="16" placeholder="pages"></label></div><p class="help">Adds a daily target quest that spreads what\u2019s left evenly over the days remaining, and adjusts as you go.</p><p class="cmsg2" id="ndMsg"></p><div class="edrow end"><button type="button" class="stone" id="ndNo">Cancel</button><button type="button" class="stone save" id="ndGo">Add deadline</button></div></div>';
@@ -37,7 +48,7 @@ function openDeadlineModal() {
         dirty[T2] = true;
         cache();
       }
-      qSig = "";
+      G.qSig = "";
       closeG();
       render();
       setSync(amt > 0 ? "Deadline added with a daily target" : "Deadline added");

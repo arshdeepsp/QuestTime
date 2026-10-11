@@ -1,11 +1,18 @@
 /* ---- today's entry: read with entry(), save with commit() ---- */
-function ro() {
-  return !!viewKey && viewKey !== todayKey();
+import { G } from "./g.js";
+import { S, dirty } from "./00-state.js";
+import { dayKey, todayKey } from "./days.js";
+import { cache, flush } from "./storage.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { render } from "../ui/04-render.js";
+
+export function ro() {
+  return !!G.viewKey && G.viewKey !== todayKey();
 }
-function locked() {
+export function locked() {
   return ro();
 }
-function entry() {
+export function entry() {
   if (locked()) return Object.assign({}, S.days[dayKey()] || {});
   var k = dayKey();
   if (!S.days[k]) S.days[k] = {};
@@ -13,7 +20,7 @@ function entry() {
   S.days[k].q = activeDefs(k);
   return S.days[k];
 }
-function commit() {
+export function commit() {
   if (locked()) {
     render();
     return;
@@ -22,6 +29,6 @@ function commit() {
   dirty[k] = true;
   cache();
   render(true);
-  clearTimeout(timer);
-  timer = setTimeout(flush, 700);
+  clearTimeout(G.timer);
+  G.timer = setTimeout(flush, 700);
 }

@@ -1,5 +1,7 @@
 /* ---- migrate(): upgrades stored data to the current SCHEMA, one step per version ---- */
-function migrate(c) {
+import { key, lockHour, parse } from "./days.js";
+
+export function migrate(c) {
   c = c || {};
   var v = c.schema || 2;
   if (v < 3) {

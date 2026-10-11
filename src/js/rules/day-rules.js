@@ -1,12 +1,18 @@
 /* ---- whether a quest is met, a limit broken, a day cleared or gold ---- */
-function projSum(id, upto) {
+import { S } from "../core/00-state.js";
+import { mins } from "../core/days.js";
+import { num } from "../core/util.js";
+import { timeMet } from "./26-periods.js";
+import { defsOf, reqOf } from "./quests-on-day.js";
+
+export function projSum(id, upto) {
   var t = 0;
   Object.keys(S.days).forEach(function (k) {
     if (!upto || k <= upto) t += +(S.days[k] || {})[id] || 0;
   });
   return num(t);
 }
-function hasEntry(e) {
+export function hasEntry(e) {
   return (
     !!e &&
     Object.keys(e).some(function (f) {
@@ -26,7 +32,7 @@ function hasEntry(e) {
     })
   );
 }
-function metQ(q, e) {
+export function metQ(q, e) {
   e = e || {};
   var v = e[q.id];
   if (q.type === "wake") {
@@ -42,16 +48,16 @@ function metQ(q, e) {
   return false;
 }
 /* Daily limit for a time quest (q.lim, minutes): past it the timer stops and logs, and nothing more is tracked that day. 0 = none. */
-function limOf(q) {
+export function limOf(q) {
   return q && q.type === "time" && q.lim > 0 ? q.lim : 0;
 }
-function overQ(q, e) {
+export function overQ(q, e) {
   return q.type === "limit" && ((e || {})[q.id] | 0) > q.max;
 }
-function planOf(q, e) {
+export function planOf(q, e) {
   return Math.max(q.min, (e || {})["plan_" + q.id] || q.min);
 }
-function ok(e) {
+export function ok(e) {
   if (!hasEntry(e)) return false;
   var dq = reqOf(defsOf(e));
   return (
@@ -61,7 +67,7 @@ function ok(e) {
     })
   );
 }
-function limBroken(e) {
+export function limBroken(e) {
   return (
     !!e &&
     reqOf(defsOf(e)).some(function (q) {
@@ -69,7 +75,7 @@ function limBroken(e) {
     })
   );
 }
-function gold(e) {
+export function gold(e) {
   return (
     ok(e) &&
     reqOf(defsOf(e)).every(function (q) {
@@ -77,7 +83,7 @@ function gold(e) {
     })
   );
 }
-function bases(e) {
+export function bases(e) {
   e = e || {};
   return reqOf(defsOf(e)).filter(function (q) {
     return metQ(q, e);

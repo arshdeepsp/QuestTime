@@ -1,5 +1,16 @@
 /* ---- park-it inbox ---- */
-function parkAdd(t) {
+import { G } from "../core/g.js";
+import { S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { cache } from "../core/storage.js";
+import { clone, esc } from "../core/util.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { render } from "../ui/04-render.js";
+import { setSync } from "../ui/feedback.js";
+
+export function parkAdd(t) {
   t = (t || "").trim();
   if (!t) return false;
   var c = clone(cfg());
@@ -9,7 +20,7 @@ function parkAdd(t) {
   renderPark();
   return true;
 }
-function renderPark() {
+export function renderPark() {
   var el = document.getElementById("parkBox");
   if (!el) return;
   var L = cfg().park || [];
@@ -62,7 +73,7 @@ function renderPark() {
         dirty[T] = true;
         cache();
       }
-      qSig = "";
+      G.qSig = "";
       render();
       setSync("Moved to to-dos");
     });

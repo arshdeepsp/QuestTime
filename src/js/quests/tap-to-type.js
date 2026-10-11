@@ -1,5 +1,13 @@
 /* ---- tap a number to type it ---- */
-function parseMins(s) {
+import { MAXM, S } from "../core/00-state.js";
+import { todayKey } from "../core/days.js";
+import { commit, entry } from "../core/entries.js";
+import { esc, hm, num } from "../core/util.js";
+import { limOf, planOf } from "../rules/day-rules.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { haptic } from "../ui/45-gestures.js";
+
+export function parseMins(s) {
   s = String(s || "")
     .trim()
     .toLowerCase()
@@ -11,7 +19,7 @@ function parseMins(s) {
   if ((m = s.match(/^(\d+)m?$/))) return +m[1];
   return null;
 }
-function openNum(q, isPlan) {
+export function openNum(q, isPlan) {
   var tq = q.type === "time" || (q.type === "limit" && q.unit === "min"),
     e0 = S.days[todayKey()] || {},
     key = isPlan ? "plan_" + q.id : q.id,

@@ -1,5 +1,11 @@
 /* ---- XP, levels and weekly counts ---- */
-function dayXP(e) {
+import { CALL_CAP, CALL_XP, S, START_KEY } from "../core/00-state.js";
+import { add, todayKey, weekStart } from "../core/days.js";
+import { completionXP } from "../quests/35c-finish-lines.js";
+import { gold, hasEntry, metQ, ok, planOf } from "./day-rules.js";
+import { defsOf } from "./quests-on-day.js";
+
+export function dayXP(e) {
   if (!e) return 0;
   var x = 0;
   defsOf(e).forEach(function (q) {
@@ -20,7 +26,7 @@ function dayXP(e) {
   if (gold(e)) x += 100;
   return Math.max(0, x);
 }
-function weekCount(id, k, upto) {
+export function weekCount(id, k, upto) {
   var s0 = weekStart(k),
     n = 0;
   for (var i = 0; i < 7; i++) {
@@ -30,7 +36,7 @@ function weekCount(id, k, upto) {
   }
   return n;
 }
-function totalXP(upto) {
+export function totalXP(upto) {
   var t = upto || todayKey(),
     x = completionXP(t);
   Object.keys(S.days).forEach(function (k) {
@@ -45,16 +51,16 @@ function totalXP(upto) {
   });
   return x;
 }
-function weekCountOn(id, k) {
+export function weekCountOn(id, k) {
   var n = 0;
   for (var d = weekStart(k); d <= k; d = add(d, 1)) if ((S.days[d] || {})[id] === true) n++;
   return n;
 }
 /* XP spent on streak repairs comes off the level, never off the day totals. */
-function xpNet(upto) {
+export function xpNet(upto) {
   return Math.max(0, totalXP(upto) - ((S.cfg && S.cfg.xpSpent) | 0));
 }
-function level(x) {
+export function level(x) {
   var l = 1,
     need = 300;
   while (x >= need) {

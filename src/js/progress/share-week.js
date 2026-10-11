@@ -1,5 +1,16 @@
 /* ---- share week ---- */
-function shareWeek(btn) {
+import { G } from "../core/g.js";
+import { RANKS, S, START_KEY } from "../core/00-state.js";
+import { add, todayKey } from "../core/days.js";
+import { fmtD, hm } from "../core/util.js";
+import { compute } from "../rules/compute.js";
+import { gold, hasEntry } from "../rules/day-rules.js";
+import { rewardsOff } from "../rules/modes.js";
+import { defsOf } from "../rules/quests-on-day.js";
+import { lastSt } from "../ui/04-render.js";
+import { setSync } from "../ui/feedback.js";
+
+export function shareWeek(btn) {
   var T = todayKey(),
     from = add(T, -6),
     days = [],
@@ -170,8 +181,8 @@ function shareWeek(btn) {
         return;
       }
     } catch (x) {}
-    if (dl) {
-      dl.save({ filename: name, data: blob }).then(
+    if (G.dl) {
+      G.dl.save({ filename: name, data: blob }).then(
         function () {
           setSync("Week card saved");
         },

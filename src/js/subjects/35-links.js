@@ -1,17 +1,26 @@
 /* ---- quest <-> subject links: the topics and subjects a quest feeds ---- */
-var LV = ["", "Novice", "Beginner", "Intermediate", "Advanced", "Expert"];
-function subjById(id) {
+import { S } from "../core/00-state.js";
+import { esc } from "../core/util.js";
+import { defsOf } from "../rules/quests-on-day.js";
+import { sjFold, subjList } from "./32-subjects.js";
+import { topicStats } from "./33-topics.js";
+import { go } from "../ui/44-navigation.js";
+import { popMenu } from "../ui/menus.js";
+
+export var LV;
+
+export function subjById(id) {
   return subjList().filter(function (s) {
     return s.id === id;
   })[0];
 }
-function qSubjs(q) {
+export function qSubjs(q) {
   var L = q && q.subjs && q.subjs.length ? q.subjs.slice() : q && q.subj ? [q.subj] : [];
   return L.filter(function (id) {
     return subjById(id);
   });
 }
-function setSubjs(q, L) {
+export function setSubjs(q, L) {
   L = (L || []).filter(function (x, i, a) {
     return x && a.indexOf(x) === i;
   });
@@ -25,7 +34,7 @@ function setSubjs(q, L) {
     if (q.fin && q.fin.t !== "total") delete q.fin;
   }
 }
-function topicById(tid) {
+export function topicById(tid) {
   var r = null;
   subjList().some(function (s) {
     return (s.topics || []).some(function (t) {
@@ -38,12 +47,12 @@ function topicById(tid) {
   });
   return r;
 }
-function qTopics(q) {
+export function qTopics(q) {
   return ((q && q.topics) || []).filter(function (t, i, a) {
     return topicById(t) && a.indexOf(t) === i;
   });
 }
-function qTopicPool(q) {
+export function qTopicPool(q) {
   var L = qTopics(q),
     out = L.slice();
   qSubjs(q).forEach(function (sid) {
@@ -59,7 +68,7 @@ function qTopicPool(q) {
   });
   return out;
 }
-function setLinks(q, L, SL) {
+export function setLinks(q, L, SL) {
   L = L.filter(function (x, i, a) {
     return a.indexOf(x) === i;
   });
@@ -68,7 +77,7 @@ function setLinks(q, L, SL) {
   setSubjs(q, SL);
   if (q.fin && q.fin.t === "topic" && !qTopics(q).length) delete q.fin;
 }
-function linkTopic(q, tid) {
+export function linkTopic(q, tid) {
   var o = topicById(tid);
   if (!o) return;
   var L = qTopics(q),
@@ -87,7 +96,7 @@ function linkTopic(q, tid) {
     });
   setLinks(q, L, SL);
 }
-function subjFull(q, sid) {
+export function subjFull(q, sid) {
   var sj = subjById(sid),
     T = (sj && sj.topics) || [],
     L = qTopics(q);
@@ -97,7 +106,7 @@ function subjFull(q, sid) {
       })
     : qSubjs(q).indexOf(sid) >= 0;
 }
-function linkSubj(q, sid) {
+export function linkSubj(q, sid) {
   var sj = subjById(sid);
   if (!sj) return;
   var L = qTopics(q),
@@ -118,7 +127,7 @@ function linkSubj(q, sid) {
   }
   setLinks(q, L, SL);
 }
-function topicPick(attr, q) {
+export function topicPick(attr, q) {
   var SJ = subjList();
   if (!SJ.length) return "";
   var L = qTopics(q),
@@ -178,7 +187,7 @@ function topicPick(attr, q) {
     "</div>"
   );
 }
-function wireTopicPick(root, getQ, redraw) {
+export function wireTopicPick(root, getQ, redraw) {
   root.querySelectorAll("[data-ltp]").forEach(function (x) {
     x.addEventListener("click", function () {
       linkTopic(getQ(x), x.getAttribute("data-ltp"));
@@ -193,7 +202,7 @@ function wireTopicPick(root, getQ, redraw) {
   });
 }
 /* Floating list of what a quest feeds (the "…" box on its row): each topic with its level, or the subject itself when it has no topics; tapping one opens that subject. */
-function openSubjPick(q, btn) {
+export function openSubjPick(q, btn) {
   var pool = qTopicPool(q),
     items = [];
   pool.forEach(function (tid) {
@@ -232,7 +241,7 @@ function openSubjPick(q, btn) {
   if (btn) popMenu(btn, items);
   else items[0][1]();
 }
-function jumpSubj(id) {
+export function jumpSubj(id) {
   go("subjects");
   setTimeout(function () {
     var c = document.querySelector('.sjsec[data-sid="' + id + '"]');
@@ -246,7 +255,7 @@ function jumpSubj(id) {
     }
   }, 50);
 }
-function subjMinutes(sid) {
+export function subjMinutes(sid) {
   var t = 0;
   Object.keys(S.days).forEach(function (d) {
     var e = S.days[d];
@@ -256,4 +265,9 @@ function subjMinutes(sid) {
     });
   });
   return t;
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  LV = ["", "Novice", "Beginner", "Intermediate", "Advanced", "Expert"];
 }

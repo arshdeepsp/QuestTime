@@ -1,7 +1,39 @@
 /* ---- mobile quest list: compact rows, details sheet, run view ---- */
-var COLQ = { time: 1, target: 1, limit: 1, wake: 1, scale: 1 };
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { cfg, uiGet, uiSet } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { locked, ro } from "../core/entries.js";
+import { esc, fmtD, hm, num } from "../core/util.js";
+import { qEls, qWrap, reqText } from "./02-quest-list.js";
+import { openMgr } from "./38-quest-editor.js";
+import {
+  perEnd,
+  perOf,
+  perStart,
+  perWord,
+  perWorkDays,
+  rollNeed,
+  rollSum,
+  weekFrom,
+  weekTarget,
+  workDaysIn,
+} from "../rules/26-periods.js";
+import { metQ, projSum } from "../rules/day-rules.js";
+import { rewardsOff } from "../rules/modes.js";
+import { qConsist, qStreak, qStreakable } from "../rules/quest-streaks.js";
+import { activeDefs, defsOf, lateStart, reqOf, scheduled } from "../rules/quests-on-day.js";
+import { switchTopic, topicName } from "../subjects/33-topics.js";
+import { LV, qSubjs, qTopicPool, qTopics, subjById, topicById } from "../subjects/35-links.js";
+import { fmtT, toggleTimer } from "../timer/13-focus-timer.js";
+import { allTimeDone } from "../tools/28-spark-tools.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { haptic } from "../ui/45-gestures.js";
+
+export var COLQ, qOpen;
+
 /* Phone row summary (HTML). A total shows what to do today from the pace figure (rollNeed) as a value over a caption: "1h 29m / to go today", "\u2714 / on pace" or "+40m / ahead of pace"; the period total lives in Details. Off days and tracking-only mode show "10h / of 15h this week". */
-function qSummary(q, e) {
+export function qSummary(q, e) {
   var v = e[q.id];
   if (q.type === "time") {
     var d = +v || 0;
@@ -27,7 +59,7 @@ function qSummary(q, e) {
   if (q.type === "scale") return v ? v + " / " + (q.scale || 5) : "\u2014";
   return "";
 }
-function openDetails(q) {
+export function openDetails(q) {
   var T = todayKey(),
     e = S.days[T] || {},
     cq =
@@ -145,12 +177,7 @@ function openDetails(q) {
     });
   });
 }
-/* Rows opened from their summary box stay open when the list is rebuilt (a quest changed here, a sync from another device). */
-var qOpen = {};
-var offOpen = !!uiGet("off"),
-  ignOpen = !!uiGet("ign"),
-  doneOpen = !!uiGet("done");
-function mobileList(defs, e, past) {
+export function mobileList(defs, e, past) {
   var s5 = document.getElementById("sp5Btn");
   if (s5) {
     var done5 = allTimeDone();
@@ -169,8 +196,8 @@ function mobileList(defs, e, past) {
     sep.id = "doneSep";
     sep.className = "donesep";
     sep.addEventListener("click", function () {
-      doneOpen = !doneOpen;
-      uiSet("done", doneOpen);
+      G.doneOpen = !G.doneOpen;
+      uiSet("done", G.doneOpen);
       mobileList(defs, S.days[todayKey()] || {}, ro());
     });
   }
@@ -182,8 +209,8 @@ function mobileList(defs, e, past) {
     osep.id = "offSep";
     osep.className = "donesep offsep";
     osep.addEventListener("click", function () {
-      offOpen = !offOpen;
-      uiSet("off", offOpen);
+      G.offOpen = !G.offOpen;
+      uiSet("off", G.offOpen);
       mobileList(defs, S.days[todayKey()] || {}, ro());
     });
   }
@@ -195,8 +222,8 @@ function mobileList(defs, e, past) {
     isep.id = "ignSep";
     isep.className = "donesep ignsep";
     isep.addEventListener("click", function () {
-      ignOpen = !ignOpen;
-      uiSet("ign", ignOpen);
+      G.ignOpen = !G.ignOpen;
+      uiSet("ign", G.ignOpen);
       mobileList(defs, S.days[todayKey()] || {}, ro());
     });
   }
@@ -308,16 +335,16 @@ function mobileList(defs, e, past) {
     : "";
   isep.hidden = !nIgn;
   isep.innerHTML = "<span>Ignored (" + nIgn + ')</span><i class="chev"></i>';
-  isep.setAttribute("aria-expanded", ignOpen);
-  qWrap.classList.toggle("ign-open", ignOpen);
+  isep.setAttribute("aria-expanded", G.ignOpen);
+  qWrap.classList.toggle("ign-open", G.ignOpen);
   osep.hidden = !nOff;
   osep.innerHTML = "<span>Off today (" + nOff + ') \u00b7 time still counts</span><i class="chev"></i>';
-  osep.setAttribute("aria-expanded", offOpen);
-  qWrap.classList.toggle("off-open", offOpen);
+  osep.setAttribute("aria-expanded", G.offOpen);
+  qWrap.classList.toggle("off-open", G.offOpen);
   sep.hidden = !nDone;
   sep.innerHTML = "<span>Done today (" + nDone + ')</span><i class="chev"></i>';
-  sep.setAttribute("aria-expanded", doneOpen);
-  qWrap.classList.toggle("done-open", doneOpen);
+  sep.setAttribute("aria-expanded", G.doneOpen);
+  qWrap.classList.toggle("done-open", G.doneOpen);
   var dc = document.getElementById("qCount"),
     rq = reqOf(defs).filter(function (q) {
       return q.type !== "limit";
@@ -340,8 +367,8 @@ function mobileList(defs, e, past) {
     }
   }
 }
-function openCountInfo() {
-  var T = viewKey || todayKey(),
+export function openCountInfo() {
+  var T = G.viewKey || todayKey(),
     e = S.days[T] || {},
     defs = defsOf(e).length ? defsOf(e) : activeDefs(T),
     rq = reqOf(defs).filter(function (q) {
@@ -392,7 +419,7 @@ function openCountInfo() {
     b.querySelector("#ciOk").addEventListener("click", closeG);
   });
 }
-function runBox(id) {
+export function runBox(id) {
   var el = qEls[id];
   if (!el) return;
   var row = el.row,
@@ -473,4 +500,14 @@ function runBox(id) {
           ? '<span class="rb-tp1">' + esc(topicName(pool[0])) + "</span>"
           : "";
   }
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  COLQ = { time: 1, target: 1, limit: 1, wake: 1, scale: 1 };
+  /* Rows opened from their summary box stay open when the list is rebuilt (a quest changed here, a sync from another device). */
+  qOpen = {};
+  G.offOpen = !!uiGet("off");
+  G.ignOpen = !!uiGet("ign");
+  G.doneOpen = !!uiGet("done");
 }

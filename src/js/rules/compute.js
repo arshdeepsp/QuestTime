@@ -1,5 +1,13 @@
 /* ---- compute(): the day-by-day streak, freezes, grace and period-total judgments ---- */
-function compute(asOf) {
+import { S, START_KEY } from "../core/00-state.js";
+import { add, todayKey } from "../core/days.js";
+import { indexDays, midDay, midNeed, perEnd, perStart, rollSum, weekFrom, weekTarget } from "./26-periods.js";
+import { ok } from "./day-rules.js";
+import { isVac, noStreakIn, noStreakOn } from "./modes.js";
+import { dayDefMap, lockPast } from "./past-days.js";
+import { reqDefsFor } from "./quests-on-day.js";
+
+export function compute(asOf) {
   lockPast();
   indexDays();
   var T = asOf ? add(asOf, 1) : todayKey(),
@@ -156,6 +164,6 @@ function compute(asOf) {
   st.best = Math.max(st.best, run);
   return st;
 }
-function fzCap() {
+export function fzCap() {
   return (S.cfg && S.cfg.style) === "spark" ? 4 : 3;
 }

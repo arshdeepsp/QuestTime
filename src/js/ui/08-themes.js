@@ -1,46 +1,12 @@
 /* ---- themes ---- */
-var THEMES = {
-  grass: {
-    d: ["#79553A", "#8B6243", "#6A4A31", "#976D4C", "#5C3F2A"],
-    g: ["#5E9E3A", "#6FB444", "#4F8A30", "#7CC24E"],
-    bg: "#79553A",
-    tc: "#5E9E3A",
-  },
-  night: {
-    d: ["#4A3322", "#553B27", "#3F2B1C", "#5E432D", "#35251A"],
-    g: ["#2F5A22", "#3A6B2A", "#264C1C", "#447A31"],
-    bg: "#4A3322",
-    tc: "#2F5A22",
-  },
-  nether: {
-    d: ["#6B2222", "#702424", "#661F1F", "#772828", "#5F1D1D"],
-    g: ["#9B2F4E", "#A8365A", "#8C2946", "#B24163"],
-    bg: "#6B2222",
-    tc: "#9B2F4E",
-    w: [0.5, 0.2, 0.15, 0.1, 0.05],
-  },
-  snow: {
-    d: ["#5E7289", "#62768D", "#5A6E84", "#667B92", "#57697F"],
-    g: ["#F4F8FB", "#FFFFFF", "#EEF4F9", "#F8FBFD"],
-    bg: "#5E7289",
-    tc: "#F4F8FB",
-    w: [0.55, 0.2, 0.13, 0.08, 0.04],
-  },
-  ocean: {
-    d: ["#1F4E79", "#22527E", "#1D4A74", "#255782", "#1B476F"],
-    g: ["#E3D39A", "#E8D9A2", "#DDCD92", "#EDDFAA"],
-    bg: "#1F4E79",
-    tc: "#E3D39A",
-    w: [0.55, 0.2, 0.13, 0.08, 0.04],
-  },
-  lava: {
-    d: ["#2B2026", "#352830", "#231A1F", "#3E2F38", "#1C1519"],
-    g: ["#E0561B", "#F07A1F", "#C9401A", "#FFA53A"],
-    bg: "#2B2026",
-    tc: "#E0561B",
-  },
-};
-function tile(pal, top, seed, ww) {
+import { cfg } from "../core/config.js";
+import { grng } from "../progress/41-grove.js";
+import { skyState } from "../progress/42-grove-sky.js";
+import { updateSky } from "./09-scenic-sky.js";
+
+export var THEMES, FX, mqDark, CYCLE, lastEff;
+
+export function tile(pal, top, seed, ww) {
   var h = seed,
     r = function () {
       h = (h * 1103515245 + 12345) & 0x7fffffff;
@@ -74,7 +40,7 @@ function tile(pal, top, seed, ww) {
     '")'
   );
 }
-function svgUri(w, h, body) {
+export function svgUri(w, h, body) {
   return (
     'url("data:image/svg+xml,' +
     encodeURIComponent(
@@ -93,7 +59,7 @@ function svgUri(w, h, body) {
     '")'
   );
 }
-function scatter(w, h, n, seed, draw) {
+export function scatter(w, h, n, seed, draw) {
   var s = seed,
     r = function () {
       s = (s * 1103515245 + 12345) & 0x7fffffff;
@@ -103,8 +69,7 @@ function scatter(w, h, n, seed, draw) {
   for (var i = 0; i < n; i++) o += draw(Math.floor(r() * w), Math.floor(r() * h), r);
   return o;
 }
-var FX = null;
-function fxPatterns() {
+export function fxPatterns() {
   if (FX) return FX;
   var px = function (x, y, s, c, op) {
     return (
@@ -761,10 +726,7 @@ function fxPatterns() {
   };
   return FX;
 }
-var mqDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-var CYCLE = ["grass", "day", "mountains", "village", "city", "night", "snow", "ocean", "lava", "nether"],
-  lastEff = null;
-function effTheme() {
+export function effTheme() {
   var t = cfg().theme;
   if (t === "stone") t = "";
   if (!t) {
@@ -777,7 +739,7 @@ function effTheme() {
   }
   return t;
 }
-function applyTheme(force) {
+export function applyTheme(force) {
   var st = document.documentElement.style,
     fx = document.getElementById("fx"),
     eff = effTheme();
@@ -824,13 +786,62 @@ function applyTheme(force) {
   }
   updateSky();
 }
-setInterval(function () {
-  applyTheme();
-  updateSky();
-}, 60000);
-window.addEventListener("resize", function () {
-  updateSky();
-});
-document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible") applyTheme();
-});
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  THEMES = {
+    grass: {
+      d: ["#79553A", "#8B6243", "#6A4A31", "#976D4C", "#5C3F2A"],
+      g: ["#5E9E3A", "#6FB444", "#4F8A30", "#7CC24E"],
+      bg: "#79553A",
+      tc: "#5E9E3A",
+    },
+    night: {
+      d: ["#4A3322", "#553B27", "#3F2B1C", "#5E432D", "#35251A"],
+      g: ["#2F5A22", "#3A6B2A", "#264C1C", "#447A31"],
+      bg: "#4A3322",
+      tc: "#2F5A22",
+    },
+    nether: {
+      d: ["#6B2222", "#702424", "#661F1F", "#772828", "#5F1D1D"],
+      g: ["#9B2F4E", "#A8365A", "#8C2946", "#B24163"],
+      bg: "#6B2222",
+      tc: "#9B2F4E",
+      w: [0.5, 0.2, 0.15, 0.1, 0.05],
+    },
+    snow: {
+      d: ["#5E7289", "#62768D", "#5A6E84", "#667B92", "#57697F"],
+      g: ["#F4F8FB", "#FFFFFF", "#EEF4F9", "#F8FBFD"],
+      bg: "#5E7289",
+      tc: "#F4F8FB",
+      w: [0.55, 0.2, 0.13, 0.08, 0.04],
+    },
+    ocean: {
+      d: ["#1F4E79", "#22527E", "#1D4A74", "#255782", "#1B476F"],
+      g: ["#E3D39A", "#E8D9A2", "#DDCD92", "#EDDFAA"],
+      bg: "#1F4E79",
+      tc: "#E3D39A",
+      w: [0.55, 0.2, 0.13, 0.08, 0.04],
+    },
+    lava: {
+      d: ["#2B2026", "#352830", "#231A1F", "#3E2F38", "#1C1519"],
+      g: ["#E0561B", "#F07A1F", "#C9401A", "#FFA53A"],
+      bg: "#2B2026",
+      tc: "#E0561B",
+    },
+  };
+  FX = null;
+  mqDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  CYCLE = ["grass", "day", "mountains", "village", "city", "night", "snow", "ocean", "lava", "nether"];
+  lastEff = null;
+  setInterval(function () {
+    applyTheme();
+    updateSky();
+  }, 60000);
+  window.addEventListener("resize", function () {
+    updateSky();
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") applyTheme();
+  });
+}

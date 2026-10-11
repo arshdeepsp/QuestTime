@@ -1,178 +1,20 @@
 /* ---- help + onboarding ---- */
-/* How it works: a full-screen page of topics in groups. Each topic is one line until opened; openHelp(id) jumps to one. */
-var HELP = [
-  [
-    "The basics",
-    [
-      [
-        "quests",
-        "dumbbell",
-        "Quests",
-        "The things you do each day.",
-        [
-          "Time, target, limit, check, clock time, rating, weekly and to-do.",
-          "Most are required. Optional quests, weekly goals and to-dos never fail a day.",
-          "Tap ⋯ on a quest for details, pausing or Just 5.",
-        ],
-      ],
-      [
-        "clear",
-        "star",
-        "Clearing a day",
-        "Every required quest done, no limit broken.",
-        [
-          "That clears the day. Hit the plan on every time quest too and it’s a gold day.",
-          "A day with nothing required, or a vacation day, never breaks a streak.",
-        ],
-      ],
-      [
-        "streak",
-        "flame",
-        "Challenge and Casual",
-        "Challenge keeps a streak; Casual keeps score.",
-        [
-          "Challenge: your streak is cleared days in a row. One missed day is a grace day; two in a row reset it. A freeze saves you from a reset: you earn one every 14 clean days and hold up to 3.",
-          "Casual (Settings › Quests & rules › Mode): XP and levels only. No streak, checkpoints, badges or grove, and changes to quests apply at once.",
-          "Switching to Casual starts today; switching back starts tomorrow, so it can never rescue a failing day. Your streak waits where it was.",
-        ],
-      ],
-      [
-        "rewards",
-        "trophy",
-        "XP, levels and badges",
-        "Minutes and finished quests earn XP.",
-        [
-          "Minutes, finished quests and cleared days earn XP. Your level never goes down.",
-          "Ranks follow your streak. Badges (20, in Badges) cover streaks, focus, topics and planning; once earned they stay earned.",
-          "Start a timer within 2 minutes of a reminder you tapped: +10 XP, up to 5 a day.",
-        ],
-      ],
-    ],
-  ],
-  [
-    "Planning",
-    [
-      [
-        "day",
-        "sprout",
-        "Your day",
-        "Wake-up and bedtime shape everything.",
-        [
-          "Set them in Settings › Your day.",
-          "The day locks at midnight, or at bedtime if that’s after midnight (up to 5 am), so late work still counts for its day.",
-          "Quests added after the middle of your day count from tomorrow.",
-          "Woke up late? Adjust today’s hours in Schedule.",
-        ],
-      ],
-      [
-        "weekly",
-        "metronome",
-        "Weekly totals",
-        "Judged once, at the end of the week.",
-        [
-          "A total quest runs over a week (Monday to Sunday, or Sunday to Saturday if you change it in Settings › Your day), every 2 weeks, or a calendar month.",
-          "Day to day only daily quests count. Each total is checked twice: by its middle work day you need a third (miss it and the days so far are lost, streak reset), and on the last day you need all of it (miss it and the whole period is lost).",
-          "Its pace is a guide: fall behind and the gap is spread over the work days left. On days you didn’t tick it sits under Off today, and extra time still counts.",
-        ],
-      ],
-      [
-        "schedule",
-        "note",
-        "Schedule",
-        "Plan when your time quests happen.",
-        [
-          "Tap Schedule, tap a free time and pick a quest, or Auto-plan the rest. The ‹ › arrows plan up to 13 days ahead; those blocks remind on their day.",
-          "Hold and drag to move a block; hold it near the top or bottom and the day scrolls with you. Tap a block, then drag its yellow corner tab to resize. Split it for several shots.",
-          "A range’s reminder starts the timer; a 5-min start’s reminder starts Just 5.",
-          "Busy times (Settings › Your day, or the Busy times button) is a weekday timeline for lectures, meetings and work. Blocks repeat every week on their days from the day you add them; the schedule and Auto-plan go around them. Quests you already placed on top stay for that day.",
-          "Tap a quest block › Repeat to repeat it on chosen weekdays for up to 26 weeks. Moving one repeat changes today only, with Every week to change them all.",
-          "It’s planning only and never affects clearing a day.",
-        ],
-      ],
-      [
-        "changes",
-        "star",
-        "Changing quests",
-        "Making things easier starts tomorrow.",
-        [
-          "Lowering a goal, pausing, deleting, making optional or removing days takes effect tomorrow.",
-          "Pausing a quest lasts until the end of the current week, never into the next one.",
-          "New quests can start today, tomorrow or next week. Weekly totals added after midday on the 4th day of the week start next week.",
-          "The daily quest limit counts required quests on each weekday.",
-          "In Casual mode every change applies right away.",
-        ],
-      ],
-    ],
-  ],
-  [
-    "Focus and tools",
-    [
-      [
-        "focus",
-        "flame",
-        "Timers, Just 5 and sprints",
-        "Start small, keep going.",
-        [
-          "▶ on a time quest starts a timer, and Today shows just that quest until you stop.",
-          "Just 5 starts five minutes on the next unfinished time quest. Stop at the chime or keep going.",
-          "Sprint (in the ⋮ menu) runs focus blocks with 15-minute breaks and logs the minutes.",
-          "The timer notification grows a sapling toward your goal.",
-        ],
-      ],
-      [
-        "alerts",
-        "note",
-        "Reminders",
-        "Only the ones you pick.",
-        [
-          "Turn them on in Settings › Notifications and choose which to get.",
-          "Tapping one opens what it’s about: your timer, open quests, the schedule or a deadline.",
-        ],
-      ],
-      [
-        "subjects",
-        "sprout",
-        "Subjects",
-        "Track what you’re learning.",
-        [
-          "Add subjects and topics, and rate each topic from 1 to 5 by what you can do now: 1 know the terms, 2 follow a worked example, 3 solve standard problems without notes, 4 apply it to new problems or explain it, 5 teach it. Time spent never changes a rating.",
-          "A topic with 5h+ in 4 weeks but no level change is flagged: either the rating is behind, or the time wasn’t really on that topic.",
-          "Pick the topics a quest feeds when you edit it. Its subjects follow.",
-          "Every timer lands on one of those topics: one due for review first, then the one furthest below its goal, then the last one you used. Tap another topic on the running timer to switch; the time is split.",
-          "Each week, your top 3 topics from last week (an hour or more each) get a quick rerate.",
-          "Topics untouched for two weeks are marked for review.",
-        ],
-      ],
-      [
-        "account",
-        "star",
-        "Account and sync",
-        "Your data belongs to your account; offline still works.",
-        [
-          "When you\u2019re signed out the app opens on Sign in: sign in, create an account, reset a forgotten password, or tap Use without account for this time (you\u2019re asked again each time you open the app; Settings \u203a Account signs in any time). Once signed in you stay signed in until you sign out \u2014 there\u2019s no time-out.",
-          "Data is linked to accounts. Signing in shows that account\u2019s data; signing out removes it from this device (it stays in your account and comes back when you sign in). If some changes haven\u2019t synced yet, Sign out asks first. Data you made without an account moves into a new account when you create one, or into an account that has nothing in it yet.",
-          "A new account gets an email to verify your address; Settings \u203a Account shows it until you tap the link (Resend, then Done). Change password and Delete account are there too. Deleting removes the account and all its data, here and everywhere \u2014 export a backup first if you want a copy. Settings \u203a Your data \u203a Erase this device removes all app data from this device (and signs you out); accounts keep theirs in the cloud.",
-          "Your quests, rules, subjects, settings, days and reflections sync, and so do your look-and-feel choices (theme, sound, Minimal view, which groups are open); the running timer doesn\u2019t. Everything keeps working offline; changes made on two devices merge by time: the newer change to each day or setting wins.",
-        ],
-      ],
-      [
-        "data",
-        "metronome",
-        "Your data",
-        "Yours, on this device; in your account only if you sign in.",
-        [
-          "Everything is stored on this device. Nothing is sent anywhere unless you sign in under Settings › Account, and then only to your own account.",
-          "Export a backup now and then in Settings › Your data. Import merges it back in.",
-        ],
-      ],
-    ],
-  ],
-];
-var hpPg = null;
-function hpOpen() {
+import { cfg } from "../core/config.js";
+import { cloudAccount } from "../core/storage.js";
+import { svg } from "../core/util.js";
+import { applyPack } from "../quests/07c-starter-packs.js";
+import { maybeReviewTodos } from "../quests/50b-todo-review.js";
+import { applyStyle, styleCards } from "../settings/27-work-styles.js";
+import { cloud } from "../sync/54-account.js";
+import { authOpen } from "../sync/55-auth-pages.js";
+import { closeG, gTitle, openG } from "./18-modal.js";
+
+export var HELP, hpPg;
+
+export function hpOpen() {
   return !!hpPg && !hpPg.hidden;
 }
-function openHelp(topic) {
+export function openHelp(topic) {
   if (!hpPg) {
     hpPg = document.createElement("div");
     hpPg.id = "helpPage";
@@ -247,16 +89,13 @@ function openHelp(topic) {
   var d = hpPg.querySelector("#hlpClose");
   if (d) d.focus();
 }
-function closeHelp() {
+export function closeHelp() {
   if (!hpPg) return;
   hpPg.hidden = true;
   document.body.classList.remove("hp-open");
   maybeReviewTodos();
 }
-document.getElementById("helpBtn").addEventListener("click", function () {
-  openHelp();
-});
-function openWelcome() {
+export function openWelcome() {
   var pick = null,
     style = null;
   function steps() {
@@ -361,7 +200,7 @@ function openWelcome() {
   );
 }
 /* First run: the welcome waits while the account gate (sync/55-auth-pages.js) is up; closing the gate calls this again. */
-function welcomeCheck(ms) {
+export function welcomeCheck(ms) {
   try {
     if (cloudAccount() && !(typeof cloud !== "undefined" && cloud.state.status === "on")) return;
     if (!localStorage.getItem("pc-welcomed") && !(cfg().quests || []).length)
@@ -369,4 +208,181 @@ function welcomeCheck(ms) {
         if (!(typeof authOpen === "function" && authOpen()) && !(cfg().quests || []).length) openWelcome();
       }, ms);
   } catch (x) {}
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  /* How it works: a full-screen page of topics in groups. Each topic is one line until opened; openHelp(id) jumps to one. */
+  HELP = [
+    [
+      "The basics",
+      [
+        [
+          "quests",
+          "dumbbell",
+          "Quests",
+          "The things you do each day.",
+          [
+            "Time, target, limit, check, clock time, rating, weekly and to-do.",
+            "Most are required. Optional quests, weekly goals and to-dos never fail a day.",
+            "Tap ⋯ on a quest for details, pausing or Just 5.",
+          ],
+        ],
+        [
+          "clear",
+          "star",
+          "Clearing a day",
+          "Every required quest done, no limit broken.",
+          [
+            "That clears the day. Hit the plan on every time quest too and it’s a gold day.",
+            "A day with nothing required, or a vacation day, never breaks a streak.",
+          ],
+        ],
+        [
+          "streak",
+          "flame",
+          "Challenge and Casual",
+          "Challenge keeps a streak; Casual keeps score.",
+          [
+            "Challenge: your streak is cleared days in a row. One missed day is a grace day; two in a row reset it. A freeze saves you from a reset: you earn one every 14 clean days and hold up to 3.",
+            "Casual (Settings › Quests & rules › Mode): XP and levels only. No streak, checkpoints, badges or grove, and changes to quests apply at once.",
+            "Switching to Casual starts today; switching back starts tomorrow, so it can never rescue a failing day. Your streak waits where it was.",
+          ],
+        ],
+        [
+          "rewards",
+          "trophy",
+          "XP, levels and badges",
+          "Minutes and finished quests earn XP.",
+          [
+            "Minutes, finished quests and cleared days earn XP. Your level never goes down.",
+            "Ranks follow your streak. Badges (20, in Badges) cover streaks, focus, topics and planning; once earned they stay earned.",
+            "Start a timer within 2 minutes of a reminder you tapped: +10 XP, up to 5 a day.",
+          ],
+        ],
+      ],
+    ],
+    [
+      "Planning",
+      [
+        [
+          "day",
+          "sprout",
+          "Your day",
+          "Wake-up and bedtime shape everything.",
+          [
+            "Set them in Settings › Your day.",
+            "The day locks at midnight, or at bedtime if that’s after midnight (up to 5 am), so late work still counts for its day.",
+            "Quests added after the middle of your day count from tomorrow.",
+            "Woke up late? Adjust today’s hours in Schedule.",
+          ],
+        ],
+        [
+          "weekly",
+          "metronome",
+          "Weekly totals",
+          "Judged once, at the end of the week.",
+          [
+            "A total quest runs over a week (Monday to Sunday, or Sunday to Saturday if you change it in Settings › Your day), every 2 weeks, or a calendar month.",
+            "Day to day only daily quests count. Each total is checked twice: by its middle work day you need a third (miss it and the days so far are lost, streak reset), and on the last day you need all of it (miss it and the whole period is lost).",
+            "Its pace is a guide: fall behind and the gap is spread over the work days left. On days you didn’t tick it sits under Off today, and extra time still counts.",
+          ],
+        ],
+        [
+          "schedule",
+          "note",
+          "Schedule",
+          "Plan when your time quests happen.",
+          [
+            "Tap Schedule, tap a free time and pick a quest, or Auto-plan the rest. The ‹ › arrows plan up to 13 days ahead; those blocks remind on their day.",
+            "Hold and drag to move a block; hold it near the top or bottom and the day scrolls with you. Tap a block, then drag its yellow corner tab to resize. Split it for several shots.",
+            "A range’s reminder starts the timer; a 5-min start’s reminder starts Just 5.",
+            "Busy times (Settings › Your day, or the Busy times button) is a weekday timeline for lectures, meetings and work. Blocks repeat every week on their days from the day you add them; the schedule and Auto-plan go around them. Quests you already placed on top stay for that day.",
+            "Tap a quest block › Repeat to repeat it on chosen weekdays for up to 26 weeks. Moving one repeat changes today only, with Every week to change them all.",
+            "It’s planning only and never affects clearing a day.",
+          ],
+        ],
+        [
+          "changes",
+          "star",
+          "Changing quests",
+          "Making things easier starts tomorrow.",
+          [
+            "Lowering a goal, pausing, deleting, making optional or removing days takes effect tomorrow.",
+            "Pausing a quest lasts until the end of the current week, never into the next one.",
+            "New quests can start today, tomorrow or next week. Weekly totals added after midday on the 4th day of the week start next week.",
+            "The daily quest limit counts required quests on each weekday.",
+            "In Casual mode every change applies right away.",
+          ],
+        ],
+      ],
+    ],
+    [
+      "Focus and tools",
+      [
+        [
+          "focus",
+          "flame",
+          "Timers, Just 5 and sprints",
+          "Start small, keep going.",
+          [
+            "▶ on a time quest starts a timer, and Today shows just that quest until you stop.",
+            "Just 5 starts five minutes on the next unfinished time quest. Stop at the chime or keep going.",
+            "Sprint (in the ⋮ menu) runs focus blocks with 15-minute breaks and logs the minutes.",
+            "The timer notification grows a sapling toward your goal.",
+          ],
+        ],
+        [
+          "alerts",
+          "note",
+          "Reminders",
+          "Only the ones you pick.",
+          [
+            "Turn them on in Settings › Notifications and choose which to get.",
+            "Tapping one opens what it’s about: your timer, open quests, the schedule or a deadline.",
+          ],
+        ],
+        [
+          "subjects",
+          "sprout",
+          "Subjects",
+          "Track what you’re learning.",
+          [
+            "Add subjects and topics, and rate each topic from 1 to 5 by what you can do now: 1 know the terms, 2 follow a worked example, 3 solve standard problems without notes, 4 apply it to new problems or explain it, 5 teach it. Time spent never changes a rating.",
+            "A topic with 5h+ in 4 weeks but no level change is flagged: either the rating is behind, or the time wasn’t really on that topic.",
+            "Pick the topics a quest feeds when you edit it. Its subjects follow.",
+            "Every timer lands on one of those topics: one due for review first, then the one furthest below its goal, then the last one you used. Tap another topic on the running timer to switch; the time is split.",
+            "Each week, your top 3 topics from last week (an hour or more each) get a quick rerate.",
+            "Topics untouched for two weeks are marked for review.",
+          ],
+        ],
+        [
+          "account",
+          "star",
+          "Account and sync",
+          "Your data belongs to your account; offline still works.",
+          [
+            "When you\u2019re signed out the app opens on Sign in: sign in, create an account, reset a forgotten password, or tap Use without account for this time (you\u2019re asked again each time you open the app; Settings \u203a Account signs in any time). Once signed in you stay signed in until you sign out \u2014 there\u2019s no time-out.",
+            "Data is linked to accounts. Signing in shows that account\u2019s data; signing out removes it from this device (it stays in your account and comes back when you sign in). If some changes haven\u2019t synced yet, Sign out asks first. Data you made without an account moves into a new account when you create one, or into an account that has nothing in it yet.",
+            "A new account gets an email to verify your address; Settings \u203a Account shows it until you tap the link (Resend, then Done). Change password and Delete account are there too. Deleting removes the account and all its data, here and everywhere \u2014 export a backup first if you want a copy. Settings \u203a Your data \u203a Erase this device removes all app data from this device (and signs you out); accounts keep theirs in the cloud.",
+            "Your quests, rules, subjects, settings, days and reflections sync, and so do your look-and-feel choices (theme, sound, Minimal view, which groups are open); the running timer doesn\u2019t. Everything keeps working offline; changes made on two devices merge by time: the newer change to each day or setting wins.",
+          ],
+        ],
+        [
+          "data",
+          "metronome",
+          "Your data",
+          "Yours, on this device; in your account only if you sign in.",
+          [
+            "Everything is stored on this device. Nothing is sent anywhere unless you sign in under Settings › Account, and then only to your own account.",
+            "Export a backup now and then in Settings › Your data. Import merges it back in.",
+          ],
+        ],
+      ],
+    ],
+  ];
+  hpPg = null;
+  document.getElementById("helpBtn").addEventListener("click", function () {
+    openHelp();
+  });
 }

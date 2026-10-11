@@ -1,5 +1,7 @@
 /* ---- fit background between app bars on phones ---- */
-function measureBars() {
+import { updateSky } from "./09-scenic-sky.js";
+
+export function measureBars() {
   var r = document.documentElement,
     mob = window.innerWidth <= 720,
     tb = document.querySelector(".titlebar"),
@@ -12,10 +14,14 @@ function measureBars() {
     if (typeof updateSky === "function") updateSky();
   }
 }
-window.addEventListener("resize", measureBars);
-window.addEventListener("orientationchange", function () {
-  setTimeout(measureBars, 200);
-});
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureBars);
-setTimeout(measureBars, 0);
-setTimeout(measureBars, 1500);
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  window.addEventListener("resize", measureBars);
+  window.addEventListener("orientationchange", function () {
+    setTimeout(measureBars, 200);
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureBars);
+  setTimeout(measureBars, 0);
+  setTimeout(measureBars, 1500);
+}

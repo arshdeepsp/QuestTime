@@ -1,5 +1,17 @@
 /* 2. past day modal */
-function openDayModal(k) {
+import { S } from "../core/00-state.js";
+import { parse, todayKey } from "../core/days.js";
+import { esc } from "../core/util.js";
+import { doWrap } from "./49-wrap-up.js";
+import { compute } from "../rules/compute.js";
+import { bases, gold, hasEntry } from "../rules/day-rules.js";
+import { isVac } from "../rules/modes.js";
+import { defsOf, reqOf } from "../rules/quests-on-day.js";
+import { dayXP } from "../rules/xp.js";
+import { lastSt } from "../ui/04-render.js";
+import { closeG, openG, qList } from "../ui/18-modal.js";
+
+export function openDayModal(k) {
   var e = S.days[k] || {},
     st = lastSt || compute(),
     m = st.marks[k] || "miss",

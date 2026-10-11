@@ -1,17 +1,31 @@
 /* ---- daily wrap-up (share card / PDF of the day) ---- */
-var wrapBtn = document.getElementById("wrapBtn");
-function wrapDay() {
+import { G } from "../core/g.js";
+import { D, RANKS, S, START_KEY } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
+import { add, dayEnd, daysBetween, mins, parse, todayKey } from "../core/days.js";
+import { ro } from "../core/entries.js";
+import { fmtD, hm, num } from "../core/util.js";
+import { STREAKY, badgeStats, nextBadge } from "./03-badges.js";
+import { compute } from "../rules/compute.js";
+import { bases, gold, hasEntry, limBroken, metQ, ok, overQ, planOf, projSum } from "../rules/day-rules.js";
+import { noStreakOn } from "../rules/modes.js";
+import { activeDefs, defsOf, reqOf } from "../rules/quests-on-day.js";
+import { dayXP, level, weekCount, xpNet } from "../rules/xp.js";
+import { setSync } from "../ui/feedback.js";
+
+export var wrapBtn, jspdfP;
+
+export function wrapDay() {
   var T = todayKey(),
-    k = ro() ? viewKey : add(T, -1);
+    k = ro() ? G.viewKey : add(T, -1);
   return k >= START_KEY && k < T ? k : null;
 }
-function wrapLabel() {
+export function wrapLabel() {
   var k = wrapDay();
   wrapBtn.disabled = !k;
   wrapBtn.textContent = k ? "Wrap-up: " + fmtD(k) : "Wrap-up unlocks at midnight";
 }
-var jspdfP = null;
-function loadPDF() {
+export function loadPDF() {
   if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
   if (!jspdfP)
     jspdfP = new Promise(function (res, rej) {
@@ -28,7 +42,7 @@ function loadPDF() {
     });
   return jspdfP;
 }
-function rng(seed) {
+export function rng(seed) {
   var h = 2166136261;
   for (var i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
@@ -42,10 +56,10 @@ function rng(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-function pick(r, a) {
+export function pick(r, a) {
   return a[Math.floor(r() * a.length)];
 }
-function note(k, e, st) {
+export function note(k, e, st) {
   var r = rng("note" + k),
     defs = defsOf(e),
     rows = defs
@@ -203,7 +217,7 @@ function note(k, e, st) {
     icon: pick(r, Object.keys(D.icons)),
   };
 }
-function wrapCanvas(k) {
+export function wrapCanvas(k) {
   var e = S.days[k] || {},
     st = compute(k),
     n = note(k, e, st),
@@ -428,7 +442,8 @@ function wrapCanvas(k) {
   );
   return c;
 }
-function wrapCanvas2(k) {
+export function wrapCanvas2(k) {
+  var np = noStreakOn(k);
   var W = 1275,
     H = 1650,
     c = document.createElement("canvas");
@@ -887,11 +902,7 @@ function wrapCanvas2(k) {
   txt("Page 2 of 2", W / 2, H - 40, "28px " + VT, "#9AA2B1", "center");
   return c;
 }
-wrapBtn.addEventListener("click", function () {
-  var k = wrapDay();
-  if (k) doWrap(k, wrapBtn);
-});
-function doWrap(k, btnEl) {
+export function doWrap(k, btnEl) {
   btnEl.disabled = true;
   setSync("Building wrap-up\u2026");
   Promise.all([
@@ -912,8 +923,8 @@ function doWrap(k, btnEl) {
       pdf.addImage(wrapCanvas2(k).toDataURL("image/png"), "PNG", 0, 0, 612, 792, undefined, "FAST");
       var blob = pdf.output("blob"),
         name = "productivitycraft-wrapup-" + k + ".pdf";
-      if (dl)
-        return dl.save({ filename: name, data: blob }).then(
+      if (G.dl)
+        return G.dl.save({ filename: name, data: blob }).then(
           function () {
             setSync("Wrap-up saved");
           },
@@ -940,4 +951,14 @@ function doWrap(k, btnEl) {
       btnEl.disabled = false;
       wrapLabel();
     });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  wrapBtn = document.getElementById("wrapBtn");
+  jspdfP = null;
+  wrapBtn.addEventListener("click", function () {
+    var k = wrapDay();
+    if (k) doWrap(k, wrapBtn);
+  });
 }

@@ -1,18 +1,29 @@
 /* ---- quest row menu ---- */
-var qmenu = null;
-function closeQMenu() {
-  if (qmenu) {
-    qmenu.remove();
-    qmenu = null;
+import { G } from "../core/g.js";
+import { DAYF, S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, nextMonday, parse, todayKey, wkEndDay, wkS } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { clone, fmtD } from "../core/util.js";
+import { markCompleteManual } from "./35c-finish-lines.js";
+import { openMgr } from "./38-quest-editor.js";
+import { openDetails } from "./47-phone-rows.js";
+import { easeInfo, guardEasing } from "../rules/easing.js";
+import { ignoredOn, rewardsOff, setIgnore } from "../rules/modes.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { start5 } from "../tools/28-spark-tools.js";
+import { render } from "../ui/04-render.js";
+import { setSync } from "../ui/feedback.js";
+import { popMenu } from "../ui/menus.js";
+
+export function closeQMenu() {
+  if (G.qmenu) {
+    G.qmenu.remove();
+    G.qmenu = null;
   }
 }
-document.addEventListener("click", function (e) {
-  if (qmenu && !qmenu.contains(e.target)) closeQMenu();
-});
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") closeQMenu();
-});
-function pauseQuest(q) {
+export function pauseQuest(q) {
   var T = todayKey(),
     c6 = clone(cfg()),
     oldQ = clone(c6.quests),
@@ -35,7 +46,7 @@ function pauseQuest(q) {
   }
   saveCfg(c6);
   if (g.eased) {
-    qSig = "";
+    G.qSig = "";
     render();
     setSync(q.label + " will be paused from tomorrow through " + DAYF[wkEndDay()] + ".");
     return;
@@ -44,10 +55,10 @@ function pauseQuest(q) {
     S.days[T] = Object.assign({}, S.days[T], { q: activeDefs(T) });
     dirty[T] = true;
     cache();
-    clearTimeout(timer);
-    timer = setTimeout(flush, 300);
+    clearTimeout(G.timer);
+    G.timer = setTimeout(flush, 300);
   }
-  qSig = "";
+  G.qSig = "";
   render();
   setSync(
     q.label +
@@ -60,7 +71,7 @@ function pauseQuest(q) {
       ".",
   );
 }
-function deleteTodo(q) {
+export function deleteTodo(q) {
   var c = clone(cfg());
   c.quests = c.quests.filter(function (x) {
     return x.id !== q.id;
@@ -74,14 +85,14 @@ function deleteTodo(q) {
     S.days[T] = e;
     dirty[T] = true;
     cache();
-    clearTimeout(timer);
-    timer = setTimeout(flush, 300);
+    clearTimeout(G.timer);
+    G.timer = setTimeout(flush, 300);
   }
-  qSig = "";
+  G.qSig = "";
   render();
   setSync("To-do deleted");
 }
-function openQMenu(q, btn) {
+export function openQMenu(q, btn) {
   closeQMenu();
   if (locked()) return;
   var items =
@@ -152,4 +163,15 @@ function openQMenu(q, btn) {
       ]);
   }
   popMenu(btn, items);
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  G.qmenu = null;
+  document.addEventListener("click", function (e) {
+    if (G.qmenu && !G.qmenu.contains(e.target)) closeQMenu();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeQMenu();
+  });
 }

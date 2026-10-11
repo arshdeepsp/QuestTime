@@ -1,42 +1,32 @@
 /* ---- subjects + proficiency ---- */
-var SUBJ_PRESETS = [
-  "Mathematics",
-  "Computer Science",
-  "Biology",
-  "Chemistry",
-  "Physics",
-  "Statistics",
-  "Engineering",
-  "Economics",
-  "Psychology",
-  "History",
-  "Literature",
-  "Philosophy",
-  "Languages",
-  "Music",
-  "Art",
-];
-var PROF = ["Not started", "Novice", "Beginner", "Intermediate", "Advanced", "Expert"];
-/* What each level means, so a rating is a check ("can I do this now?") rather than a feeling. Time never changes it. */
-var PROF_DO = [
-  "Not rated yet",
-  "I know the terms",
-  "I can follow a worked example",
-  "I can solve standard problems without notes",
-  "I can apply it to new problems or explain it",
-  "I could teach it or build something new with it",
-];
-function subjList() {
+import { G } from "../core/g.js";
+import { S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg, uiGet, uiSet } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { cache } from "../core/storage.js";
+import { clone, esc, fmtD, hm } from "../core/util.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { rerateCard, topicFlat, topicName, topicStats, wireRerate } from "./33-topics.js";
+import { qSubjs, subjById, subjMinutes, topicById } from "./35-links.js";
+import { render } from "../ui/04-render.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { haptic, swipeMenu } from "../ui/45-gestures.js";
+import { setSync } from "../ui/feedback.js";
+
+export var SUBJ_PRESETS, PROF, PROF_DO, openTopic;
+
+export function subjList() {
   return cfg().subjects || [];
 }
-function saveSubj(fn2) {
+export function saveSubj(fn2) {
   var c = clone(cfg());
   c.subjects = c.subjects || [];
   fn2(c.subjects);
   saveCfg(c);
   renderSubjects();
 }
-function setRating(t, v) {
+export function setRating(t, v) {
   t.p = v;
   var TT = todayKey();
   t.hist = (t.hist || []).filter(function (hh) {
@@ -45,7 +35,7 @@ function setRating(t, v) {
   t.hist.push({ d: TT, p: v });
   if (t.hist.length > 60) t.hist = t.hist.slice(-60);
 }
-function rateTopic(tid, v) {
+export function rateTopic(tid, v) {
   saveSubj(function (Ls) {
     Ls.forEach(function (s) {
       (s.topics || []).forEach(function (t) {
@@ -54,7 +44,7 @@ function rateTopic(tid, v) {
     });
   });
 }
-function avgProf(s) {
+export function avgProf(s) {
   var t = s.topics || [];
   if (!t.length) return 0;
   return (
@@ -63,7 +53,7 @@ function avgProf(s) {
     }, 0) / t.length
   );
 }
-function pips(p, attr) {
+export function pips(p, attr) {
   var h = '<span class="pips5" role="radiogroup">';
   for (var i = 1; i <= 5; i++)
     h +=
@@ -84,7 +74,7 @@ function pips(p, attr) {
       '"></button>';
   return h + "</span>";
 }
-function openSubjAdd() {
+export function openSubjAdd() {
   var have = subjList().map(function (s) {
     return s.name;
   });
@@ -132,7 +122,7 @@ function openSubjAdd() {
     });
   });
 }
-function renameSubj(sid) {
+export function renameSubj(sid) {
   var sj = subjById(sid);
   if (!sj) return;
   openG("Rename subject", function (b) {
@@ -161,7 +151,7 @@ function renameSubj(sid) {
         if (s) s.name = n;
       });
       closeG();
-      qSig = "";
+      G.qSig = "";
       render();
       setSync("Renamed to " + n);
     }
@@ -171,12 +161,11 @@ function renameSubj(sid) {
     });
   });
 }
-var openTopic = null;
-function sjFolded() {
+export function sjFolded() {
   var L = uiGet("sjfold", []);
   return Array.isArray(L) ? L.slice() : [];
 }
-function sjFold(sid) {
+export function sjFold(sid) {
   var L = sjFolded(),
     i = L.indexOf(sid);
   if (i >= 0) L.splice(i, 1);
@@ -188,7 +177,7 @@ function sjFold(sid) {
     el.querySelector(".sjsec-tg").setAttribute("aria-expanded", i >= 0);
   }
 }
-function renderSubjects() {
+export function renderSubjects() {
   var el = document.getElementById("subjBody");
   if (!el) return;
   var L = subjList(),
@@ -499,7 +488,7 @@ function renderSubjects() {
         dirty[T2] = true;
         cache();
       }
-      qSig = "";
+      G.qSig = "";
       render();
       renderSubjects();
       setSync("Added to to-dos");
@@ -592,4 +581,36 @@ function renderSubjects() {
       });
     });
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  SUBJ_PRESETS = [
+    "Mathematics",
+    "Computer Science",
+    "Biology",
+    "Chemistry",
+    "Physics",
+    "Statistics",
+    "Engineering",
+    "Economics",
+    "Psychology",
+    "History",
+    "Literature",
+    "Philosophy",
+    "Languages",
+    "Music",
+    "Art",
+  ];
+  PROF = ["Not started", "Novice", "Beginner", "Intermediate", "Advanced", "Expert"];
+  /* What each level means, so a rating is a check ("can I do this now?") rather than a feeling. Time never changes it. */
+  PROF_DO = [
+    "Not rated yet",
+    "I know the terms",
+    "I can follow a worked example",
+    "I can solve standard problems without notes",
+    "I can apply it to new problems or explain it",
+    "I could teach it or build something new with it",
+  ];
+  openTopic = null;
 }

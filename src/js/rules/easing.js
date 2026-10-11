@@ -1,15 +1,20 @@
 /* ---- easing changes ---- Challenge mode: a change that makes a quest easier (lower goal, delete, pause, optional, fewer
      days, later start, daily -> total, raised limit) takes effect tomorrow via cfg.lockDay = {date, defs}: today keeps the
      old definitions, so a change can never rescue a failing day. Setup week (first 7 days) and Casual mode apply at once. */
-function easeInfo() {
+import { START_KEY } from "../core/00-state.js";
+import { add, todayKey } from "../core/days.js";
+import { clone, fmtD, num } from "../core/util.js";
+import { isPaused, rewardsOff } from "./modes.js";
+
+export function easeInfo() {
   var T = todayKey(),
     setupEnd = add(START_KEY, 7);
   return { T: T, setup: T < setupEnd, setupEnd: setupEnd };
 }
-function allDays(q) {
+export function allDays(q) {
   return q.days && q.days.length ? q.days : [0, 1, 2, 3, 4, 5, 6];
 }
-function isEasier(o, n, T) {
+export function isEasier(o, n, T) {
   if (n.type !== o.type) return true;
   if (!o.opt && n.opt) return true;
   if (o.type === "time" && !o.roll && n.roll) return true;
@@ -33,7 +38,7 @@ function isEasier(o, n, T) {
   if (o.type === "wake" && (n.from < o.from || n.to > o.to)) return true;
   return false;
 }
-function easedIds(oldQ, newQ, T) {
+export function easedIds(oldQ, newQ, T) {
   var nm = {};
   newQ.forEach(function (q) {
     nm[q.id] = q;
@@ -46,7 +51,7 @@ function easedIds(oldQ, newQ, T) {
   });
   return ids;
 }
-function guardEasing(c, oldQ, ids) {
+export function guardEasing(c, oldQ, ids) {
   var inf = easeInfo();
   if (inf.setup || !ids.length || rewardsOff()) return { ok: true, eased: 0 };
   var L = c.lockDay && c.lockDay.date === inf.T ? c.lockDay.defs : {};
@@ -56,7 +61,7 @@ function guardEasing(c, oldQ, ids) {
   c.lockDay = { date: inf.T, defs: L };
   return { ok: true, eased: ids.length };
 }
-function easeNote() {
+export function easeNote() {
   var inf = easeInfo();
   if (rewardsOff()) return "Casual mode: changes apply right away.";
   if (inf.setup) return "Setup week: every change is immediate through " + fmtD(add(inf.setupEnd, -1)) + ".";

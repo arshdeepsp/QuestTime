@@ -1,5 +1,24 @@
 /* ---- finish lines: a quest completes when its goal is reached; the trophy shelf ---- */
-function finishMet(q) {
+import { G } from "../core/g.js";
+import { S } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { clone, esc, fmtD } from "../core/util.js";
+import { overDays, overMsg } from "./35b-daily-limit.js";
+import { projSum } from "../rules/day-rules.js";
+import { easeInfo, guardEasing } from "../rules/easing.js";
+import { rewardsOff } from "../rules/modes.js";
+import { avgProf } from "../subjects/32-subjects.js";
+import { LV, qSubjs, qTopicPool, subjById, topicById } from "../subjects/35-links.js";
+import { sfx } from "../ui/01-sound.js";
+import { render } from "../ui/04-render.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { setSync, showToast } from "../ui/feedback.js";
+
+export var finChecking;
+
+export function finishMet(q) {
   var f = q.fin;
   if (q.dl) {
     var s = 0,
@@ -39,7 +58,7 @@ function finishMet(q) {
   }
   return null;
 }
-function completeQuest(id, how, silent) {
+export function completeQuest(id, how, silent) {
   var c = clone(cfg()),
     q = c.quests.filter(function (x) {
       return x.id === id;
@@ -47,7 +66,7 @@ function completeQuest(id, how, silent) {
   if (!q || q.completed) return;
   q.completed = { on: todayKey(), how: how };
   saveCfg(c);
-  qSig = "";
+  G.qSig = "";
   if (!silent && how !== "archived") {
     sfx("level");
     showToast({ icon: "trophy", kicker: "Quest complete!", title: q.label, desc: how !== "manual" ? how : "" });
@@ -56,8 +75,7 @@ function completeQuest(id, how, silent) {
     );
   }
 }
-var finChecking = false;
-function checkFinish() {
+export function checkFinish() {
   if (finChecking || locked()) return;
   finChecking = true;
   try {
@@ -70,7 +88,7 @@ function checkFinish() {
     finChecking = false;
   }
 }
-function completionXP(upto) {
+export function completionXP(upto) {
   return cfg().quests.reduce(function (a, q) {
     return (
       a +
@@ -84,7 +102,7 @@ function completionXP(upto) {
     );
   }, 0);
 }
-function markCompleteManual(q) {
+export function markCompleteManual(q) {
   var met = finishMet(q);
   if (met) {
     completeQuest(q.id, met);
@@ -112,7 +130,7 @@ function markCompleteManual(q) {
       })[0];
       t.completed = { on: todayKey(), how: "manual" };
       saveCfg(c);
-      qSig = "";
+      G.qSig = "";
       closeG();
       sfx("level");
       showToast({ icon: "trophy", kicker: "Quest complete!", title: q.label, desc: "" });
@@ -120,7 +138,7 @@ function markCompleteManual(q) {
     });
   });
 }
-function renderShelf() {
+export function renderShelf() {
   var el = document.getElementById("shelf");
   if (!el) return;
   var L = cfg().quests.filter(function (q) {
@@ -179,10 +197,15 @@ function renderShelf() {
       }
       delete q.completed;
       saveCfg(c);
-      qSig = "";
+      G.qSig = "";
       render();
       renderShelf();
       setSync(q.label + " restored");
     });
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  finChecking = false;
 }

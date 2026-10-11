@@ -1,9 +1,28 @@
 /* ---- quests UI ---- */
-var qEls = {},
-  qWrap = document.getElementById("quests"),
-  qSig = "";
-var DN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-function reqText(q) {
+import { G } from "../core/g.js";
+import { MAXM, STEP } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { daysBetween, todayKey } from "../core/days.js";
+import { commit, entry, locked, ro } from "../core/entries.js";
+import { clone, fmtD, hmL, num } from "../core/util.js";
+import { applyPack, packsHidden } from "./07c-starter-packs.js";
+import { openQMenu } from "./11-row-menu.js";
+import { toggleTodo } from "./14-todos.js";
+import { openNum } from "./tap-to-type.js";
+import { perWord } from "../rules/26-periods.js";
+import { limOf } from "../rules/day-rules.js";
+import { qStreakable } from "../rules/quest-streaks.js";
+import { reqOf } from "../rules/quests-on-day.js";
+import { openSubjPick } from "../subjects/35-links.js";
+import { toggleTimer } from "../timer/13-focus-timer.js";
+import { render } from "../ui/04-render.js";
+import { sortable } from "../ui/07-drag.js";
+import { swipeRow } from "../ui/45-gestures.js";
+import { setSync } from "../ui/feedback.js";
+
+export var qEls, qWrap, DN;
+
+export function reqText(q) {
   var t;
   if (q.type === "todo") {
     t = "to-do";
@@ -45,10 +64,10 @@ function reqText(q) {
   if (q.opt) t += " \u00b7 optional";
   return t;
 }
-function buildQuests(defs) {
+export function buildQuests(defs) {
   var sig = JSON.stringify(defs);
-  if (sig === qSig) return;
-  qSig = sig;
+  if (sig === G.qSig) return;
+  G.qSig = sig;
   qWrap.innerHTML = "";
   qEls = {};
   defs.forEach(function (q) {
@@ -283,7 +302,7 @@ function buildQuests(defs) {
     ".qgrip",
     function (order) {
       if (ro() || locked()) {
-        qSig = "";
+        G.qSig = "";
         render();
         return;
       }
@@ -308,7 +327,7 @@ function buildQuests(defs) {
         return inVis[q.id] ? byId[vis[pos++]] : q;
       });
       saveCfg(c);
-      qSig = "";
+      G.qSig = "";
       render();
       setSync("Priority order saved");
     },
@@ -325,5 +344,13 @@ function buildQuests(defs) {
     .join("");
   xb.style.gridTemplateColumns = "repeat(" + Math.max(1, rq.length) + ",1fr)";
 }
-var viewKey = null;
-var syncT = 0;
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  qEls = {};
+  qWrap = document.getElementById("quests");
+  G.qSig = "";
+  DN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  G.viewKey = null;
+  G.syncT = 0;
+}

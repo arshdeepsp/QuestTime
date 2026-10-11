@@ -1,15 +1,24 @@
 /* ---- past days are frozen: each keeps the quests it had ---- */
-function lockReset() {
-  lockedThru = null;
-  ddm = {};
+import { G } from "../core/g.js";
+import { S, START_KEY } from "../core/00-state.js";
+import { add, todayKey } from "../core/days.js";
+import { cache } from "../core/storage.js";
+import { midAt } from "./26-periods.js";
+import { hasEntry } from "./day-rules.js";
+import { activeDefs, defsOf } from "./quests-on-day.js";
+import { schAll, schNorm } from "../schedule/model.js";
+
+export function lockReset() {
+  G.lockedThru = null;
+  G.ddm = {};
 }
 /* Quest list for a passed day: as the settings stand (queued changes were removed in SCHEMA 16). */
-function lockDefs(d) {
+export function lockDefs(d) {
   return activeDefs(d);
 }
 /* Repeats that fell on a passed day are copied onto it (as one-offs with src, plus a skip), so stopping or editing a
      repeat later never changes that day's plan or "Plan kept". */
-function lockReps(d, e) {
+export function lockReps(d, e) {
   if (!(S.cfg.rep || []).length) return;
   var R = schAll(d).filter(function (b) {
     return b.rep;
@@ -30,15 +39,15 @@ function lockReps(d, e) {
     }),
   );
 }
-function lockPast() {
-  if (!S.cfg || cacheBlock) return;
-  if (lockDays !== S.days || lockStart !== START_KEY) {
-    lockDays = S.days;
-    lockStart = START_KEY;
-    lockedThru = null;
+export function lockPast() {
+  if (!S.cfg || G.cacheBlock) return;
+  if (G.lockDays !== S.days || G.lockStart !== START_KEY) {
+    G.lockDays = S.days;
+    G.lockStart = START_KEY;
+    G.lockedThru = null;
   }
   var T = todayKey(),
-    d = lockedThru ? add(lockedThru, 1) : START_KEY,
+    d = G.lockedThru ? add(G.lockedThru, 1) : START_KEY,
     ch = false;
   if (!S.cfg.repFrozen) {
     for (var r0 = START_KEY; r0 < T; r0 = add(r0, 1)) {
@@ -58,7 +67,7 @@ function lockPast() {
       e = S.days[d] = Object.assign({}, e || {});
       e.q = lockDefs(d);
     } else e = S.days[d] = Object.assign({}, e);
-    ddm = {};
+    G.ddm = {};
     e.ck = [];
     lockReps(d, e);
     (e.q || []).forEach(function (q) {
@@ -66,35 +75,35 @@ function lockPast() {
     });
     ch = true;
   }
-  if (d >= T) lockedThru = add(T, -1);
+  if (d >= T) G.lockedThru = add(T, -1);
   if (ch) {
-    ddm = {};
+    G.ddm = {};
     cache();
   }
 }
-function dayDefMap(d) {
+export function dayDefMap(d) {
   var T = todayKey(),
     kk = T + "|" + (S.cfg && S.cfg.updated);
-  if (kk !== ddmKey || ddm.__c !== S.cfg || ddm.__d !== S.days) {
-    ddm = { __c: S.cfg, __d: S.days };
-    ddmKey = kk;
+  if (kk !== G.ddmKey || G.ddm.__c !== S.cfg || G.ddm.__d !== S.days) {
+    G.ddm = { __c: S.cfg, __d: S.days };
+    G.ddmKey = kk;
   }
-  if (ddm[d]) return ddm[d];
+  if (G.ddm[d]) return G.ddm[d];
   var e = S.days[d],
     L = d < T && e && e.q ? e.q : activeDefs(d),
     m = {};
   L.forEach(function (q) {
     m[q.id] = q;
   });
-  return (ddm[d] = m);
+  return (G.ddm[d] = m);
 }
-function firstSeen(id) {
+export function firstSeen(id) {
   var sig = Object.keys(S.days).length + "";
-  if (sig !== firstSeenSig) {
-    firstSeenCache = {};
-    firstSeenSig = sig;
+  if (sig !== G.firstSeenSig) {
+    G.firstSeenCache = {};
+    G.firstSeenSig = sig;
   }
-  if (id in firstSeenCache) return firstSeenCache[id];
+  if (id in G.firstSeenCache) return G.firstSeenCache[id];
   var best = null;
   Object.keys(S.days).forEach(function (d) {
     if (best && d >= best) return;
@@ -108,5 +117,5 @@ function firstSeen(id) {
     )
       best = d;
   });
-  return (firstSeenCache[id] = best);
+  return (G.firstSeenCache[id] = best);
 }

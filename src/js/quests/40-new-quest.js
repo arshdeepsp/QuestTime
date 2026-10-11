@@ -1,20 +1,24 @@
 /* ---- new quest modal ---- */
-var TDESC = {
-  time: "Minutes per day, or a weekly total",
-  target: "Count up to a number (steps, pages, glasses)",
-  limit: "Stay under a maximum (screen time, snacks)",
-  check: "A daily yes/no habit",
-  todo: "A one-off task that disappears once done",
-  weekly: "X times a week, on any days",
-  wake: "Log a time that must fall in a window",
-  scale: "Rate something 1-5 or 1-10",
-};
-var nqEl = document.getElementById("nqModal"),
-  nqB = document.getElementById("nqBody"),
-  nqS = document.getElementById("modalScrim"),
-  NQ = null,
-  nqLast = null;
-function nqDefaults(t, label) {
+import { G } from "../core/g.js";
+import { S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { add, lateInWeek, nextMonday, todayKey, wkOrder, wkSpan } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { cache, flush } from "../core/storage.js";
+import { clone, esc, fmtD, num } from "../core/util.js";
+import { DN } from "./02-quest-list.js";
+import { countsOnDay, overMsg, wouldExceed } from "./35b-daily-limit.js";
+import { LIB, TN, moreSum } from "./38-quest-editor.js";
+import { perOf, perWord } from "../rules/26-periods.js";
+import { activeDefs, stampAdded } from "../rules/quests-on-day.js";
+import { subjList } from "../subjects/32-subjects.js";
+import { topicPick, wireTopicPick } from "../subjects/35-links.js";
+import { render } from "../ui/04-render.js";
+import { setSync } from "../ui/feedback.js";
+
+export var TDESC, nqEl, nqB, nqS, NQ, nqLast;
+
+export function nqDefaults(t, label) {
   var q = { type: t, label: label || "" };
   if (t === "time") {
     q.min = 30;
@@ -36,7 +40,7 @@ function nqDefaults(t, label) {
   if (t === "weekly") q.min = 3;
   return q;
 }
-function openNQ() {
+export function openNQ() {
   if (locked()) {
     setSync("This day is locked. New quests can be added tomorrow.");
     return;
@@ -49,13 +53,13 @@ function openNQ() {
   var f = nqB.querySelector("#nqName");
   if (f) f.focus();
 }
-function closeNQ() {
+export function closeNQ() {
   nqEl.hidden = true;
   nqS.hidden = true;
   NQ = null;
   if (nqLast && nqLast.focus) nqLast.focus();
 }
-function drawNQ(msg) {
+export function drawNQ(msg) {
   var q = NQ,
     h = '<div class="ed">';
   h +=
@@ -431,18 +435,37 @@ function drawNQ(msg) {
       S.days[T] = Object.assign({}, S.days[T], { q: activeDefs(T) });
       dirty[T] = true;
       cache();
-      clearTimeout(timer);
-      timer = setTimeout(flush, 300);
+      clearTimeout(G.timer);
+      G.timer = setTimeout(flush, 300);
     }
-    qSig = "";
+    G.qSig = "";
     closeNQ();
     render();
     setSync(q.label + " added");
   });
 }
-document.getElementById("nqBtn").addEventListener("click", openNQ);
-document.getElementById("nqClose").addEventListener("click", closeNQ);
-nqS.addEventListener("click", closeNQ);
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && !nqEl.hidden) closeNQ();
-});
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  TDESC = {
+    time: "Minutes per day, or a weekly total",
+    target: "Count up to a number (steps, pages, glasses)",
+    limit: "Stay under a maximum (screen time, snacks)",
+    check: "A daily yes/no habit",
+    todo: "A one-off task that disappears once done",
+    weekly: "X times a week, on any days",
+    wake: "Log a time that must fall in a window",
+    scale: "Rate something 1-5 or 1-10",
+  };
+  nqEl = document.getElementById("nqModal");
+  nqB = document.getElementById("nqBody");
+  nqS = document.getElementById("modalScrim");
+  NQ = null;
+  nqLast = null;
+  document.getElementById("nqBtn").addEventListener("click", openNQ);
+  document.getElementById("nqClose").addEventListener("click", closeNQ);
+  nqS.addEventListener("click", closeNQ);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !nqEl.hidden) closeNQ();
+  });
+}

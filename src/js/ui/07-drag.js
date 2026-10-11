@@ -1,9 +1,9 @@
 /* ---- drag to reorder (hold to pick up on phones) ---- */
-/* sortable(container, itemSel, handleSel, onDrop, holdSkip): drag rows by their handle (mouse/pen/touch) or, when
-     holdSkip is given, by holding a touch anywhere on the row for HOLD_MS that isn't on a control matching holdSkip
-     (a finger that moves before then scrolls as usual). Arrow keys on the handle move too. onDrop(order, newIndex). */
-var HOLD_MS = 350;
-function sortable(container, itemSel, handleSel, onDrop, holdSkip) {
+import { haptic } from "./45-gestures.js";
+
+export var HOLD_MS;
+
+export function sortable(container, itemSel, handleSel, onDrop, holdSkip) {
   /* Each call is a generation of the list: a drag that outlives it (the list was rebuilt mid-drag, e.g. by a sync)
      drops its stale row and saves nothing, so old and new rows' indexes are never mixed. */
   var gen = (container._sortGen = {});
@@ -165,8 +165,16 @@ function sortable(container, itemSel, handleSel, onDrop, holdSkip) {
     }
   });
 }
-function reorder(arr, order) {
+export function reorder(arr, order) {
   return order.map(function (k) {
     return arr[k];
   });
+}
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  /* sortable(container, itemSel, handleSel, onDrop, holdSkip): drag rows by their handle (mouse/pen/touch) or, when
+     holdSkip is given, by holding a touch anywhere on the row for HOLD_MS that isn't on a control matching holdSkip
+     (a finger that moves before then scrolls as usual). Arrow keys on the handle move too. onDrop(order, newIndex). */
+  HOLD_MS = 350;
 }

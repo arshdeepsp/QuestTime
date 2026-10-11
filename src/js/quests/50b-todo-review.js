@@ -1,11 +1,29 @@
 /* ---- to-do lifecycle: done ones vanish after their day, open ones get a keep-or-clear review ---- */
-function openTodos() {
+import { G } from "../core/g.js";
+import { S, dirty } from "../core/00-state.js";
+import { cfg, saveCfg } from "../core/config.js";
+import { todayKey } from "../core/days.js";
+import { locked } from "../core/entries.js";
+import { LN } from "../core/native.js";
+import { cache } from "../core/storage.js";
+import { clone, esc, fmtD } from "../core/util.js";
+import { notifAction } from "../notifications/52-taps.js";
+import { ignoredOn } from "../rules/modes.js";
+import { activeDefs } from "../rules/quests-on-day.js";
+import { render } from "../ui/04-render.js";
+import { closeG, openG } from "../ui/18-modal.js";
+import { swipeLR } from "../ui/45-gestures.js";
+import { setSync } from "../ui/feedback.js";
+
+export var todoReviewOpen;
+
+export function openTodos() {
   var T = todayKey();
   return cfg().quests.filter(function (q) {
     return q.type === "todo" && !q.doneOn && !q.completed && !ignoredOn(q.id, T);
   });
 }
-function cleanDoneTodos() {
+export function cleanDoneTodos() {
   var T = todayKey(),
     c = cfg();
   if (
@@ -24,10 +42,9 @@ function cleanDoneTodos() {
       return q;
     });
   saveCfg(c2);
-  qSig = "";
+  G.qSig = "";
 }
-var todoReviewOpen = false;
-function reviewTodos(reason) {
+export function reviewTodos(reason) {
   var L = openTodos();
   if (!L.length || todoReviewOpen) return;
   todoReviewOpen = true;
@@ -104,7 +121,7 @@ function reviewTodos(reason) {
             dirty[T] = true;
             cache();
           }
-          qSig = "";
+          G.qSig = "";
           render();
         }
         try {
@@ -121,7 +138,7 @@ function reviewTodos(reason) {
   );
 }
 /* A full-screen page is up (schedule, help, account page, quest editor, grove): pop-ups wait until it closes. */
-function fullPageOpen() {
+export function fullPageOpen() {
   var b = document.body.classList;
   return (
     b.contains("sch-open") ||
@@ -131,13 +148,13 @@ function fullPageOpen() {
     b.contains("grove-on")
   );
 }
-function reviewDue() {
+export function reviewDue() {
   var T = todayKey(),
     last = "";
   try {
     last = localStorage.getItem("pc-todoreview") || "";
   } catch (x) {}
-  if (last >= T || locked() || S.timer || fullPageOpen() || (typeof groveOpen !== "undefined" && groveOpen))
+  if (last >= T || locked() || S.timer || fullPageOpen() || (typeof G.groveOpen !== "undefined" && G.groveOpen))
     return false;
   if (
     !openTodos().some(function (q) {
@@ -147,27 +164,32 @@ function reviewDue() {
     return false;
   return document.getElementById("gModal").hidden && document.getElementById("nqModal").hidden;
 }
-function maybeReviewTodos() {
+export function maybeReviewTodos() {
   if (reviewDue())
     setTimeout(function () {
       if (reviewDue()) reviewTodos("open");
     }, 600);
 }
-document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible") {
-    maybeReviewTodos();
-  }
-});
-(function () {
-  var ln = LN();
-  if (!ln || !ln.addListener) return;
-  try {
-    ln.addListener("localNotificationActionPerformed", function (ev) {
-      var n = ev && ev.notification;
-      if (n)
-        setTimeout(function () {
-          notifAction(n.id, n.extra || {});
-        }, 500);
-    });
-  } catch (x) {}
-})();
+
+/* Runs once at startup, in file-number order (main.js). */
+export function init() {
+  todoReviewOpen = false;
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      maybeReviewTodos();
+    }
+  });
+  (function () {
+    var ln = LN();
+    if (!ln || !ln.addListener) return;
+    try {
+      ln.addListener("localNotificationActionPerformed", function (ev) {
+        var n = ev && ev.notification;
+        if (n)
+          setTimeout(function () {
+            notifAction(n.id, n.extra || {});
+          }, 500);
+      });
+    } catch (x) {}
+  })();
+}

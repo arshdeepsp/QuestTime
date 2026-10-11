@@ -46,3 +46,13 @@ for (const width of [360, 390]) {
     });
   });
 }
+
+test("the daily wrap-up builds both pages of the PDF and downloads it", async ({ page }) => {
+  const J = { id: "j", type: "check", label: "Journal" }, R = { id: "rd", type: "time", label: "Reading", min: 30 };
+  await openApp(page, { cfg: { quests: [J, R] }, days: { "2026-11-01": { j: true, rd: 40, q: [J, R] }, "2026-10-31": { j: true, q: [J, R] } } });
+  await expect(page.locator("#wrapBtn")).toBeEnabled();
+  const dl = page.waitForEvent("download", { timeout: 15000 });
+  await page.evaluate(() => document.getElementById("wrapBtn").click());
+  expect((await dl).suggestedFilename()).toBe("productivitycraft-wrapup-2026-11-01.pdf");
+  await expect(page.locator("#sync")).toHaveText("Wrap-up saved");
+});

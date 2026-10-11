@@ -1,5 +1,10 @@
 /* ---- deadlines + term in HUD ---- */
-function renderHudExtras(T) {
+import { cfg } from "../core/config.js";
+import { daysBetween } from "../core/days.js";
+import { esc } from "../core/util.js";
+import { openDeadlineModal } from "./new-deadline.js";
+
+export function renderHudExtras(T) {
   var c = cfg(),
     dl = (c.deadlines || [])
       .filter(function (d) {

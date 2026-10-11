@@ -1,4 +1,6 @@
 /* ---- where the state is saved on this device (one copy per account) ---- */
+import { store } from "./00-state.js";
+
 /* ---- the store ----
      State lives in S; persistence goes through `store`, which thinks in documents so a sync backend can be plugged in
      without touching the app: `cfg` (one doc, carries `updated`), `refl` (one doc, a map by day), `days/<date>` (one doc
@@ -15,7 +17,7 @@
      made without an account lives in pc-cache-v1 (the guest copy). Only the copy of whoever is signed in is loaded.
      Switching (sign in, sign out, account deleted) writes nothing more (storeHold) and reloads the app. One-time
      upgrade: a device that was signed in before copies were per account hands its data to that account. */
-function storeKey() {
+export function storeKey() {
   var a = null,
     up = false;
   try {
@@ -36,16 +38,16 @@ function storeKey() {
   return k;
 }
 /* The signed-in account on this device (pc-account), readable before the sync code (sync/54-account.js) has run. */
-function cloudAccount() {
+export function cloudAccount() {
   try {
     return JSON.parse(localStorage.getItem("pc-account") || "null");
   } catch (x) {
     return null;
   }
 }
-function cache() {
+export function cache() {
   store.flush();
 }
-function flush() {
+export function flush() {
   cache();
 }
