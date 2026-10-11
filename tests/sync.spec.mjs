@@ -391,3 +391,30 @@ test("settings arriving from a device that saved a quest twice are taken without
   expect((await store(page)).cfg.quests.map((q) => q.id)).toEqual(["pp", "j"]);
   await expect.poll(async () => (await docs(page))["users/u1/data/cfg"].quests.map((q) => q.id)).toEqual(["pp", "j"]);
 });
+
+test.describe("on a phone, mid-drag", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  test("a list rebuilt while a quest is held (settings arriving from the cloud) never writes a quest twice or swallows another", async ({ page }) => {
+    const QS = [{ id: "a", type: "time", label: "Alpha", min: 30 }, { id: "b", type: "time", label: "Bravo", min: 30 }, { id: "c", type: "check", label: "Charlie" }];
+    await page.addInitScript(fake);
+    await page.addInitScript((QS) => { if (localStorage.getItem("__fc")) return; localStorage.setItem("pc-account", JSON.stringify({ uid: "u1", email: "arsh@example.com" })); window.__cloud.user = { uid: "u1", email: "arsh@example.com" };
+      window.__cloud.put("users/u1/data/cfg", { quests: QS, rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u: 1 }); }, QS);
+    await openApp(page, { cfg: { quests: [] } });
+    await expect(page.locator("#quests .q .lbl")).toHaveText(["Alpha", "Bravo", "Charlie"]);
+    await page.clock.pauseAt(Date.parse("2026-11-02T09:00:30-05:00"));
+    const cdp = await page.context().newCDPSession(page);
+    const a = await page.locator("#quests .q", { hasText: "Alpha" }).locator(".lbl").boundingBox(), b = await page.locator("#quests .q", { hasText: "Bravo" }).locator(".lbl").boundingBox();
+    const x = a.x + 5, y = a.y + a.height / 2, y2 = b.y + b.height + 6;
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y, id: 1 }] });
+    await page.clock.runFor(450);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - 10, id: 1 }] });
+    await page.evaluate((QS) => window.__cloud.remote("users/u1/data/cfg", { quests: [QS[0], Object.assign({}, QS[1], { label: "Bravo 2" }), QS[2]], rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u: 5 }), QS);
+    await page.clock.runFor(200);
+    await expect(page.locator("#quests .q .lbl")).toContainText(["Bravo 2"]);
+    for (let i = 1; i <= 5; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y + (y2 - y) * i / 5, id: 1 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.waitForTimeout(300);
+    expect((await store(page)).cfg.quests.map((q) => q.id).sort()).toEqual(["a", "b", "c"]);
+    await expect(page.locator("#quests .q .lbl")).toHaveText(["Alpha", "Bravo 2", "Charlie"]);
+  });
+});

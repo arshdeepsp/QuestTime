@@ -4,6 +4,9 @@
      (a finger that moves before then scrolls as usual). Arrow keys on the handle move too. onDrop(order, newIndex). */
 var HOLD_MS = 350;
 function sortable(container, itemSel, handleSel, onDrop, holdSkip) {
+  /* Each call is a generation of the list: a drag that outlives it (the list was rebuilt mid-drag, e.g. by a sync)
+     drops its stale row and saves nothing, so old and new rows' indexes are never mixed. */
+  var gen = (container._sortGen = {});
   var items0 = [].slice.call(container.querySelectorAll(itemSel)).filter(function (x) {
     return x.parentNode === container;
   });
@@ -58,6 +61,10 @@ function sortable(container, itemSel, handleSel, onDrop, holdSkip) {
       }
       function done() {
         row.classList.remove("dragging");
+        if (container._sortGen !== gen) {
+          if (row.parentNode === container) container.removeChild(row);
+          return;
+        }
         if (moved) {
           var order = sibs().map(function (x) {
             return +x.getAttribute("data-sidx");
