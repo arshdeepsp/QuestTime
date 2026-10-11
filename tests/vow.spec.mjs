@@ -71,6 +71,9 @@ test("the first four rules open the day; other quests show once all are ticked",
   for (const l of ["Sleep", "Midday rest", "The line", "Before starting"]) await page.locator("#quests .q", { hasText: l }).locator(".sw").click();
   await expect(page.locator("#vowNote")).toBeHidden();
   await expect(page.locator("#quests .q:visible", { hasText: "CS work" })).toHaveCount(1);
+  await expect(page.locator("#quests .q.vowq:visible")).toHaveCount(0);
+  await page.locator("#quests .q", { hasText: "Journal" }).locator(".sw").click();
+  await expect(page.locator("#doneSep")).toContainText("Done today (1)");
   const e = (await store(page)).days["2026-11-02"];
   const ids = e.q.filter((q) => q.vow).map((q) => q.id);
   expect(ids.length).toBe(4);

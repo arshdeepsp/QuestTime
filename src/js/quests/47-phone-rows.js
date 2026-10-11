@@ -237,7 +237,7 @@ export function mobileList(defs, e, past) {
     var row = el.row,
       run = !!(S.timer && S.timer.id === q.id),
       ig = !!q.ign && !run,
-      isDone = !ig && !q.off && row.classList.contains("met") && q.type !== "limit" && !run;
+      isDone = !ig && !q.off && !q.vow && row.classList.contains("met") && q.type !== "limit" && !run;
     row.classList.toggle("ignq", ig);
     if (ig) nIgn++;
     row.classList.toggle("offq", !ig && !!q.off && !run);

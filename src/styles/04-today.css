@@ -897,6 +897,9 @@ details.rules > summary.sw-l {
 #quests .q.vowq .req {
   display: none;
 }
+#gui:not(.vowgate):not(.ro) #quests .q.vowq {
+  display: none !important;
+}
 .q.vowq .vowt {
   margin-top: 2px;
   color: #f1e6d8;
