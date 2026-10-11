@@ -91,9 +91,19 @@ export function init() {
       localStorage.setItem(storeKey(), JSON.stringify(state));
     },
   };
+  /* store.subscribe(fn): fn(ids) runs after every save that changed documents ("cfg", "refl", "days/<date>", "-days/<date>"
+     for a removed day) and after a document adopted from the cloud. ui/04-render.js subscribes to re-render. */
   store = (function () {
     var ad = localAdapter,
+      subs = [],
       last = { cfg: null, refl: null, days: {} };
+    function emit(ids) {
+      subs.slice().forEach(function (fn) {
+        try {
+          fn(ids);
+        } catch (e) {}
+      });
+    }
     function changed() {
       var ch = [];
       if (S.cfg !== last.cfg) ch.push("cfg");
@@ -115,6 +125,15 @@ export function init() {
       });
     }
     return {
+      subscribe: function (fn) {
+        subs.push(fn);
+        return function () {
+          subs = subs.filter(function (x) {
+            return x !== fn;
+          });
+        };
+      },
+      emit: emit,
       use: function (a) {
         ad = a;
       },
@@ -184,6 +203,7 @@ export function init() {
         try {
           ad.save(S, ch.concat(["session"]));
         } catch (e) {}
+        if (ch.length) emit(ch);
         return ch;
       },
       docs: function () {

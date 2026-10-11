@@ -13,8 +13,8 @@ import { dedupeQuests } from "../core/config.js";
 import { cache, cloudAccount } from "../core/storage.js";
 import { lockReset } from "../rules/past-days.js";
 import { renderSettings } from "../settings/10-settings.js";
-import { hashOf, merge3 } from "./merge.js";
 import { render } from "../ui/04-render.js";
+import { hashOf, merge3 } from "./merge.js";
 import { welcomeCheck } from "../ui/24-help.js";
 import { applyLook } from "../ui/look.js";
 
@@ -265,6 +265,8 @@ export function init() {
             Object.keys(m.del || {}).forEach(function (id) {
               if (!got[id] && m.del[id] > syn) queue[id] = true;
             });
+            /* render now, not on the store's next-microtask render: freezing past days during render changes docs,
+               and those changes must go out with this pull's push */
             if (ch) {
               G.qSig = "";
               render();
@@ -784,6 +786,7 @@ export function init() {
     store.markClean(id, obj);
     lockReset();
     G.qSig = "";
+    store.emit([obj ? id : "-" + id]);
   };
   cloud.on(function () {
     if (

@@ -1,6 +1,6 @@
 /* ---- render ---- */
 import { G } from "../core/g.js";
-import { RANKS, S, START_AT, START_KEY, dirty } from "../core/00-state.js";
+import { RANKS, S, START_AT, START_KEY, dirty, store } from "../core/00-state.js";
 import { cfg, uiGet, uiSet } from "../core/config.js";
 import { add, dayKey, daysBetween, parse, todayKey } from "../core/days.js";
 import { locked, ro } from "../core/entries.js";
@@ -50,7 +50,30 @@ export function sndLabel() {
   sndBtn.textContent = G.sfxOn ? "SFX on" : "SFX off";
   sndBtn.setAttribute("aria-pressed", G.sfxOn);
 }
+/* Data changes re-render on their own: the store notifies after each save or cloud adoption, and the next microtask
+   renders unless something already rendered since (an explicit render() still works and is immediate). Saves made
+   while rendering (snapshots, housekeeping) don't schedule another render. */
+export var renderSeq, rendering, renderQueued;
+export function onStoreChange() {
+  if (rendering || renderQueued) return;
+  renderQueued = true;
+  var seq = renderSeq;
+  Promise.resolve().then(function () {
+    renderQueued = false;
+    if (renderSeq === seq) render();
+  });
+}
 export function render(fromClick) {
+  renderSeq = (renderSeq || 0) + 1;
+  if (rendering) return renderBody(fromClick);
+  rendering = true;
+  try {
+    return renderBody(fromClick);
+  } finally {
+    rendering = false;
+  }
+}
+export function renderBody(fromClick) {
   try {
     lockPast();
     rollTimer();
@@ -521,6 +544,7 @@ export function elapsed() {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
+  store.subscribe(onStoreChange);
   G.statsOpen = !!uiGet("stats");
   document.getElementById("statsToggle").addEventListener("click", function () {
     G.statsOpen = !G.statsOpen;

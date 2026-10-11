@@ -968,7 +968,6 @@ export function renderSettings() {
     var c2 = clone(cfg());
     c2.showPlan = !c2.showPlan;
     saveCfg(c2);
-    render();
     renderSettings();
   });
   bind("setSfx", "click", function () {

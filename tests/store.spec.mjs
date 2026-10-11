@@ -46,3 +46,14 @@ test("older data loads; the passed days it snapshots on first open are stamped, 
   expect(s.meta.u.cfg).toBeUndefined();
   expect(s.days["2026-11-01"]).toMatchObject({ j: true });
 });
+
+test("a saved change re-renders on its own: Show plan updates Today without an explicit render", async ({ page }) => {
+  await openApp(page, { cfg: { quests: [{ id: "rd", type: "time", label: "Reading", min: 30 }], showPlan: true } });
+  await expect(page.locator("#gui")).not.toHaveClass(/noplan/);
+  await page.goto("http://127.0.0.1:4173/index.html#settings");
+  await page.click("[data-st='quests']");
+  await page.click("#setPlan");
+  await expect(page.locator("#gui")).toHaveClass(/noplan/);
+  await page.click("#setPlan");
+  await expect(page.locator("#gui")).not.toHaveClass(/noplan/);
+});
