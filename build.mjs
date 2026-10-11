@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, cpSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { join, dirname } from "node:path";
+import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -25,7 +25,15 @@ try {
 const squeeze = (code, loader) =>
   esbuild.transformSync(code, { loader, minifyWhitespace: true, legalComments: "none" }).code;
 const css = squeeze(readDir(join(src, "styles"), ".css").join("\n"), "css");
-const js = squeeze("(function(){\n" + readDir(join(src, "js"), ".js").join("\n") + "\n})();", "js");
+/* src/js/<feature>/*.js are joined in file-name order, whatever their folder (see scripts/check-js.mjs): a numbered
+   file (NN-…) runs at that point of startup; an unnumbered one holds only function declarations, which are hoisted,
+   so where it lands doesn't matter. */
+const jsFiles = (function walk(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+    d.isDirectory() ? walk(join(dir, d.name)) : d.name.endsWith(".js") ? [join(dir, d.name)] : [],
+  );
+})(join(src, "js")).sort((a, b) => basename(a).localeCompare(basename(b)));
+const js = squeeze("(function(){\n" + jsFiles.map((f) => readFileSync(f, "utf8")).join("\n") + "\n})();", "js");
 const ach = readFileSync(join(src, "assets", "achievements.json"), "utf8");
 
 let html = readFileSync(join(src, "index.html"), "utf8");
