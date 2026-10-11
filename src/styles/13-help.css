@@ -1,0 +1,144 @@
+/* ---- How it works ---- */
+.packs.wel {
+  margin: 10px 0;
+}
+.packs.wel .stone.on {
+  background: #3c8527;
+  border-color: #2a5e1b #5db33f #5db33f #2a5e1b;
+}
+.hp-t .slot {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: #6f6f6f;
+  border: 3px solid;
+  border-color: #555 #ddd #ddd #555;
+  box-sizing: border-box;
+}
+.hp-t .slot svg {
+  width: 32px;
+  height: 32px;
+}
+/* ===== full-screen help page ===== */
+body.hp-open {
+  overflow: hidden;
+}
+.hppage {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: #c6c6c6;
+  color: #1e1e1e;
+}
+.hppage[hidden] {
+  display: none !important;
+}
+.hp-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(10px + var(--sat)) 12px 10px;
+  background: #212121;
+  border-bottom: 4px solid #000;
+}
+.hp-hd h2 {
+  margin: 0;
+  font: 12px/1.3 var(--px);
+  color: #ffff55;
+}
+.hp-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 12px calc(20px + var(--sab));
+}
+.hp-scroll > * {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.hp-intro {
+  margin: 0 auto 12px;
+  font: 18px/1.25 var(--vt);
+  color: #333;
+}
+.hp-g {
+  margin: 0 auto 16px;
+}
+.hp-gh {
+  margin: 0 0 6px;
+  font: 9px/1.5 var(--px);
+  color: #3a3a3a;
+}
+.hp-list {
+  background: #b5b5b5;
+  border: 3px solid;
+  border-color: #555 #fff #fff #555;
+}
+.hp-item {
+  border-top: 2px solid #9c9c9c;
+}
+.hp-item:first-child {
+  border-top: 0;
+}
+.hp-t {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 14px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: #1e1e1e;
+  cursor: pointer;
+}
+.hp-t b {
+  display: block;
+  font: 10px/1.5 var(--px);
+}
+.hp-t small {
+  display: block;
+  margin-top: 2px;
+  font: 17px/1.15 var(--vt);
+  color: #333;
+}
+.hp-b {
+  display: none;
+  padding: 0 12px 12px 72px;
+}
+.hp-item.open .hp-b {
+  display: block;
+}
+.hp-b ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.hp-b li {
+  margin: 0 0 6px;
+  font: 18px/1.25 var(--vt);
+}
+.hp-b .lnk {
+  font: 16px var(--vt);
+}
+.hp-item.flash {
+  animation: hpflash 1.2s ease-out 1;
+}
+@keyframes hpflash {
+  0% {
+    background: #fff3a0;
+  }
+  100% {
+    background: transparent;
+  }
+}
+@media (max-width: 420px) {
+  .hp-b {
+    padding-left: 12px;
+  }
+}

@@ -1,0 +1,844 @@
+/* ---- themes and scenery: the animated background (#fx), sky, day/night, calm mode ---- */
+.lanes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.lane {
+  background: #8b8b8b;
+  border: 3px solid;
+  border-color: #373737 #fff #fff #373737;
+  padding: 12px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #3f3f3f;
+}
+.lane h4 {
+  font-size: 10px;
+  margin: 0 0 8px;
+  color: #ffff55;
+}
+.lane .no {
+  margin-top: 8px;
+  color: #e6e6e6;
+}
+.lane .no b {
+  font-weight: 400;
+  color: #ffb4ab;
+}
+.places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.places li {
+  font-family: var(--px);
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #3f3f3f;
+  background: #7a7a7a;
+  border: 3px solid;
+  border-color: #b0b0b0 #3a3a3a #3a3a3a #b0b0b0;
+  padding: 8px 10px;
+}
+.q .gem {
+  width: 14px;
+  height: 14px;
+  background: #373737;
+  border: 2px solid #1e1e1e;
+}
+.q.met .gem {
+  background: #50d65a;
+  border-color: #1e6b23;
+  box-shadow: inset -3px -3px 0 #2fa33a;
+}
+.q.opt .gem {
+  background: #6a6a6a;
+}
+.q.fail .gem {
+  background: #e0453a;
+  border-color: #6b1e1e;
+  box-shadow: inset -3px -3px 0 #a32a22;
+}
+#quests.timing .q.running .gem {
+  display: none;
+}
+body.focusview #fx {
+  display: none;
+}
+body.calm #fx *,
+body.calm #fx::before,
+body.calm #fx::after {
+  animation: none !important;
+  transition: none !important;
+}
+#fx .stars {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background-image: var(--starsA);
+  background-size: 400px 400px;
+  image-rendering: pixelated;
+}
+#fx.skyaware .stars {
+  display: block;
+  opacity: var(--stars, 0);
+}
+#fx.skyaware.ocean .stars {
+  bottom: calc(100% - 108px);
+}
+#fx.skyaware .sun,
+#fx.skyaware .moon {
+  z-index: 0;
+}
+#fx.skyaware .l1,
+#fx.skyaware .l2,
+#fx.skyaware .l3,
+#fx.skyaware .l4,
+#fx.skyaware .l5,
+#fx.skyaware .mill,
+#fx.skyaware::before,
+#fx.skyaware::after {
+  z-index: 1;
+}
+#fx.skyaware.mountains .l1,
+#fx.skyaware.mountains .l2,
+#fx.skyaware.mountains .l3,
+#fx.skyaware.mountains .l5,
+#fx.skyaware.village .l1,
+#fx.skyaware.village .l2,
+#fx.skyaware.village .l4,
+#fx.skyaware.village .l5,
+#fx.skyaware.village .mill,
+#fx.skyaware.ocean::before,
+#fx.skyaware.ocean::after,
+#fx.skyaware.ocean .l3 {
+  filter: brightness(var(--dim, 1));
+}
+#fx.skyaware.mountains .l4 {
+  opacity: calc(0.35 + 0.6 * var(--dim, 1));
+}
+#fx.skyaware.city::before {
+  opacity: var(--stars, 0);
+}
+#fx.skyaware.city .l1,
+#fx.skyaware.city .l2 {
+  filter: brightness(var(--dimc, 1));
+}
+#fx.skyaware.city .l3 {
+  opacity: calc(1.4 - var(--dim, 1));
+}
+/* village scene */
+#fx .mill {
+  display: none;
+  position: absolute;
+  left: max(10px, 4%);
+  bottom: 56px;
+  width: 72px;
+  height: 120px;
+  background: var(--millTower) center bottom/100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+#fx .mill i {
+  position: absolute;
+  left: 50%;
+  top: -30px;
+  width: 96px;
+  height: 96px;
+  margin-left: -48px;
+  background: var(--millBlades) center/100% 100% no-repeat;
+  image-rendering: pixelated;
+  animation: fxMill 9s steps(36) infinite;
+}
+@keyframes fxMill {
+  to {
+    transform: rotate(360deg);
+  }
+}
+#fx.village {
+  display: block;
+  background: linear-gradient(#78bde8 0, #b4ddf2 55%, #f6e7c1 100%);
+}
+#fx.village .sun {
+  display: block;
+}
+#fx.village .mill {
+  display: block;
+}
+#fx.village .l1,
+#fx.village .l2,
+#fx.village .l3,
+#fx.village .l4,
+#fx.village .l5 {
+  display: block;
+  top: auto;
+  bottom: 0;
+  height: 480px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+}
+#fx.village .l1 {
+  background-image: var(--vilHills);
+  background-size: 960px 480px;
+  background-position: -200px 100%;
+}
+#fx.village .l2 {
+  background-image: var(--village);
+  background-size: 720px 480px;
+}
+#fx.village .l3 {
+  background-image: var(--smoke);
+  background-size: 720px 480px;
+  animation: fxSmoke 4.5s ease-out infinite;
+}
+#fx.village::before {
+  content: "";
+  top: auto;
+  bottom: 0;
+  height: 480px;
+  background-image: var(--smoke);
+  background-size: 720px 480px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  animation: fxSmoke 4.5s ease-out infinite;
+  animation-delay: -2.25s;
+}
+@keyframes fxSmoke {
+  0% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+}
+#fx.village .l4 {
+  background-image: var(--walkA);
+  background-size: 1440px 480px;
+  animation: fxWalkA 240s steps(480) infinite;
+}
+#fx.village .l5 {
+  background-image: var(--walkB);
+  background-size: 1440px 480px;
+  animation: fxWalkB 300s steps(360) infinite;
+}
+@keyframes fxWalkA {
+  from {
+    background-position: 0 100%;
+  }
+  to {
+    background-position: 1440px 100%;
+  }
+}
+@keyframes fxWalkB {
+  from {
+    background-position: 0 100%;
+  }
+  to {
+    background-position: -1440px 100%;
+  }
+}
+#fx.village .l1 {
+  opacity: 1;
+}
+/* city + mountains scenes */
+#fx .l4,
+#fx .l5 {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
+#fx.city,
+#fx.mountains {
+  display: block;
+}
+#fx.city {
+  background: linear-gradient(#0b0e2a 0, #24215a 45%, #7a3e7c 78%, #e8875a 100%);
+}
+#fx.city::before {
+  background-image: var(--starsB);
+  background-size: 520px 520px;
+  opacity: 0.5;
+  bottom: 40%;
+}
+#fx.city .moon {
+  display: block;
+  top: 30px;
+}
+#fx.city .l1,
+#fx.city .l2,
+#fx.city .l3,
+#fx.city .l4 {
+  display: block;
+  top: auto;
+  bottom: 0;
+  height: 480px;
+  background-size: 720px 480px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+}
+#fx.city .l1 {
+  background-image: var(--cityBack);
+  background-position: -180px 100%;
+  opacity: 0.95;
+}
+#fx.city .l2 {
+  background-image: var(--cityFront);
+}
+#fx.city .l3 {
+  background-image: var(--cityWin);
+  animation: fxWin 6s steps(1) infinite;
+}
+#fx.city .l4 {
+  background-image: var(--cityBlink);
+  animation: fxBlink 1.6s steps(1) infinite;
+}
+@keyframes fxWin {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.35;
+  }
+  66% {
+    opacity: 0.75;
+  }
+}
+@keyframes fxBlink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+#fx.mountains {
+  background: linear-gradient(#6fb6ea 0, #a9d8f4 55%, #e2f2fa 100%);
+}
+#fx.mountains .sun {
+  display: block;
+}
+#fx.mountains .l1,
+#fx.mountains .l2,
+#fx.mountains .l3 {
+  display: block;
+  top: auto;
+  bottom: 0;
+  height: 480px;
+  background-size: 960px 480px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+}
+#fx.mountains .l1 {
+  background-image: var(--mtFar);
+}
+#fx.mountains .l2 {
+  background-image: var(--mtMid);
+  background-position: -300px 100%;
+}
+#fx.mountains .l3 {
+  background-image: var(--mtNear);
+  background-position: -120px 100%;
+}
+#fx.mountains .l4 {
+  display: block;
+  top: 40px;
+  bottom: auto;
+  height: 192px;
+  background-image: var(--clouds);
+  background-size: 768px 192px;
+  background-repeat: repeat-x;
+  animation: fxCloudA 90s linear infinite;
+  opacity: 0.95;
+}
+#fx.mountains .l5 {
+  display: block;
+  top: 90px;
+  bottom: auto;
+  height: 240px;
+  background-image: var(--birds);
+  background-size: 600px 240px;
+  background-repeat: repeat-x;
+  animation: fxBirds 40s linear infinite;
+}
+@keyframes fxBirds {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 600px 0;
+  }
+}
+.q.limok .gem {
+  background: transparent;
+  border: 2px dashed #e6e6e6;
+}
+#fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  display: none;
+  image-rendering: pixelated;
+}
+#fx.snow,
+#fx.ocean,
+#fx.night,
+#fx.day,
+#fx.nether,
+#fx.lava {
+  display: block;
+}
+#fx::before,
+#fx::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
+#fx .moon {
+  display: none;
+  position: absolute;
+  top: 10px;
+  right: max(12px, calc(50% - 470px));
+  width: 64px;
+  height: 64px;
+  background: var(--moon) center/100% no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 18px rgba(243, 239, 210, 0.35));
+}
+#fx.snow::before {
+  top: 60px;
+  background-image: var(--snowA);
+  background-size: 192px 192px;
+  animation: fxFallA 16s linear infinite;
+}
+#fx.snow .l1 {
+  display: block;
+  top: -6px;
+  bottom: auto;
+  height: 112px;
+  z-index: 1;
+  background-image: var(--snowClouds);
+  background-size: 768px 168px;
+  background-repeat: repeat-x;
+  animation: fxCloudA 70s linear infinite;
+}
+#fx.snow .l2 {
+  display: block;
+  top: 30px;
+  bottom: auto;
+  height: 90px;
+  opacity: 0.75;
+  background-image: var(--snowClouds);
+  background-size: 560px 122px;
+  background-repeat: repeat-x;
+  animation: fxCloudB 95s linear infinite reverse;
+}
+#fx.snow::after {
+  top: 70px;
+  background-image: var(--snowB);
+  background-size: 224px 224px;
+  animation: fxFallB 26s linear infinite;
+  opacity: 0.85;
+}
+@keyframes fxFallA {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 192px;
+  }
+}
+@keyframes fxFallB {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 224px 224px;
+  }
+}
+#fx.ocean {
+  background: linear-gradient(
+    #2b1b4f 0,
+    #7a2e5e 34px,
+    #e8603f 72px,
+    #ffb36b 104px,
+    #ffe3a3 110px,
+    #3e8ec4 112px,
+    #2466a0 40%,
+    #123c68 75%,
+    #0b2a4a 100%
+  );
+}
+#fx.ocean .sun {
+  display: block;
+  top: 74px;
+  right: max(40px, calc(50% - 360px));
+  width: 76px;
+  height: 76px;
+  clip-path: inset(0 0 50% 0);
+  filter: hue-rotate(-28deg) saturate(1.5) drop-shadow(0 0 24px rgba(255, 120, 60, 0.8));
+}
+#fx.ocean .l3 {
+  display: block;
+  top: 114px;
+  bottom: auto;
+  height: 220px;
+  left: auto;
+  right: max(40px, calc(50% - 360px));
+  width: 76px;
+  background-image: var(--shimmer);
+  background-size: 80px 80px;
+  animation: fxShim 1.6s steps(4) infinite;
+  -webkit-mask-image: linear-gradient(#000, transparent);
+  mask-image: linear-gradient(#000, transparent);
+}
+@keyframes fxShim {
+  0% {
+    background-position: 0 0;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+  100% {
+    background-position: 8px 12px;
+    opacity: 1;
+  }
+}
+#fx.ocean::before {
+  top: 112px;
+  background-image: var(--waves);
+  background-size: 192px 96px;
+  animation: fxDrift 18s linear infinite;
+}
+#fx.ocean::after {
+  top: 124px;
+  background-image: var(--crests);
+  background-size: 320px 160px;
+  animation:
+    fxCrest 26s linear infinite,
+    fxBob 3.2s ease-in-out infinite alternate;
+  opacity: 0.85;
+}
+@keyframes fxCrest {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -320px 0;
+  }
+}
+@keyframes fxBob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(3px);
+  }
+}
+@keyframes fxDrift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 192px 0;
+  }
+}
+@keyframes fxRise {
+  from {
+    background-position: 0 160px;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+#fx.night {
+  background: linear-gradient(#050818, #101845 70%, #1a2356);
+}
+#fx .l1,
+#fx .l2,
+#fx .l3 {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
+#fx.night .moon {
+  display: block;
+}
+#fx.night .l1 {
+  display: block;
+  background-image: var(--starsA);
+  background-size: 400px 400px;
+  animation: fxTw 4s steps(4) infinite;
+}
+#fx.night .l2 {
+  display: block;
+  background-image: var(--starsB);
+  background-size: 520px 520px;
+  animation: fxTw 3s steps(3) infinite;
+  animation-delay: -1.3s;
+}
+#fx.night .l3 {
+  display: block;
+  background-image: var(--starsC);
+  background-size: 360px 360px;
+  animation: fxTw 5.5s steps(5) infinite;
+  animation-delay: -2.4s;
+}
+@keyframes fxTw {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.12;
+  }
+}
+#fx.day {
+  background: linear-gradient(#4fa8e8, #8fcdf3 55%, #c4e8fa);
+}
+#fx .sun {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: max(12px, calc(50% - 480px));
+  width: 80px;
+  height: 80px;
+  background: var(--sun) center/100% no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 22px rgba(255, 224, 102, 0.55));
+}
+#fx.day .sun {
+  display: block;
+}
+#fx.day .l1 {
+  display: block;
+  top: 40px;
+  bottom: auto;
+  height: 192px;
+  background-image: var(--clouds);
+  background-size: 768px 192px;
+  background-repeat: repeat-x;
+  animation: fxCloudA 80s linear infinite;
+}
+#fx.day .l2 {
+  display: block;
+  top: 320px;
+  bottom: auto;
+  height: 150px;
+  background-image: var(--clouds2);
+  background-size: 600px 150px;
+  background-repeat: repeat-x;
+  opacity: 0.85;
+  animation: fxCloudB 120s linear infinite;
+}
+#fx.day .l3 {
+  display: block;
+  top: 620px;
+  bottom: auto;
+  height: 192px;
+  background-image: var(--clouds);
+  background-size: 640px 160px;
+  background-repeat: repeat-x;
+  opacity: 0.7;
+  animation: fxCloudC 100s linear infinite;
+}
+@keyframes fxCloudA {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 768px 0;
+  }
+}
+@keyframes fxCloudB {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 600px 0;
+  }
+}
+@keyframes fxCloudC {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 640px 0;
+  }
+}
+#fx.nether {
+  background:
+    radial-gradient(ellipse at 50% 115%, rgba(255, 96, 16, 0.38), transparent 62%),
+    linear-gradient(rgba(40, 0, 0, 0.25), rgba(120, 20, 0, 0.15));
+}
+#fx.nether .l1 {
+  display: block;
+  background-image: var(--embersA);
+  background-size: 240px 240px;
+  animation: fxEmberA 9s linear infinite;
+}
+#fx.nether .l2 {
+  display: block;
+  background-image: var(--embersB);
+  background-size: 300px 300px;
+  animation: fxEmberB 14s linear infinite;
+  opacity: 0.85;
+}
+#fx.lava::before {
+  background: radial-gradient(ellipse at 50% 110%, rgba(255, 110, 20, 0.55), transparent 60%);
+  animation: fxGlow 5s ease-in-out infinite alternate;
+}
+#fx.lava .l1 {
+  display: block;
+  background-image: var(--lavaB);
+  background-size: 280px 280px;
+  animation: fxBubble 11s linear infinite;
+  opacity: 0.9;
+  -webkit-mask-image: linear-gradient(transparent, #000 55%);
+  mask-image: linear-gradient(transparent, #000 55%);
+}
+#fx.lava .l2 {
+  display: block;
+  background-image: var(--embersB);
+  background-size: 300px 300px;
+  animation: fxEmberB 16s linear infinite;
+  opacity: 0.7;
+}
+@keyframes fxGlow {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fxBubble {
+  0% {
+    background-position: 0 280px;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+@keyframes fxEmberA {
+  from {
+    background-position: 0 240px;
+  }
+  to {
+    background-position: 40px 0;
+  }
+}
+@keyframes fxEmberB {
+  from {
+    background-position: 0 300px;
+  }
+  to {
+    background-position: -60px 0;
+  }
+}
+.q.optq .gem {
+  border-style: dashed;
+}
+@media (max-width: 720px) {
+  .lanes {
+    grid-template-columns: 1fr;
+  }
+  #fx {
+    top: var(--hdrH, 0px);
+    bottom: var(--navH, 0px);
+    height: auto;
+  }
+  #fx.village .l1,
+  #fx.village .l2,
+  #fx.village .l3,
+  #fx.village .l4,
+  #fx.village .l5,
+  #fx.village::before {
+    height: 320px;
+  }
+  #fx.village .l1 {
+    background-size: 640px 320px;
+  }
+  #fx.village .l2,
+  #fx.village .l3,
+  #fx.village::before {
+    background-size: 480px 320px;
+  }
+  #fx.village .l4,
+  #fx.village .l5 {
+    background-size: 960px 320px;
+  }
+  @keyframes fxWalkA {
+    from {
+      background-position: 0 100%;
+    }
+    to {
+      background-position: 960px 100%;
+    }
+  }
+  @keyframes fxWalkB {
+    from {
+      background-position: 0 100%;
+    }
+    to {
+      background-position: -960px 100%;
+    }
+  }
+  #fx .mill {
+    bottom: 36px;
+    width: 48px;
+    height: 80px;
+  }
+  #fx .mill i {
+    width: 64px;
+    height: 64px;
+    margin-left: -32px;
+    top: -20px;
+  }
+  #fx.city .l1,
+  #fx.city .l2,
+  #fx.city .l3,
+  #fx.city .l4 {
+    height: 320px;
+    background-size: 480px 320px;
+  }
+  #fx.mountains .l1,
+  #fx.mountains .l2,
+  #fx.mountains .l3 {
+    height: 320px;
+    background-size: 640px 320px;
+  }
+  #quests .q .gem {
+    grid-column: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fx::before,
+  #fx::after,
+  #fx .l1,
+  #fx .l2,
+  #fx .l3,
+  #fx .l4,
+  #fx .l5,
+  #fx .mill i {
+    animation: none !important;
+    transform: none !important;
+  }
+}

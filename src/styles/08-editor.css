@@ -1,0 +1,529 @@
+/* ---- quest editor, new quest form, add sheet and tap-to-type ---- */
+/* ===== quest editor sheet ===== */
+.mgrsheet {
+  position: fixed;
+  inset: 0;
+  z-index: 33;
+  background: rgba(10, 12, 24, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.mgr-card {
+  width: min(780px, 100%);
+  max-height: min(90vh, 100%);
+  display: flex;
+  flex-direction: column;
+  background: #c6c6c6;
+  border: 4px solid;
+  border-color: #fff #555 #555 #fff;
+  box-shadow:
+    0 0 0 4px #000,
+    0 10px 0 rgba(0, 0, 0, 0.3);
+}
+.mgr-h {
+  position: relative;
+}
+.mgr-hb {
+  display: flex;
+  gap: 6px;
+}
+.mgr-body {
+  overflow: auto;
+  padding: 12px 14px 16px;
+  overscroll-behavior: contain;
+}
+.mgr-body #qmgr {
+  margin: 0;
+}
+.mgr-body [data-mcancel],
+.mgr-body [data-msave] {
+  display: none;
+}
+.mq .mq-tog {
+  flex: none;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.mq .mq-tog i {
+  width: 8px;
+  height: 8px;
+  border-right: 3px solid #fff;
+  border-bottom: 3px solid #fff;
+  transform: rotate(45deg);
+  margin-top: -4px;
+}
+.mq.open .mq-tog i {
+  transform: rotate(-135deg);
+  margin-top: 4px;
+}
+.mq:not(.open) > *:not(.mqtop):not(.mqsum) {
+  display: none;
+}
+.mq .mqtop {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.mq .mqtop input {
+  flex: 1;
+  min-width: 0;
+}
+.mq .mqtop .ty {
+  flex: none;
+}
+.mgr-body .mgrtop .help:not(:first-of-type) {
+  display: none;
+}
+.mgr-body .mgrtop .help b {
+  font-weight: 400;
+}
+.mqsum {
+  display: block;
+  font: 15px var(--vt);
+  color: #5a5a5a;
+  margin: 2px 0 0 2px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mq.open .mqsum {
+  display: none;
+}
+.mq:not(.open) {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.tdtg {
+  display: none;
+}
+html body #nqBtn {
+  display: none;
+}
+.addsheet {
+  display: grid;
+  gap: 10px;
+}
+.addopt {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  background: #8b8b8b;
+  color: #fff;
+  border: 3px solid;
+  border-color: #fff #555 #555 #fff;
+  padding: 12px;
+  font: inherit;
+  cursor: pointer;
+  text-shadow: 1px 1px 0 #3f3f3f;
+}
+.addopt b {
+  font: 11px var(--px);
+  font-weight: 400;
+}
+.addopt span {
+  font: 16px var(--vt);
+  color: #ededed;
+}
+.addopt.td {
+  cursor: default;
+}
+.addopt .edrow {
+  margin-top: 6px;
+}
+.addopt input {
+  flex: 1;
+  min-width: 0;
+  font: 18px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 6px 8px;
+}
+.addopt .cmsg2 {
+  color: #e8ffe0;
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+#numIn {
+  flex: 1;
+  font: 22px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 8px 10px;
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .modal-b .edrow .stone {
+    font-size: 8px;
+    padding: 9px 10px;
+  }
+}
+.stakes {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 19px;
+}
+.stakes b {
+  color: #9e2a1f;
+}
+.stakes.soft b {
+  color: #2e6b24;
+}
+#gBody .tpk input {
+  font: 19px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 6px 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.tpick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.tpick em {
+  font-style: normal;
+  color: #ffc4bc;
+}
+.tpk {
+  display: grid;
+  gap: 4px;
+  font: 8px var(--px);
+  color: #bdbdbd;
+}
+.tpk select {
+  font: 18px var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid #555;
+  padding: 5px 7px;
+}
+#gBody .tpk {
+  color: #3f3f3f;
+}
+.pp {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: #373737;
+  border: 2px solid #1e1e1e;
+  cursor: pointer;
+}
+.pp.on {
+  background: #ffd23f;
+  border-color: #8a6a00;
+}
+.tgrid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.trends .tgrid {
+  gap: 12px;
+}
+.sp-card .park .edrow input {
+  flex: 1;
+  background: #373737;
+  color: #fff;
+  border: 3px solid #555;
+  padding: 6px 8px;
+}
+.sp-card .edrow .stone {
+  font-size: 9px;
+  padding: 10px 12px;
+}
+.mgr .ty,
+.ed label {
+  font-family: var(--vt) !important;
+  letter-spacing: 0.02em;
+}
+.ed label,
+.mgr .ty {
+  font-size: 17px !important;
+  line-height: 1.2;
+}
+.capv {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.capv .slot {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  background: #c6c6c6;
+  border: 4px solid #8b8b8b;
+  display: grid;
+  place-items: center;
+}
+.capv .slot svg {
+  width: 56px;
+  height: 56px;
+}
+.iconpick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.iconpick .stone {
+  width: 38px;
+  height: 38px;
+  padding: 3px;
+}
+.iconpick svg {
+  width: 26px;
+  height: 26px;
+}
+.tgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.tcard {
+  text-align: left;
+  cursor: pointer;
+  background: #8b8b8b;
+  color: #fff;
+  border: 3px solid;
+  border-color: #373737 #fff #fff #373737;
+  padding: 8px;
+  display: grid;
+  gap: 5px;
+  font: inherit;
+}
+.tcard b {
+  font-family: "Press Start 2P", monospace;
+  font-weight: 400;
+  font-size: 9px;
+  text-shadow: 1px 1px 0 #3f3f3f;
+}
+.tcard span {
+  font-size: 16px;
+  line-height: 1.1;
+  color: #ededed;
+}
+.tcard.on {
+  background: #3c8527;
+  border-color: #2a5e1b #5db33f #5db33f #2a5e1b;
+}
+.tcard:focus-visible {
+  outline: 3px solid #3346a8;
+}
+.mgr .mq.dragging {
+  outline: 3px dashed #3346a8;
+  opacity: 0.85;
+  background: #c9d1f5;
+}
+.drawer-b .mq.ca {
+  margin-bottom: 8px;
+}
+.ed .stone.mini.on {
+  background: #3c8527;
+}
+.ed .stone.mini {
+  font-size: 8px;
+  padding: 6px 7px;
+  line-height: 1;
+}
+.addbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.mgrtop {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #c6c6c6;
+  padding: 4px 0 8px;
+  border-bottom: 3px solid #a6a6a6;
+}
+.ed {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.ed > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.ed label {
+  display: grid;
+  gap: 4px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  color: #3f3f3f;
+}
+.ed input,
+.ed textarea,
+.ed select {
+  box-sizing: border-box;
+  font: 20px/1.25 var(--vt);
+  background: #373737;
+  color: #fff;
+  border: 3px solid;
+  border-color: #1e1e1e #8b8b8b #8b8b8b #1e1e1e;
+  padding: 6px 8px;
+  width: 100%;
+  min-width: 0;
+}
+.ed textarea {
+  resize: vertical;
+}
+.ed select {
+  color-scheme: dark;
+}
+.edrow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.edrow > input {
+  flex: 1 1 200px;
+}
+.edrow.end {
+  justify-content: flex-end;
+}
+.edrow label {
+  flex: 0 1 140px;
+}
+.edrow label.grow {
+  flex: 1 1 200px;
+}
+.ed .stone {
+  font-size: 8px;
+  padding: 8px 10px;
+}
+.mgr .mq {
+  background: #b5b5b5;
+  border: 3px solid;
+  border-color: #fff #555 #555 #fff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.mgr .mq.paused {
+  opacity: 0.7;
+}
+.mgr .ty {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  color: #3f3f3f;
+  padding: 0 6px 10px;
+}
+.rr .pp {
+  width: 24px;
+  height: 24px;
+}
+.rrcard .edrow.end {
+  margin-top: 8px;
+}
+/* Quest forms: secondary fields fold under "More options"; the button carries a one-line summary of what's set. */
+.more-tog {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  width: 100%;
+  text-align: left;
+  margin: 6px 0 2px;
+}
+.more-tog small {
+  font: 15px var(--vt);
+  color: #3f3f3f;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+@media (max-width: 720px) {
+  .mgrsheet {
+    padding: 0;
+    align-items: stretch;
+  }
+  .mgr-card {
+    width: 100%;
+    max-height: none;
+    height: 100%;
+    border: 0;
+    box-shadow: none;
+  }
+  .mgr-h {
+    padding: calc(10px + var(--sat)) 12px 10px !important;
+  }
+  .mgr-h h2 {
+    font-size: 10px !important;
+  }
+  .mgr-body {
+    padding: 10px 10px calc(16px + var(--sab));
+  }
+  .tdtg {
+    display: inline-block;
+  }
+  .modal-b .stakes {
+    font-size: 16px;
+  }
+  .modal-b .stakes {
+    gap: 4px;
+    margin: 4px 0 8px;
+    padding-left: 16px;
+  }
+  .modal-b .edrow {
+    gap: 6px;
+  }
+  .modal-b .edrow.end {
+    position: sticky;
+    bottom: calc(-14px - var(--sab));
+    background: #c6c6c6;
+    padding: 8px 0 4px;
+    margin-bottom: 0;
+    z-index: 1;
+  }
+  .modal-b .tpk {
+    font-size: 7px;
+  }
+  .modal-b .tcard {
+    padding: 8px;
+  }
+  .modal-b .tcard b {
+    font-size: 8px;
+  }
+  .modal-b .tcard span {
+    font-size: 14px;
+  }
+  .modal-b .tgrid {
+    gap: 6px;
+  }
+  .pp {
+    width: 22px;
+    height: 22px;
+  }
+  .tgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .tgrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

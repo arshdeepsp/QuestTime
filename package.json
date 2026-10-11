@@ -7,8 +7,8 @@
     "build": "node build.mjs",
     "serve": "npm run build && npx --yes http-server dist -p 8080 -c-1",
     "test": "npm run build && node scripts/check-js.mjs && playwright test",
-    "format": "prettier --write src/js src/styles src/firebase build.mjs scripts/check-js.mjs",
-    "format:check": "prettier --check src/js src/styles src/firebase build.mjs scripts/check-js.mjs",
+    "format": "prettier --write src/js src/styles src/firebase build.mjs scripts/check-js.mjs scripts/css-diff.mjs",
+    "format:check": "prettier --check src/js src/styles src/firebase build.mjs scripts/check-js.mjs scripts/css-diff.mjs",
     "check:js": "node scripts/check-js.mjs",
     "android:sync": "npm run build && npx cap sync android && node scripts/add-native.cjs",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"

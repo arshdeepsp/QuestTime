@@ -1,0 +1,400 @@
+/* ---- focus timer (the running card) and sprints ---- */
+/* ===== timer running: one centered timer card ===== */
+#quests.timing .q:not(.running) {
+  display: none;
+}
+html body #quests.timing .q.running {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  grid-column: 1/-1;
+  gap: 14px;
+  padding: 26px 20px 22px;
+  background: #2a2a2a;
+  border: 4px solid #ffd23f;
+  box-shadow:
+    0 0 0 3px #000,
+    0 0 24px rgba(255, 210, 63, 0.25);
+}
+#quests.timing .q.running .pzb,
+#quests.timing .q.running .pendtag {
+  display: none;
+}
+#quests.timing .q.running .runbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  container-type: inline-size;
+}
+#quests.timing .q.running .rb-t {
+  font-size: clamp(20px, calc(100cqw / var(--n, 5) - 6px), 72px);
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1;
+  letter-spacing: 4px;
+  color: #ffff55;
+  text-shadow: 4px 4px 0 #000;
+}
+#quests.timing .q.running .rb-s {
+  font-size: 20px;
+  color: #e6e6e6;
+}
+#quests.timing .q.running .rb-b {
+  width: 100%;
+  height: 18px;
+  background: #111;
+  border: 3px solid #000;
+  box-shadow: inset 0 0 0 2px #3a3a3a;
+}
+#quests.timing .q.running .rb-b i {
+  background: repeating-linear-gradient(90deg, #7fe05a 0 14px, #5db33f 14px 16px);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+}
+#quests.timing .q.running .rb-f {
+  font-size: 18px;
+  color: #fff3c4;
+}
+html body #quests.timing .q.running .tmr {
+  order: 3;
+  width: 100%;
+  min-height: 52px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font: 10px var(--px);
+  color: #fff;
+  background: #9e2a1f;
+  border-color: #c9473a #5e1710 #5e1710 #c9473a;
+  padding: 0 16px;
+}
+#quests.timing .q.running .tmr .ic {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 0;
+  display: block;
+}
+#quests.timing .q.running .tmr span {
+  display: none;
+}
+#quests.timing .q.running .tmr::after {
+  content: "Stop and log time";
+}
+html body #spBtn {
+  display: none;
+}
+.runbox {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+  align-items: center;
+  flex: 1;
+  min-width: 220px;
+}
+.rb-t {
+  font: 20px var(--px);
+  color: #ffff55;
+  text-shadow: 2px 2px 0 #000;
+}
+.rb-s {
+  font: 16px var(--vt);
+  color: #fff;
+}
+.rb-b {
+  height: 8px;
+  background: #1e1e1e;
+  border: 2px solid #000;
+}
+.rb-b i {
+  display: block;
+  height: 100%;
+  background: #7fe05a;
+}
+.rb-f {
+  font: 15px var(--vt);
+  color: #fff3c4;
+}
+.rb-f:empty {
+  display: none;
+}
+#quests .q.running {
+  border-color: #ffd23f;
+}
+#quests .q.running .tmr {
+  order: 2;
+  align-self: stretch;
+  height: auto;
+  min-height: 44px;
+  padding: 0 14px;
+}
+#quests .q.running .tmr span {
+  display: none;
+}
+.prep {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 10px;
+}
+.sp-tp {
+  display: block;
+  font: 16px var(--vt);
+  color: #fff3c4;
+  margin-top: 4px;
+}
+/* ===== sprint ===== */
+.sprint {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  background: rgba(10, 12, 24, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.sp-card {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  background: #212121;
+  color: #fff;
+  border: 4px solid #555;
+  box-shadow: 0 0 0 4px #000;
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+.sp-k {
+  font-family: var(--px);
+  font-size: 10px;
+  color: #ffff55;
+}
+.sp-q1 {
+  font-family: var(--px);
+  font-size: 18px;
+  line-height: 1.4;
+}
+.sp-time {
+  font-family: var(--px);
+  font-size: clamp(32px, 8vw, 56px);
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 4px 4px 0 #000;
+}
+.sp-time.ok {
+  color: #7fe05a;
+}
+.sp-bar {
+  height: 14px;
+  background: #1e1e1e;
+  border: 2px solid #000;
+}
+.sp-bar i {
+  display: block;
+  height: 100%;
+  background: #7fe05a;
+  box-shadow: inset 0 -3px 0 #3e9e2b;
+}
+.sp-card .help {
+  color: #bdbdbd;
+}
+.sp-list {
+  display: grid;
+  gap: 6px;
+}
+.sp-opt {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  text-align: left;
+  background: #3a3a3a;
+  color: #fff;
+  border: 3px solid #555;
+  padding: 8px 10px;
+  font: 19px var(--vt);
+  cursor: pointer;
+}
+.sp-opt.on {
+  border-color: #7fe05a;
+  background: #2e4a2a;
+}
+.sp-opt em {
+  font-style: normal;
+  color: #bdbdbd;
+  font-size: 15px;
+}
+.sp-pb {
+  grid-column: 1/-1;
+  height: 6px;
+  background: #1e1e1e;
+}
+.sp-pb i {
+  display: block;
+  height: 100%;
+  background: #ffd23f;
+}
+.sp-q {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sp-q small {
+  font-family: var(--vt);
+  font-size: 14px;
+  opacity: 0.85;
+  margin-left: 4px;
+}
+.sp-pill {
+  position: fixed;
+  top: calc(10px + var(--sat));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 43;
+  font: 9px var(--px);
+  color: #fff;
+  background: #b3261e;
+  border: 3px solid #000;
+  padding: 9px 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.mgr .pz {
+  font-family: var(--vt) !important;
+  letter-spacing: 0.02em;
+}
+.mgr .pz {
+  font-size: 17px !important;
+  line-height: 1.2 !important;
+}
+.mgr .pz.ok {
+  color: #2e6b24;
+}
+/* ===== customization ===== */
+.pzb {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: #6a6a6a;
+  border: 3px solid;
+  border-color: #b0b0b0 #3a3a3a #3a3a3a #b0b0b0;
+  cursor: pointer;
+}
+.pzb {
+  color: #fff;
+  font: 16px/1 var(--vt);
+  text-shadow: 1px 1px 0 #3f3f3f;
+}
+.pzb:hover {
+  background: #7d86c9;
+}
+.pzb.arm {
+  background: #b3261e;
+}
+.gui.ro .pzb {
+  visibility: hidden;
+}
+.mgr .pz {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  padding: 0 6px 10px;
+}
+.mgr .pz {
+  color: #9e2a1f;
+}
+.rb-tp {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.rb-tp:empty {
+  display: none;
+}
+.rb-tp .stone {
+  font-size: 8px;
+  padding: 7px 9px;
+}
+.rb-tp1 {
+  font: 16px var(--vt);
+  color: #b9f5a0;
+}
+.runbox .rb-tp {
+  grid-column: 1/-1;
+}
+.rb-tp .stone.on {
+  background: #5e9e3a;
+  color: #fff;
+  border-color: #7cc24e #2f5a22 #2f5a22 #7cc24e;
+}
+@media (max-width: 720px) {
+  #quests .q.running {
+    border-color: #ffd23f;
+  }
+  .runbox {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .rb-t {
+    font: 20px var(--px);
+    color: #ffff55;
+    text-shadow: 2px 2px 0 #000;
+  }
+  .rb-s {
+    grid-column: 1;
+    font: 16px var(--vt);
+    color: #fff;
+  }
+  .rb-b {
+    grid-column: 1/-1;
+    height: 8px;
+    background: #1e1e1e;
+    border: 2px solid #000;
+  }
+  .rb-b i {
+    display: block;
+    height: 100%;
+    background: #7fe05a;
+  }
+  .rb-f {
+    grid-column: 1/-1;
+    font: 15px var(--vt);
+    color: #fff3c4;
+  }
+  .rb-f:empty {
+    display: none;
+  }
+  #quests .q.running .tmr {
+    order: 2;
+    align-self: stretch;
+    height: auto;
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  #quests .q.running .tmr span {
+    display: none;
+  }
+  .modal-b .prep {
+    gap: 4px;
+    margin: 4px 0 8px;
+  }
+  .sp-pill {
+    top: auto;
+    bottom: calc(84px + var(--sab));
+  }
+  #quests .q .pzb {
+    grid-column: 2;
+  }
+}

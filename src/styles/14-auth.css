@@ -1,3 +1,4 @@
+/* ---- account pages (sign in, create account, reset, change, delete) ---- */
 /* Account pages (#authPage, 55): full-screen like How it works. */
 body.au-open {
   overflow: hidden;
@@ -133,8 +134,4 @@ body.au-open {
 .au-skip .stone {
   min-height: 46px;
   font-size: 9px;
-}
-.acct .bad,
-.srow .bad {
-  color: #9e2a1f;
 }

@@ -1,3 +1,4 @@
+/* ---- the schedule page ---- */
 /* ===== today's schedule ===== */
 .sch-sum {
   font: 18px/1.2 var(--vt);
@@ -8,7 +9,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 0 0 8px;
 }
 .sch-q small {
   font-size: 0.85em;
@@ -182,7 +182,6 @@
   gap: 6px;
   margin-left: auto;
 }
-
 /* full-screen schedule page */
 body.sch-open {
   overflow: hidden;
@@ -367,7 +366,7 @@ body.sch-open {
   border-bottom: 3px solid #8b8b8b;
 }
 .sch-adj[hidden] {
-  display: none !important;
+  display: none;
 }
 .sch-adj label {
   display: flex;
@@ -556,7 +555,6 @@ body.sch-open {
   left: 42%;
   z-index: 3;
 }
-
 /* Now button (sticky at the scroller's bottom, only while the now line is off screen) and the dense hour scale */
 .sch-nowb {
   position: sticky;
@@ -576,4 +574,20 @@ body.sch-open {
 }
 .sch-tl.dense .sch-hr {
   font-size: 14px;
+}
+.schev {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-right: 3px solid #333;
+  border-bottom: 3px solid #333;
+  transform: rotate(-45deg);
+}
+.hp-t .schev {
+  transform: rotate(45deg);
+  margin-top: -4px;
+}
+.hp-item.open .hp-t .schev {
+  transform: rotate(-135deg);
+  margin-top: 4px;
 }

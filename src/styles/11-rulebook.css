@@ -1,0 +1,209 @@
+/* ---- Rulebook and starter packs ---- */
+/* rules panels */
+.block {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 10px 24px;
+  padding: 16px 0;
+  border-top: 3px solid #a6a6a6;
+}
+.block:first-of-type {
+  border-top: 0;
+  padding-top: 4px;
+}
+.block.wide {
+  grid-template-columns: 1fr;
+}
+.block h3 {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #3f3f3f;
+}
+.motto {
+  font-size: 24px;
+  color: #1e1e1e;
+  margin: 0 0 14px;
+  line-height: 1.25;
+}
+/* collapsible rules */
+details.rules {
+  margin: 18px 3px 0;
+  background: #c6c6c6;
+  color: #3f3f3f;
+  border: 4px solid;
+  border-color: #fff #555 #555 #fff;
+  box-shadow: 0 0 0 3px #000;
+}
+details.rules > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: #7a7a7a;
+  border-bottom: 3px solid #373737;
+}
+details.rules > summary::-webkit-details-marker {
+  display: none;
+}
+details.rules > summary:hover {
+  background: #7d86c9;
+}
+details.rules > summary h2 {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fff;
+  text-shadow: 2px 2px 0 #3f3f3f;
+}
+details.rules:not([open]) > summary {
+  border-bottom: 0;
+}
+details.rules > summary::after {
+  content: "+";
+  font-family: var(--px);
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #3f3f3f;
+}
+details.rules[open] > summary::after {
+  content: "-";
+}
+.rules-body {
+  padding: 16px;
+}
+.rules-empty {
+  font-size: 20px;
+  color: var(--muted);
+  text-shadow: 2px 2px 0 #000;
+  margin: 18px 3px 0;
+}
+details.rules > summary {
+  justify-content: flex-start;
+}
+details.rules > summary h2 {
+  flex: 1;
+}
+.edb.dragging,
+.ln.dragging,
+details.rules.dragging {
+  outline: 3px dashed #3346a8;
+  opacity: 0.85;
+}
+.packs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.packs .stone {
+  font-size: 9px;
+  padding: 9px 11px;
+}
+.lines {
+  display: grid;
+  gap: 6px;
+}
+.ln {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 8px;
+  align-items: start;
+  background: #b5b5b5;
+  border: 2px solid #9a9a9a;
+  padding: 6px;
+}
+.ln .lt {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  color: #3f3f3f;
+  padding-top: 10px;
+  line-height: 1.5;
+}
+.addbar .lt {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  color: #3f3f3f;
+  line-height: 1.5;
+}
+.ln .lin {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.ln-card .lin {
+  grid-template-columns: 1fr 2fr 1.4fr;
+}
+.ln-fact .lin {
+  grid-template-columns: 1fr 1fr;
+}
+.ln-yes .lt {
+  color: #2e6b24;
+}
+.ln-no .lt {
+  color: #9e2a1f;
+}
+.lbtn {
+  display: flex;
+  gap: 4px;
+}
+.addbar .lt {
+  padding: 0 6px 0 0;
+}
+.sec-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.sec-tools .stone,
+.rules-tools .stone {
+  font-size: 8px;
+  padding: 7px 9px;
+}
+.rules-tools {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin: 14px 3px 0;
+}
+.edb > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.edb {
+  border-top: 3px solid #a6a6a6;
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+details.rules > summary {
+  touch-action: pan-y;
+}
+@media (max-width: 720px) {
+  .block {
+    grid-template-columns: 1fr;
+  }
+  .ln {
+    grid-template-columns: 1fr;
+  }
+  .ln .lt {
+    padding-top: 0;
+  }
+  .ln-card .lin,
+  .ln-fact .lin {
+    grid-template-columns: 1fr;
+  }
+  .lbtn {
+    justify-content: flex-end;
+  }
+  details.rules > summary {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+}
+@media (min-width: 800px) and (max-width: 1099px) {
+  #quests .packs {
+    grid-column: 1/-1;
+  }
+}

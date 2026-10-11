@@ -1,0 +1,204 @@
+/* ---- page frame: panels and columns for phone, tablet and desktop ---- */
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+footer {
+  padding: 40px 0 64px;
+}
+.gui-r {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.gui-r .stone {
+  padding: 7px 9px;
+  font-size: 8px;
+}
+.gui {
+  margin: 22px 3px 0;
+  background: #c6c6c6;
+  color: #3f3f3f;
+  border: 4px solid;
+  border-color: #fff #555 #555 #fff;
+  box-shadow: 0 0 0 3px #000;
+  padding: 16px;
+}
+.gui.ro button:disabled,
+.gui.ro input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* achievements */
+.ach-sec {
+  padding: 44px 0 16px;
+}
+body.focusview footer {
+  display: none;
+}
+body.focusview .wrap {
+  padding-bottom: 0 !important;
+}
+html body #qEditBtn {
+  display: none;
+}
+.vtitle {
+  display: none;
+}
+.viewh {
+  font-family: var(--px);
+  font-weight: 400;
+  font-size: 16px;
+  color: #fff;
+  text-shadow: 3px 3px 0 #000;
+  margin: 26px 3px 6px;
+}
+.setpage {
+  margin: 14px 3px 0;
+  padding: 16px;
+}
+.wk {
+  font-family: var(--vt) !important;
+  letter-spacing: 0.02em;
+}
+.wk {
+  font-size: 16px !important;
+  line-height: 1.2;
+}
+.tbtns {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.stone:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.stone.tdbtn {
+  font-size: 9px;
+  padding: 9px 10px;
+}
+.stone.tdbtn[aria-pressed="true"] {
+  background: #3c8527;
+  border-color: #2a5e1b #5db33f #5db33f #2a5e1b;
+}
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  left: -9999px;
+}
+.wrap,
+footer {
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 720px) {
+  .wrap {
+    padding: 0 14px;
+  }
+  body.focusview .wrap {
+    padding-bottom: 16px;
+  }
+  .gui-r {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    justify-content: stretch;
+  }
+  .gui-r .stone {
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 7px !important;
+    padding: 8px 8px !important;
+  }
+  .gui,
+  #gui,
+  .wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+  #gui * {
+    max-width: 100%;
+  }
+  #gui {
+    padding: 12px 10px;
+  }
+  #gui .gh {
+    margin-bottom: 8px;
+  }
+  .gui-r {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+  }
+  #gui {
+    padding-bottom: 12px;
+  }
+  .wrap {
+    padding-bottom: 70px;
+  }
+  .gui-r {
+    gap: 6px;
+  }
+  .vtitle {
+    display: block;
+    font: 14px var(--px);
+    color: #ffff55;
+    text-shadow: 2px 2px 0 #000;
+    line-height: 1.2;
+  }
+  .viewh {
+    display: none;
+  }
+  .view {
+    padding-top: 6px;
+  }
+  .tl-from {
+    display: none;
+  }
+  .timeline {
+    margin-top: 6px;
+  }
+  .tl-for {
+    font-size: 18px;
+  }
+  .sw {
+    width: 76px;
+    height: 36px;
+    --k: 28px;
+  }
+  .gui {
+    padding: 12px;
+  }
+  .gui-r {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+}
+@media (max-width: 420px) {
+  .wrap {
+    padding: 0 10px;
+  }
+}
+@media (min-width: 800px) and (max-width: 1099px) {
+  .wrap {
+    max-width: 1040px;
+  }
+}
+@media (min-width: 1100px) {
+  body.focusview .wrap {
+    max-width: 900px !important;
+  }
+  .wrap {
+    max-width: 1260px !important;
+  }
+}
+@media (min-width: 1280px) {
+  .wrap {
+    max-width: 960px;
+  }
+}
