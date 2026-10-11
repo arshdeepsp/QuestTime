@@ -14,7 +14,6 @@ function openDayModal(k) {
           })[0];
           return x ? (x.mid ? "halfway checkpoint" : "period") + " (" + x.q.join(", ") + ")" : "period";
         })(),
-      carried: "Carried by your weekly total (streak held, no XP)",
       frozen: "Missed, saved by a streak freeze",
       pause: "Streaks paused: tracking only",
       rest: isVac(k) ? "Vacation day" : "Rest day",
@@ -26,7 +25,7 @@ function openDayModal(k) {
   openG(parse(k).toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric" }), function (b) {
     var h =
       '<p class="mhead ' +
-      (m === "ok" ? "good" : m === "rest" || m === "frozen" || m === "carried" || m === "pause" ? "" : "bad") +
+      (m === "ok" ? "good" : m === "rest" || m === "frozen" || m === "pause" ? "" : "bad") +
       '">' +
       label +
       (m !== "rest" ? " \u00b7 " + bases(e) + "/" + reqOf(defs).length + " done" : "") +
@@ -34,16 +33,6 @@ function openDayModal(k) {
       "</p>";
     if (!hasEntry(e)) h += '<p class="help">Nothing was logged this day.</p>';
     else h += qList(e, defs);
-    var tp = [];
-    if (tp.length)
-      h +=
-        '<p class="sh2">Top 3</p><ul class="ul">' +
-        tp
-          .map(function (x) {
-            return "<li>" + (x.d ? "\u2713 " : "\u2717 ") + esc(x.t) + "</li>";
-          })
-          .join("") +
-        "</ul>";
     if (S.refl[k]) h += '<p class="sh2">Reflection</p><p class="help">' + esc(S.refl[k].text || "") + "</p>";
     h +=
       '<p class="help">' +

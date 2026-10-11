@@ -933,7 +933,6 @@ function renderSettings() {
       function apply() {
         var c2 = clone(cfg());
         c2.cap = v;
-        c2.capSet = todayKey();
         saveCfg(c2);
         qSig = "";
         render();

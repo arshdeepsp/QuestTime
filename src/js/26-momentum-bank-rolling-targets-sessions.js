@@ -1,42 +1,11 @@
-/* ---- momentum: bank, rolling targets, sessions ---- */
-var eKey = new WeakMap(),
-  bankCov = new WeakMap(),
-  bankNow = {};
-function buildBank() {
+/* ---- rolling targets, sessions ---- */
+/* eKey: day entry → its date, rebuilt by compute() (indexDays), so code holding only an entry can find its day. */
+var eKey = new WeakMap();
+function indexDays() {
   eKey = new WeakMap();
-  bankCov = new WeakMap();
-  bankNow = {};
-  var on = false,
-    bal = {},
-    T = todayKey();
-  Object.keys(S.days)
-    .sort()
-    .forEach(function (k) {
-      var e = S.days[k];
-      if (!e) return;
-      eKey.set(e, k);
-      if (!on || k < START_KEY || k > T) return;
-      var cov = {};
-      defsOf(e).forEach(function (q) {
-        if (q.type !== "time" || q.roll) return;
-        var v = e[q.id] | 0,
-          b = bal[q.id] || 0;
-        if (v >= q.min) {
-          if (k < T) bal[q.id] = Math.min(q.min, b + (v - q.min));
-        } else {
-          var c = Math.min(b, q.min - v, Math.floor(q.min / 2));
-          if (c > 0 && v > 0) {
-            cov[q.id] = c;
-            if (k < T) bal[q.id] = b - c;
-          }
-        }
-      });
-      bankCov.set(e, cov);
-    });
-  bankNow = bal;
-}
-function emptyCover(fromK) {
-  return null;
+  Object.keys(S.days).forEach(function (k) {
+    if (S.days[k]) eKey.set(S.days[k], k);
+  });
 }
 /* Time totals run over a period: the calendar week (default), two weeks (q.per "2w", counted from the week the
      quest started) or the calendar month (q.per "month"). Pace spreads the total across the period's work days. */
@@ -308,8 +277,7 @@ function timeMet(q, e) {
     if (!k) return false;
     return rollSum(q.id, k, q) >= rollNeed(q, k);
   }
-  var c = (bankCov.get(e) || {})[q.id] || 0;
-  return v + c >= q.min;
+  return v >= q.min;
 }
 function addSession(T, id, start, end) {
   var e = Object.assign({}, S.days[T] || {}),

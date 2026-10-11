@@ -21,7 +21,6 @@ function setSubjs(q, L) {
   } else {
     delete q.subjs;
     delete q.subj;
-    delete q.topic;
     delete q.topics;
     if (q.fin && q.fin.t !== "total") delete q.fin;
   }
@@ -66,7 +65,6 @@ function setLinks(q, L, SL) {
   });
   if (L.length) q.topics = L;
   else delete q.topics;
-  delete q.topic;
   setSubjs(q, SL);
   if (q.fin && q.fin.t === "topic" && !qTopics(q).length) delete q.fin;
 }
@@ -645,16 +643,6 @@ function nfPlan() {
       }
     }
   }
-  var cov = emptyCover(T);
-  if (n.risk && cov != null && cov <= 1 && !hasEntry(e))
-    push(
-      2300,
-      cov === 0 ? "Empty today = a miss" : "Covered today, not tomorrow",
-      cov === 0
-        ? "Your weekly totals don\u2019t cover an empty day today. Log something before the day ends."
-        : "Today is covered by your weekly totals. Tomorrow an empty day would be a miss.",
-      atTime(T, "18:00"),
-    );
   if (n.risk && !rewardsOff() && st.miss === 1 && !ok(e))
     push(
       2200,

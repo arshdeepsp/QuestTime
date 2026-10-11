@@ -105,7 +105,6 @@ document.getElementById("strip").addEventListener("click", function (ev) {
     e = S.days[k] || {};
   var label = {
     lost: "Lost: a weekly total was missed, so this period no longer counts",
-    carried: "Carried: no work logged, but your weekly total covered it (streak held, no XP)",
     frozen: "Missed (saved by a streak freeze)",
     repaired: "Missed (repaired with XP)",
     rest: isVac(k) ? "Vacation day" : "Rest day (nothing required)",
@@ -408,11 +407,6 @@ function render(fromClick) {
             ? " \u00b7 on pace"
             : " \u00b7 ahead " + hm(df)
           : " \u00b7 " + hm(-df) + " more today keeps you on pace");
-    } else if (cfg().bank) {
-      var cv = (bankCov.get(e) || {})[q.id] || 0,
-        bk = bankNow[q.id] || 0;
-      if (cv) xtra = " \u00b7 +" + hm(cv) + " from bank";
-      else if (bk) xtra = " \u00b7 bank " + hm(bk);
     }
     rq.textContent = base;
   });

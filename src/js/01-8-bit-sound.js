@@ -93,7 +93,7 @@ function hm(m) {
 
 function compute(asOf) {
   lockPast();
-  buildBank();
+  indexDays();
   var T = asOf ? add(asOf, 1) : todayKey(),
     Y = add(T, -1),
     st = { fz: 0, streak: 0, best: 0, total: 0, miss: 0, resets: [], start: null, marks: {} },
@@ -116,7 +116,6 @@ function compute(asOf) {
     st.start = null;
     st.miss = 0;
   }
-  st.carry = 0;
   st.lost = [];
   if (T < START_KEY) return st;
   function dayEval(k) {

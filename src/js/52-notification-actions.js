@@ -3,9 +3,7 @@
      localNotificationActionPerformed (50-todo-lifecycle.js); the live timer (901) is read from the native
      FocusNotify.takeTap() when the app opens or comes back to the front. */
 var CALL_IDS = function (id) {
-  return (
-    (id >= 2000 && id < 2100) || id === 2200 || id === 2300 || id === 2500 || id === 2600 || (id >= 3500 && id < 4000)
-  );
+  return (id >= 2000 && id < 2100) || id === 2200 || id === 2500 || id === 2600 || (id >= 3500 && id < 4000);
 };
 function callLeft() {
   return S.call ? S.call.until - Date.now() : 0;
@@ -261,34 +259,6 @@ function notifAction(id, x) {
       "flame",
       "Your " + st.streak + "-day streak is on the line.",
       '<p class="help">Your last required day was missed. Clear today to keep it.</p>',
-    );
-  }
-  if (id === 2300) {
-    var T = todayKey(),
-      cov = emptyCover(T),
-      rq =
-        activeDefs(T).filter(function (q) {
-          return q.type === "time" && q.roll && !q.off;
-        })[0] || nfBehind();
-    return nfCall(
-      "Weekly totals",
-      "metronome",
-      cov === 0 ? "An empty day today counts as a miss." : "You’re covered today, but not tomorrow.",
-      '<p class="help">Log anything, even 5 minutes, and today counts normally.</p>',
-      [
-        rq
-          ? [
-              "Log 5 minutes",
-              function () {
-                start5(rq);
-              },
-              "save",
-              1,
-            ]
-          : null,
-        ["How it works", openCarryInfo],
-        ["Later"],
-      ].filter(Boolean),
     );
   }
   if (id === 2400) {

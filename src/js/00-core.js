@@ -44,7 +44,7 @@ var S = { days: {}, refl: {}, cfg: null },
   dirty = {},
   timer = null;
 /* Data schema. Bump SCHEMA and add a step to migrate() whenever the stored shape changes. */
-var SCHEMA = 17,
+var SCHEMA = 18,
   RERATE_MIN = 60,
   MID_FRAC = 1 / 3;
 function migrate(c) {
@@ -204,6 +204,19 @@ function migrate(c) {
       if (Object.keys(ui).length) c.cfg.ui = ui;
     }
     v = 17;
+  }
+  /* 18: leftovers of retired features that later code still wrote or kept: cfg.bank (work-style presets wrote false),
+     cfg.capSet (the daily limit setting stamped it after 16 dropped it) and day.top (Top 3). */
+  if (v < 18) {
+    if (c.cfg) {
+      delete c.cfg.bank;
+      delete c.cfg.capSet;
+    }
+    Object.keys(c.days || {}).forEach(function (k) {
+      var x = c.days[k];
+      if (x && "top" in x) delete x.top;
+    });
+    v = 18;
   }
   c.schema = v;
   return c;
@@ -448,9 +461,6 @@ function noStreakOn(k) {
     return k >= r.from && (!r.to || k < r.to);
   });
 }
-function modeOn(k) {
-  return noStreakOn(k) ? "casual" : "challenge";
-}
 function rewardsOff() {
   return noStreakOn(todayKey());
 }
@@ -650,10 +660,6 @@ function hasEntry(e) {
   return (
     !!e &&
     Object.keys(e).some(function (f) {
-      if (f === "top")
-        return (e.top || []).some(function (x) {
-          return x && x.t;
-        });
       return (
         f !== "q" &&
         f !== "sched" &&

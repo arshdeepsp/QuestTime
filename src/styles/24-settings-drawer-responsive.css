@@ -619,9 +619,6 @@ footer {
 .strip i.frozen {
   background: #6fc3e8;
 }
-i.carried {
-  background: repeating-linear-gradient(45deg, #2f7a7a 0 4px, #3a8c8c 4px 8px);
-}
 #settingsSec {
   margin-top: 18px;
 }

@@ -118,11 +118,9 @@ function shareWeek(btn) {
                   ? "#4E5560"
                   : m === "frozen"
                     ? "#6FC3E8"
-                    : m === "carried"
-                      ? "#3A8C8C"
-                      : d === T
-                        ? "#555"
-                        : "#9E2A1F";
+                    : d === T
+                      ? "#555"
+                      : "#9E2A1F";
     g.fillStyle = col;
     g.fillRect(70 + i * (sq + 14), 570, sq, 70);
   });

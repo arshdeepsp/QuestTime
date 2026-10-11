@@ -43,8 +43,6 @@ function openDetails(q) {
     }
     r("Goal", esc(reqText(q)));
     if (q.type === "time" && q.roll) {
-      var cvd = emptyCover(T);
-      if (cvd != null) r("Empty days covered", cvd === 0 ? "none right now" : cvd + " from today");
       var rs = rollSum(q.id, T),
         rn = rollNeed(q, T);
       var wt = weekTarget(q, T),
