@@ -67,7 +67,7 @@ test("later edits push only the changed documents; a removed day is pushed as a 
   await expect.poll(async () => (await docs(page))["users/u1/days/2026-11-03"]).toMatchObject({ del: true });
 });
 
-test("a signed-in device with nothing local pulls everything; remote changes arrive on return to the app and the newer stamp wins", async ({ page }) => {
+test("a signed-in device with nothing local pulls everything; remote changes arrive on return to the app, even from a device whose clock is behind", async ({ page }) => {
   await page.addInitScript(fake);
   await page.addInitScript(() => { if (localStorage.getItem("__fc")) return; localStorage.setItem("pc-account", JSON.stringify({ uid: "u1", email: "arsh@example.com" })); window.__cloud.user = { uid: "u1", email: "arsh@example.com" };
     const now = Date.parse("2026-11-02T08:00:00-05:00");
@@ -83,8 +83,7 @@ test("a signed-in device with nothing local pulls everything; remote changes arr
   await page.evaluate(() => window.__cloud.remote("users/u1/days/2026-11-01", { r: false, q: [{ id: "r", type: "check", label: "Remote quest" }], u: Date.parse("2026-11-02T09:30:00-05:00") }));
   await expect.poll(async () => (await store(page)).days["2026-11-01"].r).toBe(false);
   await page.evaluate(() => window.__cloud.remote("users/u1/days/2026-11-01", { r: true, q: [{ id: "r", type: "check", label: "Remote quest" }], u: Date.parse("2026-11-02T07:00:00-05:00") }));
-  await page.waitForTimeout(400);
-  expect((await store(page)).days["2026-11-01"].r).toBe(false);
+  await expect.poll(async () => (await store(page)).days["2026-11-01"].r).toBe(true);
   await page.evaluate(() => window.__cloud.remote("users/u1/data/cfg", { quests: [{ id: "r", type: "check", label: "Renamed remotely" }], rules: [], idleGrove: 0, start: "2026-10-01T04:00:00.000Z", repFrozen: true, u: Date.parse("2026-11-02T09:40:00-05:00") }));
   await expect(page.locator("#quests .q .lbl")).toHaveText(["Renamed remotely"]);
   await page.evaluate(() => window.__cloud.remote("users/u1/days/2026-11-05", { sched: [{ id: "z", q: "r", f: 600, t: 660 }], u: Date.parse("2026-11-02T09:45:00-05:00") }));
@@ -170,7 +169,7 @@ test("a full account's worth of data pushes as documents Firestore accepts, and 
   const dayKeys = Object.keys(local.days).sort();
   expect(dayKeys.length).toBeGreaterThanOrEqual(Object.keys(D).length);
   expect(Object.keys(d).sort()).toEqual(["users/u1/data/cfg", "users/u1/data/refl"].concat(dayKeys.map((k) => "users/u1/days/" + k)).sort());
-  const clean = (o) => { const x = JSON.parse(JSON.stringify(o)); delete x.u; return x; };
+  const clean = (o) => { const x = JSON.parse(JSON.stringify(o)); delete x.u; delete x.at; return x; };
   expect(clean(d["users/u1/data/cfg"])).toEqual(local.cfg);
   expect(clean(d["users/u1/data/refl"]).map).toEqual(local.refl);
   for (const k of dayKeys) expect(clean(d["users/u1/days/" + k])).toEqual(local.days[k]);
@@ -321,19 +320,63 @@ test("launch reads only what changed since the last pull, and an edit that never
   await page.addInitScript(fake);
   await page.addInitScript(() => { if (localStorage.getItem("__fc")) return; localStorage.setItem("pc-account", JSON.stringify({ uid: "u1", email: "arsh@example.com" })); window.__cloud.user = { uid: "u1", email: "arsh@example.com" };
     const u = Date.parse("2026-11-01T08:00:00-05:00");
-    window.__cloud.docs["users/u1/data/cfg"] = { quests: [{ id: "cs", type: "time", label: "Coursework", min: 60 }], rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u };
-    window.__cloud.docs["users/u1/data/refl"] = { map: {}, u };
-    for (let i = 1; i <= 30; i++) { const k = "2026-10-" + String(i).padStart(2, "0"); window.__cloud.docs["users/u1/days/" + k] = { cs: 30, q: [{ id: "cs", type: "time", label: "Coursework", min: 60 }], ck: [], u: u - (31 - i) * 3600000 }; }
+    window.__cloud.put("users/u1/data/cfg", { quests: [{ id: "cs", type: "time", label: "Coursework", min: 60 }], rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u });
+    window.__cloud.put("users/u1/data/refl", { map: {}, u });
+    for (let i = 1; i <= 30; i++) { const k = "2026-10-" + String(i).padStart(2, "0"); window.__cloud.put("users/u1/days/" + k, { cs: 30, q: [{ id: "cs", type: "time", label: "Coursework", min: 60 }], ck: [], u: u - (31 - i) * 3600000 }); }
     window.__cloud.save(); });
   await openApp(page, { cfg: { quests: [] } });
   await expect(page.locator("#quests .q .lbl")).toHaveText(["Coursework"]);
-  await expect.poll(async () => (await store(page)).meta.pulled).toBe(Date.parse("2026-11-01T08:00:00-05:00"));
+  await expect.poll(async () => (await store(page)).meta.pat).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.__cloud.reads)).toBeGreaterThan(30);
-  await page.evaluate(() => { const t = Date.now(); window.__cloud.docs["users/u1/data/refl"] = { map: { "2026-10-30": { text: "from the phone" } }, u: t }; window.__cloud.docs["users/u1/days/2026-10-29"] = { cs: 45, u: t }; window.__cloud.save(); window.__cloud.fail = true; });
+  await page.evaluate(() => { const t = Date.now(); window.__cloud.put("users/u1/data/refl", { map: { "2026-10-30": { text: "from the phone" } }, u: t }); window.__cloud.put("users/u1/days/2026-10-29", { cs: 45, q: [{ id: "cs", type: "time", label: "Coursework", min: 60 }], ck: [], u: t - 86400000 * 3 }); window.__cloud.fail = true; });
   await page.locator("#quests .q .act button[aria-label^='More']").last().click();
   await page.reload();
   await expect.poll(async () => (await store(page)).refl["2026-10-30"]?.text).toBe("from the phone");
   expect((await store(page)).days["2026-10-29"].cs).toBe(45);
   expect(await page.evaluate(() => window.__cloud.reads)).toBeLessThan(10);
   await expect.poll(async () => ((await docs(page))["users/u1/days/2026-11-02"] || {}).cs).toBe(10);
+});
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 390, height: 800 }, isMobile: true, hasTouch: true });
+test("two devices editing different things in settings both keep their edits, whatever their clocks say", async ({ page }) => {
+  const A = { id: "a", type: "check", label: "Alpha" }, B = { id: "b", type: "check", label: "Bravo" }, C = { id: "c", type: "check", label: "Charlie" };
+  await page.addInitScript(fake);
+  await page.addInitScript(([A, B, C]) => { if (localStorage.getItem("__fc")) return; localStorage.setItem("pc-account", JSON.stringify({ uid: "u1", email: "arsh@example.com" })); window.__cloud.user = { uid: "u1", email: "arsh@example.com" };
+    window.__cloud.put("users/u1/data/cfg", { quests: [A, B, C], rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u: Date.parse("2026-11-01T08:00:00-05:00") }); }, [A, B, C]);
+  await openApp(page, { cfg: { quests: [] } });
+  await expect(page.locator("#quests .q .lbl")).toHaveText(["Alpha", "Bravo", "Charlie"]);
+  await expect.poll(async () => !!(await store(page)).meta.cb).toBe(true);
+  await page.evaluate(() => { window.__cloud.fail = true; });
+  await page.locator("#tdGhost input").fill("Buy milk");
+  await page.locator("#tdGhost input").press("Enter");
+  await page.goto("http://127.0.0.1:4173/index.html#settings");
+  await page.click("[data-st='quests']");
+  await page.click("#setPlan");
+  await page.evaluate(([A, B]) => { window.__cloud.put("users/u1/data/cfg", { quests: [A, Object.assign({}, B, { label: "Bravo (phone)" }), { id: "d", type: "check", label: "Delta" }], rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u: Date.parse("2026-10-01T08:00:00-05:00") }); window.__cloud.fail = false; document.dispatchEvent(new Event("visibilitychange")); }, [A, B]);
+  await page.goto("http://127.0.0.1:4173/index.html#today");
+  await expect.poll(async () => ((await docs(page))["users/u1/data/cfg"].quests || []).map((q) => q.label)).toEqual(["Alpha", "Bravo (phone)", "Buy milk", "Delta"]);
+  const s = await store(page);
+  expect(s.cfg.quests.map((q) => q.label)).toEqual(["Alpha", "Bravo (phone)", "Buy milk", "Delta"]);
+  expect(s.cfg.showPlan).toBe(true);
+  expect((await docs(page))["users/u1/data/cfg"].showPlan).toBe(true);
+  await expect(page.locator("#quests .q .lbl").first()).toHaveText("Alpha");
+});
+});
+
+test("a day deleted on another device goes here too, unless this device changed it meanwhile", async ({ page }) => {
+  await page.addInitScript(fake);
+  await page.addInitScript(() => { if (localStorage.getItem("__fc")) return; localStorage.setItem("pc-account", JSON.stringify({ uid: "u1", email: "arsh@example.com" })); window.__cloud.user = { uid: "u1", email: "arsh@example.com" };
+    const Q = [{ id: "cs", type: "time", label: "Coursework", min: 60 }];
+    window.__cloud.put("users/u1/data/cfg", { quests: Q, rules: [], idleGrove: 0, start: "2026-09-01T04:00:00.000Z", repFrozen: true, u: 1 });
+    window.__cloud.put("users/u1/days/2026-11-02", { cs: 20, u: 1 });
+    window.__cloud.put("users/u1/days/2026-11-05", { sched: [{ id: "z", q: "cs", f: 600, t: 660 }], u: 1 }); });
+  await openApp(page, { cfg: { quests: [] } });
+  await expect.poll(async () => Object.keys((await store(page)).meta.h || {})).toEqual(expect.arrayContaining(["days/2026-11-02", "days/2026-11-05"]));
+  await page.evaluate(() => { window.__cloud.fail = true; });
+  await page.locator("#quests .q .act button[aria-label^='More']").last().click();
+  await page.evaluate(() => { window.__cloud.put("users/u1/days/2026-11-02", { del: true, u: 2 }); window.__cloud.put("users/u1/days/2026-11-05", { del: true, u: 2 }); window.__cloud.fail = false; document.dispatchEvent(new Event("visibilitychange")); });
+  await expect.poll(async () => (await store(page)).days["2026-11-05"]).toBeUndefined();
+  expect((await store(page)).days["2026-11-02"].cs).toBe(30);
+  await expect.poll(async () => (await docs(page))["users/u1/days/2026-11-02"].cs).toBe(30);
 });

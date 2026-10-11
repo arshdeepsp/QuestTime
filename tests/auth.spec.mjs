@@ -4,8 +4,8 @@ import { openApp } from "./helpers.mjs";
 /* In-memory Firebase facade: accounts by email, documents by path, and a log of emails "sent". */
 const fake = `window.__fb={users:{"arsh@example.com":{pw:"secret1",uid:"u1",verified:true}},user:null,docs:{},sent:[],cbs:[]};
 /* Survives the app's reloads on sign-in/out through localStorage __fb. */
-(function(){try{var s=JSON.parse(localStorage.getItem("__fb")||"null");if(s)["users","user","docs","sent"].forEach(function(k){window.__fb[k]=s[k]})}catch(e){}})();
-window.__fb.save=function(){var F=window.__fb;localStorage.setItem("__fb",JSON.stringify({users:F.users,user:F.user,docs:F.docs,sent:F.sent}))};
+(function(){try{var s=JSON.parse(localStorage.getItem("__fb")||"null");if(s)["users","user","docs","sent","clock"].forEach(function(k){window.__fb[k]=s[k]})}catch(e){}})();
+window.__fb.save=function(){var F=window.__fb;localStorage.setItem("__fb",JSON.stringify({users:F.users,user:F.user,docs:F.docs,sent:F.sent,clock:F.clock}))};
 (function(F){function me(){var u=F.user&&F.users[F.user];return u?{uid:u.uid,email:F.user,verified:u.verified}:null}
 function no(c){return Promise.reject({code:c,message:c})}
 function segs(p,even){var n=p.split("/").length;if((n%2===0)!==even)throw new Error("Invalid "+(even?"document":"collection")+" reference: "+p+" has "+n+" segments")}
@@ -21,10 +21,10 @@ window.PCFB={init:function(){},
     changePassword:function(c,n){return window.PCFB.auth.reauth(c).then(function(){F.users[F.user].pw=n;F.save()})},
     deleteUser:function(){delete F.users[F.user];F.user=null;F.save();F.cbs.forEach(function(cb){cb(null)});return new Promise(function(r){setTimeout(r,30)})}},
   db:{get:function(p){segs(p,true);return Promise.resolve({id:p.split("/").pop(),data:F.docs[p]?JSON.parse(JSON.stringify(F.docs[p])):null,pending:false})},
-    listSince:function(p,since){segs(p,false);return Promise.resolve(Object.keys(F.docs).filter(function(k){return k.indexOf(p+"/")===0&&(+F.docs[k].u||0)>since}).map(function(k){return {id:k.split("/").pop(),data:F.docs[k],pending:false}}))},
+    listSince:function(p,since){segs(p,false);return Promise.resolve(Object.keys(F.docs).filter(function(k){return k.indexOf(p+"/")===0&&(+F.docs[k].at||0)>since}).map(function(k){return {id:k.split("/").pop(),data:F.docs[k],pending:false}}))},
     list:function(p){segs(p,false);return Promise.resolve(Object.keys(F.docs).filter(function(k){return k.indexOf(p+"/")===0}).map(function(k){return {id:k.split("/").pop(),data:F.docs[k],pending:false}}))},
     set:function(p,d){segs(p,true);F.docs[p]=d;return Promise.resolve()},
-    batch:function(ops){ops.forEach(function(o){segs(o.path,true)});ops.forEach(function(o){F.docs[o.path]=JSON.parse(JSON.stringify(o.data))});F.save();return Promise.resolve()},
+    batch:function(ops){ops.forEach(function(o){segs(o.path,true)});ops.forEach(function(o){var d=JSON.parse(JSON.stringify(o.data));F.clock=(F.clock||1700000000000)+100000;d.at=F.clock;F.docs[o.path]=d});F.save();return Promise.resolve()},
     remove:function(ps){ps.forEach(function(p){segs(p,true)});ps.forEach(function(p){delete F.docs[p]});F.save();return Promise.resolve()},
     onDoc:function(p){segs(p,true);return function(){}},onCol:function(p){segs(p,false);return function(){}}}}})(window.__fb);`;
 

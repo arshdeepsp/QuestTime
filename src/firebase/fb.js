@@ -4,7 +4,7 @@
    Tests replace window.PCFB with an in-memory fake, so keep this surface tiny and plain (paths and plain objects). */
 import { initializeApp } from "firebase/app";
 import { initializeAuth, getAuth, indexedDBLocalPersistence, browserLocalPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, reload, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from "firebase/auth";
-import { initializeFirestore, getFirestore, persistentLocalCache, persistentSingleTabManager, doc, collection, getDoc, getDocs, setDoc, writeBatch, onSnapshot, query, where, terminate, clearIndexedDbPersistence } from "firebase/firestore";
+import { initializeFirestore, getFirestore, persistentLocalCache, persistentSingleTabManager, doc, collection, getDoc, getDocs, setDoc, writeBatch, query, where, serverTimestamp, Timestamp, terminate, clearIndexedDbPersistence } from "firebase/firestore";
 
 let app = null, auth = null, db = null;
 
@@ -13,7 +13,8 @@ function cur() { const u = auth && auth.currentUser; if (!u) throw Object.assign
 
 function ref(path) { return doc(db, path); }
 function col(path) { return collection(db, path); }
-function snap(s) { return { id: s.id, data: s.exists() ? s.data() : null, pending: !!(s.metadata && s.metadata.hasPendingWrites) }; }
+/* `at` is the server's commit time (a Timestamp; null while a local write is pending): handed to the app as ms. */
+function snap(s) { const d = s.exists() ? s.data() : null; if (d && "at" in d) { if (d.at && d.at.toMillis) d.at = d.at.toMillis(); else delete d.at; } return { id: s.id, data: d, pending: !!(s.metadata && s.metadata.hasPendingWrites) }; }
 
 const PCFB = {
   init(config) {
@@ -45,19 +46,18 @@ const PCFB = {
   db: {
     get(path) { return getDoc(ref(path)).then(snap); },
     list(path) { return getDocs(col(path)).then((q) => q.docs.map(snap)); },
-    /* Documents in a collection stamped after `since` (u > since): what changed elsewhere since the last pull. */
-    listSince(path, since) { return getDocs(query(col(path), where("u", ">", since))).then((q) => q.docs.map(snap)); },
+    /* Documents in a collection written after `since` (server time, ms): what changed anywhere since the last pull.
+       Uses the server's clock, so a device whose clock is off can't hide its writes. */
+    listSince(path, since) { return getDocs(query(col(path), where("at", ">", Timestamp.fromMillis(Math.max(0, since))))).then((q) => q.docs.map(snap)); },
     set(path, data) { return setDoc(ref(path), data); },
     batch(ops) {
       const chunks = []; for (let i = 0; i < ops.length; i += 450) chunks.push(ops.slice(i, i + 450));
-      return chunks.reduce((p, part) => p.then(() => { const b = writeBatch(db); part.forEach((o) => b.set(ref(o.path), o.data)); return b.commit(); }), Promise.resolve());
+      return chunks.reduce((p, part) => p.then(() => { const b = writeBatch(db); part.forEach((o) => b.set(ref(o.path), Object.assign({}, o.data, { at: serverTimestamp() }))); return b.commit(); }), Promise.resolve());
     },
     remove(paths) {
       const chunks = []; for (let i = 0; i < paths.length; i += 450) chunks.push(paths.slice(i, i + 450));
       return chunks.reduce((p, part) => p.then(() => { const b = writeBatch(db); part.forEach((x) => b.delete(ref(x))); return b.commit(); }), Promise.resolve());
-    },
-    onDoc(path, cb) { return onSnapshot(ref(path), { includeMetadataChanges: true }, (s) => cb(snap(s)), (e) => cb(null, e)); },
-    onCol(path, cb) { return onSnapshot(col(path), { includeMetadataChanges: true }, (q) => cb(q.docChanges().map((c) => Object.assign(snap(c.doc), { type: c.type }))), (e) => cb(null, e)); }
+    }
   }
 };
 window.PCFB = PCFB;
