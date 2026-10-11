@@ -176,6 +176,8 @@ export function migrate(c) {
     if (c.cfg && c.cfg.theme === "nether") c.cfg.theme = "ember";
     v = 19;
   }
+  /* 20 marks cfg.vow (Morning promise ranges, rules/vow.js); nothing to convert. */
+  if (v < 20) v = 20;
   c.schema = v;
   return c;
 }

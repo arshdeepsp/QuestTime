@@ -4,6 +4,7 @@ import { cfg } from "../core/config.js";
 import { dayMidMin, nowMinInDay, parse, todayKey } from "../core/days.js";
 import { hasEntry } from "./day-rules.js";
 import { ignoredOn, isPaused, isVac } from "./modes.js";
+import { vowDefs } from "./vow.js";
 import { dlMin } from "../tools/deadline-breakdown.js";
 
 export function slim(q) {
@@ -15,6 +16,7 @@ export function slim(q) {
     "to",
     "unit",
     "note",
+    "vow",
     "days",
     "opt",
     "ul",
@@ -57,33 +59,38 @@ export function activeDefs(k) {
       )
         src.push(LD[id]);
     });
-  return src
-    .filter(function (q) {
-      if (q.completed && q.completed.on < k) return false;
-      if (q.startOn && k < q.startOn && q.type !== "todo") return false;
-      if (q.type === "todo") return !q.doneOn || q.doneOn === k;
-      if (q.dl && (k > q.dl.due || k < q.dl.from)) return false;
-      return !isPaused(q, k) && (scheduled(q, k) || (q.type === "time" && q.roll));
-    })
-    .map(function (q) {
-      var o = slim(q);
-      if (q.type === "time" && q.roll && q.opt) o.uopt = true;
-      if (q.type === "time" && q.roll && !scheduled(q, k)) {
-        o.opt = true;
-        o.off = true;
-      }
-      if (q.dl) {
-        o.min = dlMin(q, k);
-        if (!o.min) o.opt = true;
-      }
-      if (vc) o.opt = true;
-      if (lateStart(q, k)) o.opt = true;
-      if (ignoredOn(q.id, k)) {
-        o.opt = true;
-        o.ign = true;
-      }
-      return o;
-    });
+  var vw = vowDefs(k).map(function (q) {
+    return vc ? Object.assign({}, q, { opt: true }) : q;
+  });
+  return vw.concat(
+    src
+      .filter(function (q) {
+        if (q.completed && q.completed.on < k) return false;
+        if (q.startOn && k < q.startOn && q.type !== "todo") return false;
+        if (q.type === "todo") return !q.doneOn || q.doneOn === k;
+        if (q.dl && (k > q.dl.due || k < q.dl.from)) return false;
+        return !isPaused(q, k) && (scheduled(q, k) || (q.type === "time" && q.roll));
+      })
+      .map(function (q) {
+        var o = slim(q);
+        if (q.type === "time" && q.roll && q.opt) o.uopt = true;
+        if (q.type === "time" && q.roll && !scheduled(q, k)) {
+          o.opt = true;
+          o.off = true;
+        }
+        if (q.dl) {
+          o.min = dlMin(q, k);
+          if (!o.min) o.opt = true;
+        }
+        if (vc) o.opt = true;
+        if (lateStart(q, k)) o.opt = true;
+        if (ignoredOn(q.id, k)) {
+          o.opt = true;
+          o.ign = true;
+        }
+        return o;
+      }),
+  );
 }
 export function stampAdded(q) {
   q.addedOn = todayKey();

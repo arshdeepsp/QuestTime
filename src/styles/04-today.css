@@ -868,6 +868,41 @@ details.rules > summary.sw-l {
 }
 /* ===== Today trims (usability pass 2) ===== */
 /* Period note: one quiet line above the list; warm when behind pace, red only on a checkpoint day that's behind. */
+.vownote {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  background: #f3e7c4;
+  border: 3px solid;
+  border-color: #60554a #fff #fff #60554a;
+  color: #201e1c;
+  font: 17px/1.25 var(--vt);
+  text-shadow: none;
+}
+.vownote[hidden] {
+  display: none;
+}
+#gui.vowgate #quests > :not(.vowq),
+#gui.vowgate #sparkBar,
+#gui.vowgate #carryNote,
+#gui.vowgate .qtools,
+#gui.vowgate #parkBox,
+#gui.vowgate #tdRow,
+#gui.vowgate #pausedNote {
+  display: none !important;
+}
+.q.vowq .qgrip,
+.q.vowq .pzb {
+  visibility: hidden;
+}
+#quests .q.vowq .req {
+  display: none;
+}
+.q.vowq .vowt {
+  margin-top: 2px;
+  color: #f1e6d8;
+  font: 17px/1.2 var(--vt);
+  white-space: normal;
+}
 .carrynote {
   display: flex;
   align-items: center;

@@ -25,6 +25,7 @@ import { lockPast } from "../rules/past-days.js";
 import { renderCarryNote } from "../rules/period-note.js";
 import { qStreak } from "../rules/quest-streaks.js";
 import { activeDefs, defsOf, lateStart, reqOf, scheduled } from "../rules/quests-on-day.js";
+import { vowPending } from "../rules/vow.js";
 import { level, weekCount, xpNet } from "../rules/xp.js";
 import { schRows } from "../schedule/page.js";
 import { topicName, topicStats } from "../subjects/33-topics.js";
@@ -180,6 +181,9 @@ export function renderBody(fromClick) {
   if (typeof wrapLabel === "function" && wrapBtn) wrapLabel();
   var defs = k === T ? activeDefs(T) : defsOf(e);
   buildQuests(defs);
+  var vg = k === T && vowPending(defs, e);
+  document.getElementById("gui").classList.toggle("vowgate", vg);
+  document.getElementById("vowNote").hidden = !vg;
   if (k === T && S.days[T] && JSON.stringify(S.days[T].q) !== JSON.stringify(defs)) {
     S.days[T] = Object.assign({}, S.days[T], { q: defs });
     dirty[T] = true;

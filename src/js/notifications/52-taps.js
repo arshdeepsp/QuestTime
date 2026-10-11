@@ -288,6 +288,10 @@ export function notifAction(id, x) {
       '<p class="help">Your last required day was missed. Clear today to keep it.</p>',
     );
   }
+  if (id >= 2700 && id < 2770) {
+    go("today");
+    return;
+  }
   if (id === 2400) {
     go("today");
     return reviewTodos("notif");

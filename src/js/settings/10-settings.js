@@ -13,6 +13,7 @@ import { WDN, WDS, busiest, capOf, overDays } from "../quests/35b-daily-limit.js
 import { openMgr } from "../quests/38-quest-editor.js";
 import { easeInfo } from "../rules/easing.js";
 import { curVac, noStreakOn, rewardsOff } from "../rules/modes.js";
+import { setVow, vowMax, vowOn, vowRules } from "../rules/vow.js";
 import { activeDefs } from "../rules/quests-on-day.js";
 import { busyDaysText } from "../schedule/busy.js";
 import { openBusy } from "../schedule/page.js";
@@ -79,6 +80,18 @@ export function setStreaks(on) {
       ? (rewardsOff() ? "Challenge mode from tomorrow." : "Challenge mode.") + " Your streak picks up where it was."
       : "Casual mode: XP and levels, no streak or checkpoints.",
   );
+}
+export function vowHint() {
+  var T = todayKey(),
+    n = vowRules().length,
+    a = vowOn(T),
+    b = vowOn(add(T, 1));
+  if (!n) return "Add rules to the Rulebook first; your first " + vowMax() + " become morning check quests";
+  var w = n === 1 ? "your rule" : "your first " + n + " rules";
+  if (a && b) return "Tick " + w + " each morning to unlock the day; alarm 15 min after waking";
+  if (b) return "Starts tomorrow: tick " + w + " to unlock the day";
+  if (a) return "Ends after today";
+  return "Tick " + w + " each morning before your quests show. Starts tomorrow";
 }
 export function swc(id, on, label, attr) {
   return (
@@ -397,7 +410,8 @@ export function renderSettings() {
           "Plan counters",
           "A stretch target above the minimum, for gold days",
           swc("setPlan", c.showPlan, "Plan counters"),
-        ),
+        ) +
+        srow("Morning promise", vowHint(), swc("setVow", vowOn(add(T, 1)), "Morning promise")),
       "changes",
     );
     h += sgroup(
@@ -963,6 +977,12 @@ export function renderSettings() {
     });
   bind("setStreak", "click", function () {
     setStreaks(noStreakOn(easeInfo().setup ? todayKey() : add(todayKey(), 1)));
+  });
+  bind("setVow", "click", function () {
+    var on = !vowOn(add(todayKey(), 1));
+    setVow(on);
+    renderSettings();
+    setSync(on ? "Morning promise starts tomorrow." : "Morning promise ends after today.");
   });
   bind("setPlan", "click", function () {
     var c2 = clone(cfg());

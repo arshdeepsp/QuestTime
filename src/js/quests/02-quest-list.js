@@ -86,6 +86,12 @@ export function buildQuests(defs) {
     });
     row.querySelector(".lbl").textContent = q.label;
     row.querySelector(".req").textContent = reqText(q);
+    if (q.vow && q.note) {
+      var vt = document.createElement("div");
+      vt.className = "vowt";
+      vt.textContent = q.note;
+      row.children[3].appendChild(vt);
+    }
     if (qStreakable(q)) {
       var sk = document.createElement("i");
       sk.className = "qstk";
@@ -279,6 +285,7 @@ export function buildQuests(defs) {
     });
     swipeRow(row, q);
     if (q.opt) row.classList.add("optq");
+    if (q.vow) row.classList.add("vowq");
     qWrap.appendChild(row);
   });
   if (!defs.length && !packsHidden()) {

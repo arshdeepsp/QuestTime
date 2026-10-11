@@ -94,7 +94,7 @@ export function deleteTodo(q) {
 }
 export function openQMenu(q, btn) {
   closeQMenu();
-  if (locked()) return;
+  if (locked() || q.vow) return;
   var items =
     q.type === "todo"
       ? [

@@ -11,6 +11,7 @@ import { compute } from "../rules/compute.js";
 import { limOf, metQ, ok, planOf } from "../rules/day-rules.js";
 import { rewardsOff } from "../rules/modes.js";
 import { activeDefs, reqOf } from "../rules/quests-on-day.js";
+import { vowDefs, vowNid, vowPending } from "../rules/vow.js";
 import { resumeSync, schNotifs } from "../schedule/resume.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerMin } from "../timer/13-focus-timer.js";
@@ -130,6 +131,31 @@ export function nfPlan() {
       }
     }
   }
+  /* Morning promise: 15 min after waking, then every 5 min for 15 more, as ongoing notifications (they can't be
+       swiped away) until the rules are ticked; notifSync clears the delivered ones then (vowClear). */
+  for (var vi = 0; vi < 7; vi++) {
+    var vk = add(T, vi),
+      vd = vowDefs(vk);
+    if (!vd.length || (vi === 0 && !vowPending(vd, e))) continue;
+    var va = atMin(vk, dayWin(vk).s + 15);
+    for (var vr = 0; vr < 4; vr++) {
+      var vb = out.length;
+      push(
+        vowNid(vk, vr),
+        vr ? "Your rules are waiting" : "Morning promise",
+        "Read your " +
+          (vd.length === 1 ? "rule" : vd.length + " rules") +
+          " and promise to keep " +
+          (vd.length === 1 ? "it" : "them") +
+          ". Today\u2019s quests show up after.",
+        va + vr * 5 * 60000,
+      );
+      if (out.length > vb) {
+        out[vb].ongoing = true;
+        out[vb].autoCancel = false;
+      }
+    }
+  }
   if (n.risk && !rewardsOff() && st.miss === 1 && !ok(e))
     push(
       2200,
@@ -223,12 +249,25 @@ export function nfPlan() {
   }
   return out;
 }
+/* Clears delivered promise reminders that are no longer due: other days', and today's once the rules are ticked. */
+export function vowClear(ln) {
+  if (!ln.removeDeliveredNotifications) return;
+  var T = todayKey(),
+    keep = vowPending(activeDefs(T), S.days[T] || {}),
+    ids = [];
+  for (var i = 2700; i < 2770; i++) if (!keep || i < vowNid(T, 0) || i > vowNid(T, 3)) ids.push({ id: i });
+  var sig = keep ? T : "";
+  if (sig === G.vowClr) return;
+  G.vowClr = sig;
+  Promise.resolve(ln.removeDeliveredNotifications({ notifications: ids })).catch(function () {});
+}
 export function notifSync() {
   clearTimeout(nfT);
   nfT = setTimeout(function () {
     var ln = LN();
     if (!ln) return;
     resumeSync(ln);
+    vowClear(ln);
     var plan = nfPlan(),
       sig = JSON.stringify(
         plan.map(function (x) {
