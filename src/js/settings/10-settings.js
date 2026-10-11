@@ -13,7 +13,7 @@ import { WDN, WDS, busiest, capOf, overDays } from "../quests/35b-daily-limit.js
 import { openMgr } from "../quests/38-quest-editor.js";
 import { easeInfo } from "../rules/easing.js";
 import { curVac, noStreakOn, rewardsOff } from "../rules/modes.js";
-import { setVow, vowMax, vowOn, vowRules } from "../rules/vow.js";
+import { setVow, vowMax, vowOn, vowRules, vowSet, vowStart } from "../rules/vow.js";
 import { activeDefs } from "../rules/quests-on-day.js";
 import { busyDaysText } from "../schedule/busy.js";
 import { openBusy } from "../schedule/page.js";
@@ -85,13 +85,15 @@ export function vowHint() {
   var T = todayKey(),
     n = vowRules().length,
     a = vowOn(T),
-    b = vowOn(add(T, 1));
+    b = vowOn(add(T, 1)),
+    st = vowStart();
   if (!n) return "Add rules to the Rulebook first; your first " + vowMax() + " become morning check quests";
   var w = n === 1 ? "your rule" : "your first " + n + " rules";
+  if (st && !b) return (a ? "Off tomorrow; back " : "Starts ") + fmtD(st) + ": tick " + w + " to unlock the day";
   if (a && b) return "Tick " + w + " each morning to unlock the day; alarm 15 min after waking";
   if (b) return "Starts tomorrow: tick " + w + " to unlock the day";
   if (a) return "Ends after today";
-  return "Tick " + w + " each morning before your quests show. Starts tomorrow";
+  return "Tick " + w + " each morning before your quests show. You pick the start day";
 }
 export function swc(id, on, label, attr) {
   return (
@@ -411,7 +413,7 @@ export function renderSettings() {
           "A stretch target above the minimum, for gold days",
           swc("setPlan", c.showPlan, "Plan counters"),
         ) +
-        srow("Morning promise", vowHint(), swc("setVow", vowOn(add(T, 1)), "Morning promise")),
+        srow("Morning promise", vowHint(), swc("setVow", vowSet(), "Morning promise")),
       "changes",
     );
     h += sgroup(
@@ -979,10 +981,34 @@ export function renderSettings() {
     setStreaks(noStreakOn(easeInfo().setup ? todayKey() : add(todayKey(), 1)));
   });
   bind("setVow", "click", function () {
-    var on = !vowOn(add(todayKey(), 1));
-    setVow(on);
-    renderSettings();
-    setSync(on ? "Morning promise starts tomorrow." : "Morning promise ends after today.");
+    if (vowSet()) {
+      setVow(false);
+      renderSettings();
+      setSync(vowOn(todayKey()) ? "Morning promise ends after today." : "Morning promise is off.");
+      return;
+    }
+    var T = todayKey(),
+      tm = add(T, 1);
+    openG("Morning promise", function (b) {
+      b.innerHTML =
+        '<p class="help">Each morning, tick your first ' +
+        vowMax() +
+        ' rules before the day\u2019s quests show. Pick the first day.</p><div class="edrow"><label for="vowFrom" class="help">Start on</label><input type="date" id="vowFrom" min="' +
+        T +
+        '" value="' +
+        tm +
+        '"></div><div class="edrow end"><button type="button" class="stone" id="vowNo">Cancel</button><button type="button" class="stone save" id="vowGo">Start</button></div>';
+      b.querySelector("#vowNo").addEventListener("click", closeG);
+      b.querySelector("#vowGo").addEventListener("click", function () {
+        var v = b.querySelector("#vowFrom").value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < T) v = tm;
+        setVow(true, v);
+        closeG();
+        render();
+        renderSettings();
+        setSync("Morning promise starts " + (v === T ? "today" : v === tm ? "tomorrow" : fmtD(v)) + ".");
+      });
+    });
   });
   bind("setPlan", "click", function () {
     var c2 = clone(cfg());

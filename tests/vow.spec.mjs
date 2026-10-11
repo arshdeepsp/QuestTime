@@ -13,18 +13,53 @@ const VOW = [{ from: "2026-10-20" }];
 const store = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
 const rows = (page) => page.locator("#quests .q:visible .lbl");
 
-test("turning on Morning promise starts tomorrow; today is unchanged", async ({ page }) => {
+test("turning on Morning promise asks for a start day; tomorrow by default leaves today unchanged", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q, rules: RULES } });
   await page.click("#setBtn");
   await page.click("[data-st='quests']");
   await expect(page.locator("#setVow")).toHaveAttribute("aria-checked", "false");
   await page.click("#setVow");
+  await expect(page.locator("#vowFrom")).toHaveValue("2026-11-03");
+  await expect(page.locator("#vowFrom")).toHaveAttribute("min", "2026-11-02");
+  await page.click("#vowGo");
   await expect(page.locator("#setVow")).toHaveAttribute("aria-checked", "true");
   await expect(page.locator(".srow", { hasText: "Morning promise" })).toContainText("Starts tomorrow");
   expect((await store(page)).cfg.vow).toEqual([{ from: "2026-11-03" }]);
   await page.goto("http://127.0.0.1:4173/index.html#today");
   await expect(page.locator("#vowNote")).toBeHidden();
   await expect(rows(page)).toHaveText(["CS work", "Journal"]);
+});
+
+test("starting today puts the rule quests on today's list at once", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, rules: RULES } });
+  await page.click("#setBtn");
+  await page.click("[data-st='quests']");
+  await page.click("#setVow");
+  await page.fill("#vowFrom", "2026-11-02");
+  await page.click("#vowGo");
+  await expect(page.locator("#sync")).toContainText("starts today");
+  expect((await store(page)).cfg.vow).toEqual([{ from: "2026-11-02" }]);
+  await page.goto("http://127.0.0.1:4173/index.html#today");
+  await expect(page.locator("#vowNote")).toBeVisible();
+  await expect(rows(page)).toHaveText(["Sleep", "Midday rest", "The line", "Before starting"]);
+});
+
+test("a later start day is kept and shown; Cancel changes nothing", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, rules: RULES } });
+  await page.click("#setBtn");
+  await page.click("[data-st='quests']");
+  await page.click("#setVow");
+  await page.click("#vowNo");
+  expect((await store(page)).cfg.vow).toBeUndefined();
+  await expect(page.locator("#setVow")).toHaveAttribute("aria-checked", "false");
+  await page.click("#setVow");
+  await page.fill("#vowFrom", "2026-11-09");
+  await page.click("#vowGo");
+  await expect(page.locator("#setVow")).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator(".srow", { hasText: "Morning promise" })).toContainText("Starts");
+  expect((await store(page)).cfg.vow).toEqual([{ from: "2026-11-09" }]);
+  await page.click("#setVow");
+  expect((await store(page)).cfg.vow).toBeUndefined();
 });
 
 test("the first four rules open the day; other quests show once all are ticked", async ({ page }) => {
@@ -61,6 +96,7 @@ test("turning it off ends after today; today keeps its promise", async ({ page }
   await expect(page.locator(".srow", { hasText: "Morning promise" })).toContainText("Ends after today");
   expect((await store(page)).cfg.vow).toEqual([{ from: "2026-10-20", to: "2026-11-03" }]);
   await page.click("#setVow");
+  await page.click("#vowGo");
   expect((await store(page)).cfg.vow).toEqual([{ from: "2026-10-20" }]);
   await page.goto("http://127.0.0.1:4173/index.html#today");
   await expect(page.locator("#vowNote")).toBeVisible();

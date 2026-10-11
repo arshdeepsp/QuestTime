@@ -66,17 +66,42 @@ export function vowPending(defs, e) {
 export function vowNid(k, n) {
   return 2700 + (Math.round(parse(k).getTime() / 864e5) % 7) * 10 + n;
 }
-export function setVow(on) {
+/* On, or starting on a later day (the switch in Settings shows this). */
+export function vowSet() {
+  var tm = add(todayKey(), 1);
+  return (
+    vowOn(tm) ||
+    ((S.cfg && S.cfg.vow) || []).some(function (r) {
+      return r.from > tm;
+    })
+  );
+}
+/* The day a pending start begins, if one is set. */
+export function vowStart() {
+  var T = todayKey(),
+    r = ((S.cfg && S.cfg.vow) || []).filter(function (x) {
+      return x.from > T;
+    })[0];
+  return r ? r.from : null;
+}
+/* Turning on starts on day `from` (today or later; tomorrow by default); turning off ends it after today. */
+export function setVow(on, from) {
   var c2 = clone(cfg()),
     T = todayKey(),
     tm = add(T, 1),
     L = (c2.vow || []).slice();
   if (on) {
-    var j = L.filter(function (r) {
-      return r.to && r.to >= tm;
+    var d = from && from >= T ? from : tm;
+    L = L.filter(function (r) {
+      return r.from <= T;
+    }).map(function (r) {
+      return Object.assign({}, r);
+    });
+    var act = L.filter(function (r) {
+      return !r.to || r.to > T;
     })[0];
-    if (j) delete j.to;
-    else if (!vowOn(tm)) L.push({ from: tm });
+    if (act && act.to && d <= act.to) delete act.to;
+    else if (!act || act.to) L.push({ from: d });
   } else
     L = L.map(function (r) {
       if (r.to && r.to <= tm) return r;
