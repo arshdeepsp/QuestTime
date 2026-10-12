@@ -43,6 +43,7 @@ import {
   schOfQ,
   schPlaced,
   schQuests,
+  schOn,
   schRemove,
   schSave,
   schSplit,
@@ -60,6 +61,7 @@ import { toggleTimer } from "../timer/13-focus-timer.js";
 import { render } from "../ui/04-render.js";
 import { go } from "../ui/44-navigation.js";
 import { haptic } from "../ui/45-gestures.js";
+import { popMenu } from "../ui/menus.js";
 
 export function schOpen() {
   return !!G.schPg && !G.schPg.hidden;
@@ -457,7 +459,11 @@ export function schDraw(first) {
     g = schGeo(),
     w = g.w,
     BZ = G.schMd === "busy",
-    Q = BZ ? [] : schQuests(T),
+    QA = BZ ? [] : schQuests(T),
+    Q = schOn(QA),
+    QO = QA.filter(function (q) {
+      return q.off;
+    }),
     L = schList(),
     e = S.days[T] || {},
     px = g.px,
@@ -638,7 +644,7 @@ export function schDraw(first) {
   L.forEach(function (bl) {
     var q = bl.lb
         ? null
-        : Q.filter(function (x) {
+        : QA.filter(function (x) {
             return x.id === bl.q;
           })[0],
       dn = q && !FT ? schDoneIn(T, bl) : 0,
@@ -703,7 +709,7 @@ export function schDraw(first) {
     return (
       b.lb ||
       (
-        Q.filter(function (q) {
+        QA.filter(function (q) {
           return q.id === b.q;
         })[0] || {}
       ).label ||
@@ -957,13 +963,24 @@ export function schDraw(first) {
               );
             })
             .join("") +
+          (QO.length
+            ? '<button type="button" class="stone sch-offb" id="schOffB" aria-haspopup="menu" aria-label="Off today: ' +
+              esc(
+                QO.map(function (q) {
+                  return q.label;
+                }).join(", "),
+              ) +
+              '" title="Off ' +
+              schTd() +
+              '">\u22ee</button>'
+            : "") +
           "</div>") +
       '<div class="sch-acts"><button type="button" class="stone" id="schBzB">Block busy time…</button><button type="button" class="stone" id="schPkNo">Cancel</button></div>';
   } else {
     var rz = FT ? null : schResumable(T),
       rq =
         rz &&
-        Q.filter(function (q) {
+        QA.filter(function (q) {
           return q.id === rz.b.q;
         })[0],
       sb2 = FT
@@ -973,7 +990,7 @@ export function schDraw(first) {
           })[0],
       sq2 =
         sb2 &&
-        Q.filter(function (q) {
+        QA.filter(function (q) {
           return q.id === sb2.q;
         })[0],
       pr2 =
@@ -1047,6 +1064,23 @@ export function schDraw(first) {
       schMode(G.schSel, x.getAttribute("data-sm") === "j5");
       schDraw();
     });
+  });
+  on("schOffB", function (ev) {
+    ev.stopPropagation();
+    var m3 = G.schPick;
+    popMenu(
+      ft.querySelector("#schOffB"),
+      QO.map(function (q) {
+        return [
+          esc(q.label) + " <small>off " + schTd() + "</small>",
+          function () {
+            G.schPick = null;
+            schAdd(q.id, m3);
+            schDraw();
+          },
+        ];
+      }),
+    );
   });
   ft.querySelectorAll("[data-pk]").forEach(function (x) {
     x.addEventListener("click", function () {

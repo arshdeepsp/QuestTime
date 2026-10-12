@@ -310,6 +310,11 @@ body.sch-open {
 .sch-pick small {
   opacity: 0.8;
 }
+.sch-pick .sch-offb {
+  min-width: 40px;
+  padding: 0 10px;
+  font: 26px/1 var(--vt);
+}
 .sch-ghost {
   position: absolute;
   left: 4px;

@@ -40,9 +40,17 @@ export function schStarted(T, b) {
 export function schTd() {
   return schFut() ? "this day" : "today";
 }
+/* Time quests that can go on day k's schedule, including totals on a day off their work days (q.off): those aren't
+     planned for (tray, counts, Auto-plan and repeats leave them out; schOn) but can be placed by hand from the pick
+     footer's ⋮ list. */
 export function schQuests(k) {
   return activeDefs(k).filter(function (q) {
-    return q.type === "time" && !q.off && !q.ign;
+    return q.type === "time" && !q.ign;
+  });
+}
+export function schOn(Q) {
+  return Q.filter(function (q) {
+    return !q.off;
   });
 }
 export function schLen(q, k) {
@@ -69,7 +77,7 @@ export function schAll(k) {
   schReps().forEach(function (r) {
     if (!repOn(r, k) || sk.indexOf(r.id) >= 0) return;
     if (r.q) {
-      Q = Q || schQuests(k);
+      Q = Q || schOn(schQuests(k));
       if (
         !Q.some(function (q) {
           return q.id === r.q;
@@ -264,7 +272,7 @@ export function schAdd(qid, m) {
     })[0];
   if (!q) return;
   var L = schList(),
-    left = schLeft(T, q, L),
+    left = q.off ? schLen(q, T) : schLeft(T, q, L),
     len = left >= SCH_STEP ? left : SCH_STEP * 2,
     f = m,
     t = Math.min(w.e, f + len);
@@ -487,7 +495,8 @@ export function schFree(L, from, to, pad, minLen) {
 export function schAuto() {
   var T = schK(),
     w = dayWin(T),
-    Q = schQuests(T),
+    QA = schQuests(T),
+    Q = schOn(QA),
     e = S.days[T] || {},
     from = Math.max(
       T === todayKey() ? Math.ceil(nowMinInDay() / SCH_STEP) * SCH_STEP : -1e9,
@@ -500,7 +509,7 @@ export function schAuto() {
     vis = function (b) {
       return (
         !b.q ||
-        Q.some(function (q) {
+        QA.some(function (q) {
           return q.id === b.q;
         })
       );

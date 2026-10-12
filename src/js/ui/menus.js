@@ -17,7 +17,8 @@ export function popMenu(btn, items) {
     .join("");
   document.body.appendChild(m);
   var r = btn.getBoundingClientRect();
-  m.style.top = window.scrollY + r.bottom + 6 + "px";
+  var up = r.bottom + 6 + m.offsetHeight > window.innerHeight && r.top - 6 - m.offsetHeight >= 0;
+  m.style.top = window.scrollY + (up ? r.top - 6 - m.offsetHeight : r.bottom + 6) + "px";
   m.style.left =
     Math.max(
       8,

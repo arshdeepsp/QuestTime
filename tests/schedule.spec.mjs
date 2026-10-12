@@ -502,6 +502,32 @@ test("a busy time can be off for today only: its time is free, the weekly busy t
   expect((await raw(page)).schSkip).toBeUndefined();
 });
 
+test("a total on its day off isn't in the tray or the pick list, but the ⋮ box places it, and Auto-plan leaves it alone", async ({ page }) => {
+  await open(page, { now: "2026-11-07T09:00:00-05:00" });
+  await expect(page.locator("#schTray [data-sq='fr']")).toHaveCount(0);
+  await tapTime(page, "10:00");
+  await expect(page.locator("[data-pk='fr']")).toHaveCount(0);
+  await expect(page.locator("[data-pk='cs']")).toHaveCount(1);
+  await page.click("#schOffB");
+  await page.locator(".qmenu button", { hasText: "French" }).click();
+  const s = (await raw(page, "2026-11-07")).sched;
+  expect(s.length).toBe(1);
+  expect([s[0].q, s[0].f]).toEqual(["fr", 600]);
+  await expect(page.locator(".sch-b", { hasText: "French" })).toHaveCount(1);
+  await expect(page.locator("#schTray [data-sq='fr']")).toHaveCount(0);
+  await page.click("#schAuto");
+  const s2 = (await raw(page, "2026-11-07")).sched;
+  expect(s2.filter((b) => b.q === "fr").length).toBe(1);
+  expect(s2.some((b) => b.q === "cs")).toBe(true);
+});
+
+test("no ⋮ box when nothing is off today", async ({ page }) => {
+  await open(page);
+  await tapTime(page, "10:00");
+  await expect(page.locator("[data-pk='fr']")).toHaveCount(1);
+  await expect(page.locator("#schOffB")).toHaveCount(0);
+});
+
 test("tapping a past time on Today offers to block it as busy", async ({ page }) => {
   await open(page);
   await tapTime(page, "08:00");
