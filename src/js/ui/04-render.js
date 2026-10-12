@@ -181,7 +181,8 @@ export function renderBody(fromClick) {
   if (typeof wrapLabel === "function" && wrapBtn) wrapLabel();
   var defs = k === T ? activeDefs(T) : defsOf(e);
   buildQuests(defs);
-  var vg = k === T && vowPending(defs, e);
+  /* A running timer always shows: the promise waits until it stops (it may have been started from a reminder, or carried over from last night). */
+  var vg = k === T && !S.timer && vowPending(defs, e);
   document.getElementById("gui").classList.toggle("vowgate", vg);
   document.getElementById("vowNote").hidden = !vg;
   if (k === T && S.days[T] && JSON.stringify(S.days[T].q) !== JSON.stringify(defs)) {

@@ -131,3 +131,16 @@ test("an ongoing reminder 15 minutes after waking repeats every 5 minutes until 
   const del = await page.evaluate(() => window.__del.at(-1));
   expect(today.every((n) => del.includes(n.id))).toBe(true);
 });
+
+test("a running timer is never hidden behind the promise", async ({ page }) => {
+  const cfg = { quests: Q, rules: RULES, vow: VOW, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z" };
+  const state = { days: {}, cfg, timer: { id: "cs", label: "CS work", start: Date.parse("2026-11-02T08:20:00-05:00"), day: "2026-11-02" } };
+  await page.addInitScript((s) => { if (!localStorage.getItem("pc-cache-v1")) localStorage.setItem("pc-cache-v1", s); }, JSON.stringify(state));
+  await openApp(page, { cfg });
+  await expect(page.locator("#quests .q.running")).toBeVisible();
+  await expect(page.locator("#vowNote")).toBeHidden();
+  await page.locator("#quests .q.running .tmr").click();
+  await expect(page.locator("#quests .q.running")).toHaveCount(0);
+  await expect(page.locator("#vowNote")).toBeVisible();
+  await expect(rows(page)).toHaveText(["Sleep", "Midday rest", "The line", "Before starting"]);
+});
