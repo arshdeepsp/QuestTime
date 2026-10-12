@@ -44,6 +44,8 @@ import {
   schPlaced,
   schQuests,
   schOn,
+  schLocked,
+  schLockDay,
   schRemove,
   schSave,
   schSplit,
@@ -205,6 +207,13 @@ export function schWire() {
       return;
     }
     var m = schAt(ev.clientY);
+    if (G.schMd !== "busy" && schLocked(schK())) {
+      G.schSel = null;
+      G.schPick = null;
+      G.schMsg = "Today\u2019s plan is locked. It can\u2019t be changed until tomorrow.";
+      schDraw();
+      return;
+    }
     if (G.schRep) {
       G.schRep = null;
       schDraw();
@@ -466,6 +475,7 @@ export function schDraw(first) {
     }),
     L = schList(),
     e = S.days[T] || {},
+    LK = !BZ && schLocked(T),
     px = g.px,
     fl = schFloor(),
     now = nowMinInDay();
@@ -585,7 +595,8 @@ export function schDraw(first) {
       Q.length +
       " placed" +
       (tot ? " · " + hm(tot) + " blocked" : "") +
-      (bz ? " · " + hm(bz) + " busy" : "");
+      (bz ? " · " + hm(bz) + " busy" : "") +
+      (LK ? " · Locked" : "");
     tray.innerHTML = Q.length
       ? Q.map(function (q) {
           var pl = schPlaced(T, q.id),
@@ -658,7 +669,7 @@ export function schDraw(first) {
         : [],
       ix = sh.indexOf(bl),
       en = !BZ && !bl.busy && schEnded(T, bl),
-      ro = (!BZ && bl.busy) || en,
+      ro = (!BZ && bl.busy) || en || LK,
       cl = clashOf(bl),
       grip = !(bl.j5 || ro || G.schSel !== bl.id);
     h +=
@@ -776,6 +787,20 @@ export function schDraw(first) {
       '<p class="help sch-help">Tap a time on ' +
       wdn +
       " to block it: lectures, meetings, work. Blocks repeat every week on their days, starting the day you add them. Quests already scheduled on top stay for that day; new ones go around them.</p>";
+  } else if (LK && sb) {
+    var dnL = sb.q ? schDoneIn(T, sb) : 0;
+    f2 =
+      '<p class="sch-ft-h"><b>' +
+      esc(nameOf(sb)) +
+      "</b> " +
+      hhmmOf(sb.f) +
+      "\u2013" +
+      hhmmOf(sb.t) +
+      ' <small class="sch-tag">Locked</small></p>' +
+      (sb.q
+        ? '<p class="help sch-help">' + hm(Math.min(dnL, sb.t - sb.f)) + " of " + hm(sb.t - sb.f) + " done.</p>"
+        : "") +
+      '<div class="sch-acts"><button type="button" class="stone sch-x" id="schDesel" aria-label="Deselect">\u2715</button></div>';
   } else if (G.schRep) {
     var rb = L.filter(function (x) {
         return x.id === G.schRep.id;
@@ -983,11 +1008,12 @@ export function schDraw(first) {
         QA.filter(function (q) {
           return q.id === rz.b.q;
         })[0],
-      sb2 = FT
-        ? null
-        : L.filter(function (b) {
-            return schShort(T, b);
-          })[0],
+      sb2 =
+        FT || LK
+          ? null
+          : L.filter(function (b) {
+              return schShort(T, b);
+            })[0],
       sq2 =
         sb2 &&
         QA.filter(function (q) {
@@ -1010,7 +1036,7 @@ export function schDraw(first) {
             hm(schShort(T, sb2)) +
             "</button>"
           : "");
-    var bzOff = busySkipped(T);
+    var bzOff = LK ? [] : busySkipped(T);
     f2 =
       (pr2 ? '<div class="sch-acts sch-pri">' + pr2 + "</div>" : "") +
       (bzOff.length
@@ -1030,18 +1056,21 @@ export function schDraw(first) {
             .join("") +
           "</div>"
         : "") +
-      '<p class="help sch-help">Tap a free time to add a quest. Tap a block to change or repeat it.</p><div class="sch-acts"><button type="button" class="stone save" id="schAuto"' +
-      (Q.some(function (q) {
-        return schLeft(T, q) >= SCH_STEP && !metQ(q, e);
-      })
-        ? ""
-        : " disabled") +
-      '>Auto-plan the rest</button><button type="button" class="stone" id="schBzOpen">Busy times</button>' +
-      (L.some(function (x) {
-        return !x.busy && x.f >= nw0;
-      })
-        ? '<button type="button" class="stone del" id="schClr">' + (FT ? "Clear all" : "Clear rest") + "</button>"
-        : "") +
+      (LK
+        ? '<p class="help sch-help">Locked for today: nothing can be added, moved or removed. Timers still work.</p><div class="sch-acts"><button type="button" class="stone" id="schBzOpen">Busy times</button>'
+        : '<p class="help sch-help">Tap a free time to add a quest. Tap a block to change or repeat it.</p><div class="sch-acts"><button type="button" class="stone save" id="schAuto"' +
+          (Q.some(function (q) {
+            return schLeft(T, q) >= SCH_STEP && !metQ(q, e);
+          })
+            ? ""
+            : " disabled") +
+          '>Auto-plan the rest</button><button type="button" class="stone" id="schBzOpen">Busy times</button>' +
+          (L.some(function (x) {
+            return !x.busy && x.f >= nw0;
+          })
+            ? '<button type="button" class="stone del" id="schClr">' + (FT ? "Clear all" : "Clear rest") + "</button>"
+            : "") +
+          (FT ? "" : '<button type="button" class="stone" id="schLock">Lock today</button>')) +
       "</div>";
   }
   ft.innerHTML = (G.schMsg ? '<p class="cmsg2" id="schMsg">' + esc(G.schMsg) + "</p>" : "") + f2;
@@ -1309,6 +1338,29 @@ export function schDraw(first) {
     if (b) schReplan(b.id);
     schDraw();
   });
+  var lkb = ft.querySelector("#schLock"),
+    lkArm = null;
+  if (lkb)
+    lkb.addEventListener("click", function () {
+      if (!lkArm) {
+        lkb.textContent = "Lock? Can\u2019t undo today";
+        lkb.classList.add("del");
+        lkArm = setTimeout(function () {
+          lkArm = null;
+          lkb.textContent = "Lock today";
+          lkb.classList.remove("del");
+        }, 4000);
+        return;
+      }
+      clearTimeout(lkArm);
+      if (schLockDay()) {
+        G.schSel = null;
+        G.schPick = null;
+        G.schMsg = "Locked. Today\u2019s plan stays as it is until tomorrow.";
+        haptic("medium");
+      }
+      schDraw();
+    });
   var cl = ft.querySelector("#schClr"),
     arm = null;
   if (cl)

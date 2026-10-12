@@ -528,6 +528,48 @@ test("no ⋮ box when nothing is off today", async ({ page }) => {
   await expect(page.locator("#schOffB")).toHaveCount(0);
 });
 
+test("Lock today (two taps) freezes today's plan: no adding, moving, removing or Auto-plan; timers aren't affected", async ({ page }) => {
+  await open(page, { cfg: { busy: BUSY } });
+  await place(page, "cs", "12:00");
+  await page.click("#schLock");
+  expect((await raw(page)).schLock).toBeUndefined();
+  await expect(page.locator("#schLock")).toContainText("Can’t undo today");
+  await page.click("#schLock");
+  await expect(page.locator("#schMsg")).toContainText("Locked");
+  const lk = (await raw(page)).schLock;
+  expect(lk.map((b) => [b.q || b.lb, b.f, b.t])).toEqual([["Lecture", 600, 690], ["cs", 720, 780]]);
+  await expect(page.locator("#schSum")).toContainText("Locked");
+  await expect(page.locator("#schAuto")).toHaveCount(0);
+  await expect(page.locator("#schLock")).toHaveCount(0);
+  await expect(page.locator(".sch-b:not([data-ro])")).toHaveCount(0);
+  await tapTime(page, "15:00");
+  await expect(page.locator("[data-pk]")).toHaveCount(0);
+  await expect(page.locator("#schMsg")).toContainText("locked");
+  await page.locator(".sch-b", { hasText: "CS work" }).click({ position: { x: 20, y: 10 } });
+  await expect(page.locator(".sch-tag")).toHaveText("Locked");
+  await expect(page.locator("#schRm")).toHaveCount(0);
+  await page.click("#schDesel");
+  await page.locator(".sch-b.busy").click({ position: { x: 20, y: 10 } });
+  await expect(page.locator("#schBzSkip")).toHaveCount(0);
+  expect((await raw(page)).schLock).toEqual(lk);
+});
+
+test("a locked day keeps its plan when busy times change later", async ({ page }) => {
+  await open(page, { cfg: { busy: BUSY }, days: { "2026-11-02": { schLock: [{ id: "z-zL", busy: "zL", lb: "Lecture", f: 600, t: 690 }] } } });
+  await page.click("#schBzOpen");
+  await page.locator(".sch-b.busy").first().click({ position: { x: 20, y: 10 } });
+  await page.click("#schBzRm");
+  await page.click("#schOk");
+  await expect(page.locator(".sch-b.busy")).toHaveCount(1);
+  await expect(page.locator(".sch-b.busy")).toContainText("Lecture");
+});
+
+test("Lock today isn't offered on a later day", async ({ page }) => {
+  await open(page);
+  await page.click("#schDN");
+  await expect(page.locator("#schLock")).toHaveCount(0);
+});
+
 test("tapping a past time on Today offers to block it as busy", async ({ page }) => {
   await open(page);
   await tapTime(page, "08:00");
@@ -545,7 +587,7 @@ test("schema 10: old busy blocks and busy repeats move into Busy times", async (
   await page.click("#quests .q .act button[aria-label^='More']");
   await page.waitForTimeout(900);
   const st = await store(page);
-  expect(st.schema).toBe(20);
+  expect(st.schema).toBe(21);
   expect(st.cfg.rep.map((r) => r.id)).toEqual(["r2"]);
   expect(st.cfg.busy).toEqual([{ id: "zr1", lb: "Class", f: 600, t: 660, dows: [1, 3], from: "2026-11-02", until: "2026-11-29" }, { id: "zx", lb: "Lab", f: 480, t: 540, dows: [1], from: "2026-11-02", until: "2026-11-02" }]);
   expect(st.days["2026-11-02"].sched.map((b) => b.id)).toEqual(["y"]);

@@ -178,6 +178,8 @@ export function migrate(c) {
   }
   /* 20 marks cfg.vow (Morning promise ranges, rules/vow.js); nothing to convert. */
   if (v < 20) v = 20;
+  /* 21 marks a day's e.schLock (a locked schedule, schedule/model.js); nothing to convert. */
+  if (v < 21) v = 21;
   c.schema = v;
   return c;
 }

@@ -69,9 +69,28 @@ export function schNorm(s) {
       });
   return out;
 }
+/* Locked day (e.schLock = the day's blocks as they stood when locked, repeats and busy times included): schAll returns
+     that copy, so nothing that changes later (edits, repeats, busy times) moves it, and schSave refuses every edit. */
+export function schLocked(k) {
+  return !!(S.days[k] || {}).schLock;
+}
+export function schLockDay() {
+  var T = schK();
+  if (T !== todayKey() || schLocked(T)) return false;
+  var snap = schAll(T).map(function (b) {
+    return Object.assign({}, b);
+  });
+  return schSave(function (L, e) {
+    e.schLock = snap;
+  });
+}
 export function schAll(k) {
-  var e = S.days[k] || {},
-    sk = e.schSkip || [],
+  var e = S.days[k] || {};
+  if (e.schLock)
+    return e.schLock.map(function (b) {
+      return Object.assign({}, b);
+    });
+  var sk = e.schSkip || [],
     out = schNorm(e.sched).slice(),
     Q = null;
   schReps().forEach(function (r) {
@@ -179,6 +198,10 @@ export function schNewId() {
 }
 export function schSave(fn) {
   if (locked()) return false;
+  if (schLocked(schK())) {
+    G.schMsg = "Today\u2019s plan is locked. It can\u2019t be changed until tomorrow.";
+    return false;
+  }
   var k = schK(),
     fut = k !== todayKey(),
     e = fut ? (S.days[k] = Object.assign({}, S.days[k] || {})) : entry(),
