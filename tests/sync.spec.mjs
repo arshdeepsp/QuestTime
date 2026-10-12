@@ -1,4 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect as baseExpect } from "@playwright/test";
+/* Pushes wait PUSH_DELAY (3 s) and sign-in reloads the page, so under a loaded full run 5 s polls flaked; sync waits get 15 s. */
+const expect = baseExpect.configure({ timeout: 15000 });
 import { openApp } from "./helpers.mjs";
 import { Q, SUBJ, RULES, days, busy, rep } from "./fixture.mjs";
 import { fake } from "./fakecloud.mjs";
@@ -158,7 +160,7 @@ test("a full account's worth of data pushes as documents Firestore accepts, and 
   await page.addInitScript(fake);
   const D = days();
   const cfg = { quests: Q, subjects: SUBJ, rules: RULES, busy, rep, nf: { on: true, checkinAt: "20:00" }, showPlan: true, addTrends: true, sparkTools: true, badges: { first: "2026-10-03" }, noStreak: [{ from: "2026-10-10", to: "2026-10-15" }], ignore: ["cl"], xpSpent: 200, weekStart: 0 };
-  await openApp(page, { cfg, days: D });
+  await openApp(page, { cfg, days: D, extra: { "pc-todoreview": "2026-11-02" } });
   await page.evaluate(() => { const S = JSON.parse(localStorage.getItem("pc-cache-v1")); S.refl = { "2026-10-12": { text: "exam week", tags: ["tired"] } }; localStorage.setItem("pc-cache-v1", JSON.stringify(S)); });
   await page.reload();
   await signIn(page);
