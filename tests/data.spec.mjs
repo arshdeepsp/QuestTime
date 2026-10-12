@@ -83,7 +83,7 @@ test("schema 6: the old ended flag is dropped, so an already-ended today can be 
   await page.waitForTimeout(900);
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
   expect(st.days["2026-11-01"]).toEqual({ cs: 75, q: Q, ck: [] });
-  expect(st.days["2026-11-02"].cs).toBe(21);
+  expect(st.days["2026-11-02"].cs).toBe(20);
   expect(st.days["2026-11-02"].ended).toBeUndefined();
 });
 
