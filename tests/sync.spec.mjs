@@ -420,3 +420,33 @@ test.describe("on a phone, mid-drag", () => {
     await expect(page.locator("#quests .q .lbl")).toHaveText(["Alpha", "Bravo 2", "Charlie"]);
   });
 });
+
+test("signing out clears this account's reminders, pending and shown; signing back in plans them again", async ({ page }) => {
+  const ln = `(function(){var L=function(){return JSON.parse(localStorage.getItem("__ln")||'{"pend":[],"log":[]}')},W=function(x){localStorage.setItem("__ln",JSON.stringify(x))};
+  window.Capacitor={isNativePlatform:()=>true,Plugins:{FocusNotify:{show:()=>Promise.resolve({}),hide:()=>Promise.resolve(),takeTap:()=>Promise.resolve({tap:null})},
+  LocalNotifications:{requestPermissions:()=>Promise.resolve({display:'granted'}),createChannel:()=>Promise.resolve(),getPending:()=>Promise.resolve({notifications:L().pend}),
+  cancel:(o)=>{var s=L();s.pend=s.pend.filter(n=>!o.notifications.some(c=>c.id===n.id));W(s);return Promise.resolve()},removeDeliveredNotifications:()=>Promise.resolve(),
+  removeAllDeliveredNotifications:()=>{var s=L();s.log.push("clearShown");W(s);return Promise.resolve()},
+  schedule:(o)=>{var s=L();s.pend=s.pend.filter(n=>!o.notifications.some(c=>c.id===n.id)).concat(o.notifications.map(n=>({id:n.id,title:n.title})));W(s);return Promise.resolve()},addListener:()=>Promise.resolve({})},
+  App:{addListener:()=>Promise.resolve({})},KeepAwake:{keepAwake:()=>Promise.resolve(),allowSleep:()=>Promise.resolve()}}}})();`;
+  await page.addInitScript(fake);
+  await page.addInitScript(ln);
+  const CS = { id: "cs", type: "time", label: "CS work", min: 60 };
+  await openApp(page, { cfg: { quests: [CS], nf: { on: true }, repFrozen: true }, days: { "2026-11-02": { sched: [{ id: "a", q: "cs", f: 720, t: 780 }] } }, extra: gate });
+  const st = () => page.evaluate(() => JSON.parse(localStorage.getItem("__ln") || '{"pend":[],"log":[]}'));
+  await page.fill("#auEmail", "arsh@example.com");
+  await page.fill("#auPw", "secret1");
+  await reloadOn(page, () => page.click("#auGo"));
+  await expect.poll(async () => (await st()).pend.some((n) => n.title === "Time for CS work")).toBe(true);
+  await page.goto("http://127.0.0.1:4173/index.html#settings");
+  await page.click("[data-st='account']");
+  await reloadOn(page, () => page.click("#acOut"));
+  await expect(page.locator("#authPage")).toBeVisible();
+  const after = await st();
+  expect(after.log).toContain("clearShown");
+  expect(after.pend.filter((n) => n.id >= 900 && n.id < 5000)).toEqual([]);
+  await page.fill("#auEmail", "arsh@example.com");
+  await page.fill("#auPw", "secret1");
+  await reloadOn(page, () => page.click("#auGo"));
+  await expect.poll(async () => (await st()).pend.some((n) => n.title === "Time for CS work")).toBe(true);
+});

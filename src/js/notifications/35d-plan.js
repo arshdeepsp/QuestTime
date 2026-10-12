@@ -249,6 +249,34 @@ export function nfPlan() {
   }
   return out;
 }
+/* Every reminder this app has pending or showing, gone (leaving an account: sync/54-account.js reloadApp). Settles
+     within 3 s whatever the plugin does, so a sign-out never hangs on it. */
+export function notifClearAll() {
+  var ln = LN();
+  if (!ln) return Promise.resolve();
+  G.nfSig = "";
+  var work = Promise.resolve(ln.getPending ? ln.getPending() : { notifications: [] })
+    .then(function (r) {
+      var ours = ((r && r.notifications) || [])
+        .filter(function (x) {
+          return x.id >= 900 && x.id < 5000;
+        })
+        .map(function (x) {
+          return { id: x.id };
+        });
+      return ours.length ? ln.cancel({ notifications: ours }) : null;
+    })
+    .then(function () {
+      return ln.removeAllDeliveredNotifications ? ln.removeAllDeliveredNotifications() : null;
+    })
+    .catch(function () {});
+  return Promise.race([
+    work,
+    new Promise(function (res) {
+      setTimeout(res, 3000);
+    }),
+  ]);
+}
 /* Clears delivered promise reminders that are no longer due: other days', and today's once the rules are ticked. */
 export function vowClear(ln) {
   if (!ln.removeDeliveredNotifications) return;

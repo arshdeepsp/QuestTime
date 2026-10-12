@@ -10,6 +10,7 @@
 import { G } from "../core/g.js";
 import { S, localAdapter, store } from "../core/00-state.js";
 import { dedupeQuests } from "../core/config.js";
+import { notifClearAll } from "../notifications/35d-plan.js";
 import { cache, cloudAccount } from "../core/storage.js";
 import { lockReset } from "../rules/past-days.js";
 import { renderSettings } from "../settings/10-settings.js";
@@ -509,13 +510,18 @@ export function init() {
         return u;
       });
     }
-    function reloadApp(note) {
+    /* leave = this device is leaving an account (sign-out, erase, deletion, a session ended elsewhere): its reminders,
+       pending and shown, are cleared first, so nothing from that account fires while nobody (or someone else) is signed
+       in. A sign-in needs no clearing: the reloaded app re-plans everything for the account it opens. */
+    function reloadApp(note, leave) {
       try {
         sessionStorage.setItem("pc-authnote", note || "");
       } catch (x) {}
-      setTimeout(function () {
-        location.reload();
-      }, 0);
+      (leave ? notifClearAll() : Promise.resolve()).then(function () {
+        setTimeout(function () {
+          location.reload();
+        }, 0);
+      });
     }
     return {
       state: state,
@@ -546,6 +552,7 @@ export function init() {
                   setAcct(null);
                   reloadApp(
                     "You were signed out. Sign in again to see your data; it's kept on this device until you do.",
+                    true,
                   );
                 } else {
                   setAcct(null);
@@ -616,7 +623,7 @@ export function init() {
         return (f ? f.auth.signOut() : Promise.resolve())
           .catch(function () {})
           .then(function () {
-            reloadApp("Signed out. Your data is in your account and comes back when you sign in.");
+            reloadApp("Signed out. Your data is in your account and comes back when you sign in.", true);
           });
       },
       unsynced: function () {
@@ -663,7 +670,7 @@ export function init() {
         return (f ? f.auth.signOut() : Promise.resolve())
           .catch(function () {})
           .then(function () {
-            reloadApp("This device’s data was erased.");
+            reloadApp("This device’s data was erased.", true);
           });
       },
       /* Email verification, password change and account deletion (55 draws the pages). Deleting needs the password again
@@ -731,7 +738,7 @@ export function init() {
                 localStorage.removeItem("pc-cache-u-" + u.uid);
               } catch (x) {}
               setAcct(null);
-              reloadApp("Your account and its data were deleted.");
+              reloadApp("Your account and its data were deleted.", true);
             },
             function (e) {
               leaving = false;
