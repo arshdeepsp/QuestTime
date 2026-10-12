@@ -160,3 +160,21 @@ test("a weekly total's timer celebrates today's share, not its leftover 30-minut
   await expect(page.locator("#gBody .mhead")).toHaveText("Today’s share done!");
   await expect(page.locator("#gBody")).toContainText("40m / 7h 30m");
 });
+
+test.describe("phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const PQ = [
+    { id: "cs", type: "time", label: "CS work", min: 60 },
+    { id: "st", type: "time", label: "Strength", min: 30, roll: 120, days: [0, 3, 5] },
+    { id: "j", type: "check", label: "Journal" }
+  ];
+  for (const [what, id, logged] of [["Done today", "cs", { cs: 60 }], ["Off today", "st", {}]]) {
+    test(`a timer started from a notification on a quest in ${what} shows its card at once`, async ({ page }) => {
+      await page.addInitScript(mock(null));
+      await openApp(page, { cfg: { quests: PQ, nf: { on: true } }, days: { "2026-11-02": { q: PQ, ...logged, sched: [{ id: "b1", q: id, f: 540, t: 600 }] } } });
+      await tap(page, 3500, { sched: id });
+      await expect(page.locator("#quests .q.running")).toBeVisible();
+      await expect(page.locator("#quests .q.running .lbl")).toHaveText(PQ.find((q) => q.id === id).label);
+    });
+  }
+});

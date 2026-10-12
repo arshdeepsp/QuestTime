@@ -86,7 +86,9 @@ export function toggleTimer(q) {
       applyHide();
     }
     cache();
-    timerTick();
+    /* A full render, not just timerTick: the row may sit in a collapsed group (Done today, Off today, Ignored) and only
+       mobileList takes the running row out of it, so starting from a notification left Focus empty until a refresh. */
+    render();
     setSync(first ? "Timer started. First step: " + first : "Timer started: " + q.label);
     notifSync();
     setTimeout(focusSync, 0);
@@ -115,7 +117,7 @@ export function stopTimer(end) {
     T = t.day && t.day < T0 ? t.day : T0;
   if (m < 1) {
     setSync(cap ? "Daily limit reached for " + t.label + ". Timer stopped." : "Timer stopped (under a minute).");
-    timerTick();
+    render();
     return;
   }
   if (logTimer(t, T, at)) {
