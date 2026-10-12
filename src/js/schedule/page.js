@@ -48,6 +48,8 @@ import {
   schSplit,
   schStarted,
   schTd,
+  busyOff,
+  busySkipped,
   schText,
 } from "./model.js";
 import { schDayDone, schDoneIn, schReplan, schShort } from "./progress.js";
@@ -830,7 +832,9 @@ export function schDraw(first) {
       (bt2 ? '<p class="sch-rep">↻ ' + esc(busyText(bt2)) + "</p>" : "") +
       '<p class="help sch-help">Busy times are set in Busy times. Quests already placed on top of it stay for ' +
       schTd() +
-      '.</p><div class="sch-acts"><button type="button" class="stone" id="schBzEdit">Edit busy times</button><button type="button" class="stone sch-x" id="schDesel" aria-label="Deselect">✕</button></div>';
+      '.</p><div class="sch-acts"><button type="button" class="stone" id="schBzSkip">Not ' +
+      schTd() +
+      '</button><button type="button" class="stone" id="schBzEdit">Edit busy times</button><button type="button" class="stone sch-x" id="schDesel" aria-label="Deselect">✕</button></div>';
   } else if (sb && schEnded(T, sb)) {
     var rpE = sb.rep ? repById(sb.rep) : null,
       dnE = sb.q ? schDoneIn(T, sb) : 0,
@@ -989,8 +993,26 @@ export function schDraw(first) {
             hm(schShort(T, sb2)) +
             "</button>"
           : "");
+    var bzOff = busySkipped(T);
     f2 =
       (pr2 ? '<div class="sch-acts sch-pri">' + pr2 + "</div>" : "") +
+      (bzOff.length
+        ? '<div class="sch-acts">' +
+          bzOff
+            .map(function (b) {
+              return (
+                '<button type="button" class="stone" data-bzon="' +
+                esc(b.id) +
+                '">' +
+                esc(b.lb) +
+                " is off " +
+                schTd() +
+                " \u00b7 Put back</button>"
+              );
+            })
+            .join("") +
+          "</div>"
+        : "") +
       '<p class="help sch-help">Tap a free time to add a quest. Tap a block to change or repeat it.</p><div class="sch-acts"><button type="button" class="stone save" id="schAuto"' +
       (Q.some(function (q) {
         return schLeft(T, q) >= SCH_STEP && !metQ(q, e);
@@ -1183,6 +1205,24 @@ export function schDraw(first) {
   });
   on("schBzOpen", function () {
     openBusy(parse(T).getDay(), null, true);
+  });
+  on("schBzSkip", function () {
+    var b = L.filter(function (x) {
+      return x.id === G.schSel;
+    })[0];
+    if (!b || !b.busy || !busyOff(b.busy, true)) return;
+    G.schSel = null;
+    G.schMsg = b.lb + " is off " + schTd() + ". The time is free; it still repeats.";
+    haptic("light");
+    schDraw();
+  });
+  ft.querySelectorAll("[data-bzon]").forEach(function (x) {
+    x.addEventListener("click", function () {
+      if (!busyOff(x.getAttribute("data-bzon"), false)) return;
+      G.schMsg = "";
+      haptic("light");
+      schDraw();
+    });
   });
   on("schBzEdit", function () {
     var b = L.filter(function (x) {

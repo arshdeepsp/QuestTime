@@ -84,7 +84,7 @@ export function schAll(k) {
     out.push(b);
   });
   busyList().forEach(function (b) {
-    if (busyOn(b, k)) out.push({ id: "z-" + b.id, busy: b.id, lb: b.lb, f: b.f, t: b.t });
+    if (busyOn(b, k) && sk.indexOf(b.id) < 0) out.push({ id: "z-" + b.id, busy: b.id, lb: b.lb, f: b.f, t: b.t });
   });
   return out.sort(function (a, b) {
     return a.f - b.f;
@@ -148,6 +148,23 @@ export function schLabel(qid) {
 }
 export function schName(b) {
   return b ? b.lb || schLabel(b.q) : "another block";
+}
+/* A busy time can be off for one day (a cancelled class): its id goes in that day's e.schSkip, like a skipped repeat,
+     so the time is free that day and the weekly busy time stays. */
+export function busyOff(id, off) {
+  return schSave(function (L, e) {
+    var sk = (e.schSkip || []).filter(function (x) {
+      return x !== id;
+    });
+    if (off) sk.push(id);
+    e.schSkip = sk;
+  });
+}
+export function busySkipped(k) {
+  var sk = (S.days[k] || {}).schSkip || [];
+  return busyList().filter(function (b) {
+    return busyOn(b, k) && sk.indexOf(b.id) >= 0;
+  });
 }
 export function schNewId() {
   return "b" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);

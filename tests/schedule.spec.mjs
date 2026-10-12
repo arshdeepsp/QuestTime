@@ -486,6 +486,22 @@ test("on Today, busy times are read-only, planned around, and shots placed befor
   await expect(page.locator("#schTitle")).toHaveText("Today");
 });
 
+test("a busy time can be off for today only: its time is free, the weekly busy time stays, and it can be put back", async ({ page }) => {
+  await open(page, { cfg: { busy: BUSY } });
+  await page.locator(".sch-b.busy").click({ position: { x: 20, y: 10 } });
+  await page.click("#schBzSkip");
+  await expect(page.locator(".sch-b.busy")).toHaveCount(0);
+  await expect(page.locator("#schMsg")).toContainText("Lecture is off today");
+  expect((await raw(page)).schSkip).toEqual(["zL"]);
+  expect((await store(page)).cfg.busy).toEqual(BUSY);
+  await tapTime(page, "10:00");
+  await expect(page.locator(".sch-ft-h")).toHaveText("Add at 10:00");
+  await page.click("#schPkNo");
+  await page.click("[data-bzon='zL']");
+  await expect(page.locator(".sch-b.busy")).toHaveCount(1);
+  expect((await raw(page)).schSkip).toBeUndefined();
+});
+
 test("tapping a past time on Today offers to block it as busy", async ({ page }) => {
   await open(page);
   await tapTime(page, "08:00");
