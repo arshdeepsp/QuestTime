@@ -115,6 +115,27 @@ export function schNotifs(T, e, push) {
       atMin(T, bl.f),
       { sched: q.id, j5: !!bl.j5 },
     );
+    /* Get back to it: 10, 25 and 40 minutes into a block that isn't under a timer, unless the block or the day's share
+         is already done (3600 + n). Re-planned on every sync, so starting the timer or finishing cancels the rest. */
+    if (bl.j5 || schDoneIn(T, bl) >= bl.t - bl.f) return;
+    [10, 25, 40].forEach(function (off, n) {
+      var m = bl.f + off;
+      if (m > bl.t - 5) return;
+      push(
+        3600 + (i % 25) * 4 + n,
+        "Get back to " + q.label,
+        hm(bl.t - m) +
+          " left of your " +
+          hhmmOf(bl.f) +
+          "\u2013" +
+          hhmmOf(bl.t) +
+          " block. Tap to " +
+          (schDoneIn(T, bl) >= 1 ? "resume" : "start") +
+          " the timer.",
+        atMin(T, m),
+        { sched: q.id },
+      );
+    });
   });
   /* Blocks on the next SCH_AHEAD days (planned ahead or repeats) are scheduled too (3700 + day×20 + n), so they remind even if the app isn't opened that day. */
   for (var dd = 1; dd <= SCH_AHEAD; dd++) {

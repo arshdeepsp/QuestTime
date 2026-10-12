@@ -168,10 +168,34 @@ test("each shot gets its own reminder, and done quests are skipped", async ({ pa
   await page.addInitScript(mock);
   await openApp(page, { cfg: { quests: Q, nf: { on: true } }, days: { "2026-11-02": { q: Q, fr: 60, sched: [{ id: "a", q: "cs", f: 600, t: 630, j5: true }, { id: "b", q: "fr", f: 780, t: 840 }, { id: "c", q: "cs", f: 900, t: 930 }] } } });
   await page.clock.runFor(2000);
-  const n = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3500 && x.id < 4000);
+  const n = (await page.evaluate(() => window.__ln)).filter((x) => (x.id >= 3500 && x.id < 3600) || (x.id >= 3700 && x.id < 4000));
   expect(n.map((x) => x.title)).toEqual(["5 minutes on CS work", "Time for CS work"]);
   expect(n.map((x) => x.at.slice(16, 21))).toEqual(["10:00", "15:00"]);
   expect(n[0].extra).toMatchObject({ sched: "cs", j5: true });
+});
+
+test("a block not under a timer nags 10, 25 and 40 minutes in; a 5-min start, a short block's tail and a done block don't", async ({ page }) => {
+  await page.addInitScript(mock);
+  const at = (h, m) => Date.parse(`2026-11-02T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00-05:00`);
+  await openApp(page, { cfg: { quests: Q, nf: { on: true } }, days: { "2026-11-02": { q: Q, sched: [{ id: "a", q: "cs", f: 600, t: 660 }, { id: "b", q: "fr", f: 720, t: 750 }, { id: "c", q: "cs", f: 780, t: 810, j5: true }, { id: "d", q: "fr", f: 840, t: 870 }], sess: [{ id: "fr", s: at(14, 0), e: at(14, 30), m: 30 }], fr: 30 } } });
+  await page.clock.runFor(2000);
+  const n = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3600 && x.id < 3700);
+  expect(n.map((x) => [x.title, x.at.slice(16, 21)])).toEqual([
+    ["Get back to CS work", "10:10"], ["Get back to CS work", "10:25"], ["Get back to CS work", "10:40"],
+    ["Get back to French", "12:10"], ["Get back to French", "12:25"]
+  ]);
+  expect(n[0].body).toBe("50m left of your 10:00–11:00 block. Tap to start the timer.");
+  expect(n.every((x) => x.extra.sched)).toBe(true);
+});
+
+test("a timer running on the quest stops its nags", async ({ page }) => {
+  await page.addInitScript(mock);
+  const state = { days: { "2026-11-02": { q: Q, sched: [{ id: "a", q: "cs", f: 600, t: 660 }] } }, cfg: { quests: Q, rules: [], start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z", nf: { on: true } }, timer: { id: "cs", label: "CS work", start: Date.parse("2026-11-02T08:50:00-05:00"), day: "2026-11-02" } };
+  await page.addInitScript((s) => { if (!localStorage.getItem("pc-cache-v1")) localStorage.setItem("pc-cache-v1", s); }, JSON.stringify(state));
+  await openApp(page, { cfg: state.cfg, days: state.days });
+  await page.clock.runFor(2000);
+  const n = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3500 && x.id < 3700);
+  expect(n).toEqual([]);
 });
 
 test("tapping a 5-min start notification starts Just 5 on that quest", async ({ page }) => {
@@ -300,7 +324,7 @@ test("a repeated quest shot reminds you like any other", async ({ page }) => {
   await page.addInitScript(mock);
   await openApp(page, { cfg: { quests: Q, nf: { on: true }, rep: [{ id: "r2", q: "cs", f: 600, t: 660, dows: [1], from: "2026-11-02", until: "2026-11-29" }] } });
   await page.clock.runFor(2000);
-  const n = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3500 && x.id < 3700);
+  const n = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3500 && x.id < 3600);
   expect(n.map((x) => [x.title, x.extra.sched])).toEqual([["Time for CS work", "cs"]]);
 });
 
@@ -693,7 +717,7 @@ test.describe("schedule flexibility", () => {
     await page.click(".sch-b");
     await tapTime(page, "13:00");
     await page.clock.runFor(2000);
-    const last = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3500 && x.id < 3700).pop();
+    const last = (await page.evaluate(() => window.__ln)).filter((x) => x.id >= 3500 && x.id < 3600).pop();
     expect(last.at).toContain("13:00");
   });
 
