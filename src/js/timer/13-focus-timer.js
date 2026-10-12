@@ -169,6 +169,22 @@ export function rollTimer() {
   if (t.day === add(T, -1) && now < cut + ROLL_GRACE * 60000) return;
   cut = Math.max(t.start, Math.min(cut, now));
   logTimer(t, t.day, cut);
+  /* Its quest isn't on today's list: nothing today could count the time, so stop instead of carrying it over. */
+  if (
+    !activeDefs(T).some(function (x) {
+      return x.id === t.id;
+    })
+  ) {
+    S.timer = null;
+    cache();
+    notifSync();
+    setTimeout(function () {
+      focusSync(true);
+    }, 0);
+    if (t.autoFocus) G.focusView = !!uiGet("focus");
+    setSync(t.label + " timer stopped: it ran past " + fmtD(t.day) + " and isn't on today's list.");
+    return;
+  }
   cut = Math.min(now, Math.max(cut, atMin(T, dayEnd() * 60)));
   t.start = cut;
   t.day = T;

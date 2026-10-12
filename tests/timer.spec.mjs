@@ -54,3 +54,35 @@ for (const width of [320, 360, 390, 1280]) {
     });
   });
 }
+
+const ST = [...Q, { id: "st", type: "time", label: "Strength Training", min: 45, days: [0] }];
+const lastNight = async (page, now) => {
+  const cfg = { quests: ST, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z" };
+  const state = { days: { "2026-11-01": { q: ST } }, cfg, timer: { id: "st", label: "Strength Training", start: Date.parse("2026-11-01T23:30:00-05:00"), day: "2026-11-01", autoFocus: true } };
+  await page.addInitScript((s) => { if (!localStorage.getItem("pc-cache-v1")) localStorage.setItem("pc-cache-v1", s); }, JSON.stringify(state));
+  await openApp(page, { now, cfg });
+};
+const saved = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
+
+test("a timer from last night on a quest not scheduled today still shows its card in the grace period", async ({ page }) => {
+  await lastNight(page, "2026-11-02T00:20:00-05:00");
+  await expect(page.locator("#quests .q.running")).toHaveCount(1);
+  await expect(page.locator("#quests .q.running .lbl")).toHaveText("Strength Training");
+  expect(await visibleLabels(page)).toEqual(["Strength Training"]);
+  await page.click("#quests .q.running .tmr");
+  await expect(page.locator("#quests .q.running")).toHaveCount(0);
+  const s = await saved(page);
+  expect(s.timer).toBeFalsy();
+  expect(s.days["2026-11-01"].st).toBe(50);
+  await expect(page.locator("#quests .q:visible .lbl")).toHaveText(["CS work", "Music"]);
+});
+
+test("past the grace, a timer whose quest isn't on today stops instead of carrying over", async ({ page }) => {
+  await lastNight(page, "2026-11-02T12:54:00-05:00");
+  await expect(page.locator("#sync")).toContainText("Strength Training timer stopped");
+  const s = await saved(page);
+  expect(s.timer).toBeFalsy();
+  expect(s.days["2026-11-01"].st).toBe(30);
+  expect(await page.evaluate(() => document.body.classList.contains("focusview"))).toBe(false);
+  await expect(page.locator("#quests .q:visible .lbl")).toHaveText(["CS work", "Music"]);
+});

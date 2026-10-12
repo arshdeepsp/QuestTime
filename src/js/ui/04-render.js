@@ -179,8 +179,25 @@ export function renderBody(fromClick) {
   document.getElementById("backToday").hidden = !ro();
   lockIn();
   if (typeof wrapLabel === "function" && wrapBtn) wrapLabel();
-  var defs = k === T ? activeDefs(T) : defsOf(e);
-  buildQuests(defs);
+  var defs = k === T ? activeDefs(T) : defsOf(e),
+    shown = defs;
+  /* The running timer's quest always gets its row, even off today's list (a timer from last night still in its grace
+     period, on a quest not scheduled today): Focus shows only that row, so without it the screen is empty. */
+  if (
+    k === T &&
+    S.timer &&
+    !defs.some(function (q) {
+      return q.id === S.timer.id;
+    })
+  ) {
+    var tq = defsOf(S.days[S.timer.day] || {})
+      .concat(cfg().quests)
+      .filter(function (q) {
+        return q.id === S.timer.id;
+      })[0];
+    if (tq) shown = defs.concat([tq]);
+  }
+  buildQuests(shown);
   /* A running timer always shows: the promise waits until it stops (it may have been started from a reminder, or carried over from last night). */
   var vg = k === T && !S.timer && vowPending(defs, e);
   document.getElementById("gui").classList.toggle("vowgate", vg);
@@ -192,7 +209,7 @@ export function renderBody(fromClick) {
     clearTimeout(G.timer);
     G.timer = setTimeout(flush, 700);
   }
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el) return;
     var v = e[q.id];
@@ -247,7 +264,7 @@ export function renderBody(fromClick) {
       el.pminus.disabled = pv <= q.min;
     }
   });
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el) return;
     var pj = el.row.querySelector(".proj");
@@ -276,7 +293,7 @@ export function renderBody(fromClick) {
   cfg().quests.forEach(function (q) {
     cqm[q.id] = q;
   });
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el) return;
     var sk = el.row.querySelector(".qstk");
@@ -318,10 +335,10 @@ export function renderBody(fromClick) {
   renderShelf();
   notifSync();
   applyHide();
-  mobileList(defs, e, past);
+  mobileList(shown, e, past);
   renderPark();
   renderHeat();
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el || q.type !== "time") return;
     var rq = el.row.querySelector(".req"),
@@ -347,7 +364,7 @@ export function renderBody(fromClick) {
   });
   /* Casual: totals just say how much of this period's target is done (no pace or "need" figures). */
   if (off && k === T)
-    defs.forEach(function (q) {
+    shown.forEach(function (q) {
       var el = qEls[q.id];
       if (!el || q.type !== "time" || !q.roll) return;
       var rq = el.row.querySelector(".req");
@@ -355,7 +372,7 @@ export function renderBody(fromClick) {
         rq.textContent +=
           " \u00b7 " + hm(rollSum(q.id, k, q)) + " of " + hm(weekTarget(q, k)) + " done this " + perWord(q);
     });
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el || q.type !== "time" || !q.roll) return;
     var wt = weekTarget(q, k);
@@ -365,13 +382,13 @@ export function renderBody(fromClick) {
         rq.textContent += " \u00b7 " + hm(wt) + " this " + perWord(q) + " (started " + fmtD(weekFrom(q, k)) + ")";
     }
   });
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el || q.type !== "time" || !q.roll || scheduled(q, k)) return;
     var rq = el.row.querySelector(".req");
     if (rq && rq.textContent.indexOf("off day") < 0) rq.textContent += " \u00b7 off day, extra time still counts";
   });
-  defs.forEach(function (q) {
+  shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el || !lateStart(q, k)) return;
     var rq = el.row.querySelector(".req");
