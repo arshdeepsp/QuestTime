@@ -4,7 +4,7 @@ import { S } from "../core/00-state.js";
 import { uiGet } from "../core/config.js";
 import { haptic } from "./45-gestures.js";
 
-export var AC, TAPS, squishBuf;
+export var AC, TAPS, sampleBuf;
 
 export function tone(f, t0, dur, type, vol) {
   var o = AC.createOscillator(),
@@ -18,22 +18,24 @@ export function tone(f, t0, dur, type, vol) {
   o.start(AC.currentTime + t0);
   o.stop(AC.currentTime + t0 + dur + 0.02);
 }
-/* Tomato squish (pomodoro start and finish): the recorded sample sounds/squish.wav (the same file the native
-     pc_squish channel plays), decoded once and kept; nothing plays until it has loaded, and a failed load stays silent. */
-export function squish() {
-  if (squishBuf === null) return;
-  if (squishBuf) {
+/* Recorded samples (public/sounds/<name>.wav, the same files the native channels play): the tomato squish (pomodoro start
+     and finish) and the knuckle crack (break over). Each is fetched and decoded once into sampleBuf[name]; nothing plays
+     until it has loaded, and a failed load stays silent. */
+export function sample(name) {
+  var b = sampleBuf[name];
+  if (b === null) return;
+  if (b) {
     var src = AC.createBufferSource(),
       g = AC.createGain();
     g.gain.value = 0.9;
-    src.buffer = squishBuf;
+    src.buffer = b;
     src.connect(g);
     g.connect(AC.destination);
     src.start();
     return;
   }
-  squishBuf = null;
-  fetch("sounds/squish.wav")
+  sampleBuf[name] = null;
+  fetch("sounds/" + name + ".wav")
     .then(function (r) {
       return r.arrayBuffer();
     })
@@ -41,11 +43,11 @@ export function squish() {
       return AC.decodeAudioData(ab);
     })
     .then(function (buf) {
-      squishBuf = buf;
-      squish();
+      sampleBuf[name] = buf;
+      sample(name);
     })
     .catch(function () {
-      squishBuf = undefined;
+      sampleBuf[name] = undefined;
     });
 }
 export function sfx(kind) {
@@ -54,6 +56,7 @@ export function sfx(kind) {
     else if (kind === "clear" || kind === "level" || kind === "chime") haptic("success", true);
     else if (kind === "stop") haptic("heavy", true);
     else if (kind === "squish") haptic("medium", true);
+    else if (kind === "crack") haptic("heavy", true);
     else if (kind === "fail") haptic("error", true);
   } catch (x) {}
   if (!G.sfxOn) return;
@@ -87,7 +90,9 @@ export function sfx(kind) {
     });
     tone(392, 0.55, 0.4, "square", 0.06);
   } else if (kind === "squish") {
-    squish();
+    sample("squish");
+  } else if (kind === "crack") {
+    sample("crack");
   } else if (kind === "level") {
     [392, 523, 659, 784, 659, 1047].forEach(function (f, i) {
       tone(f, i * 0.1, 0.18, "triangle", 0.09);
@@ -107,7 +112,7 @@ export function tapSound(k) {
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
   AC = null;
-  squishBuf = undefined;
+  sampleBuf = {};
   G.sfxOn = uiGet("sfx", true) !== false;
   /* Tap sounds: a short 8-bit click that goes with every haptic tap. Off with Settings › Tap sounds, or with Sound off. */
   TAPS = { light: [1568, 0.03, 0.025], medium: [1175, 0.05, 0.035], heavy: [784, 0.07, 0.045] };

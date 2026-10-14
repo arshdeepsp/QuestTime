@@ -406,3 +406,27 @@ test("a pomodoro whose interval ended while the app was closed is finished on la
   await expect(page.locator("#mainnav")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("a break ending plays the knuckle crack, and the break-over notifications go on the pc_crack channel", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__sq = [];
+    const Real = window.AudioContext;
+    window.AudioContext = function () { const ac = new Real(); const mk = ac.createBufferSource.bind(ac); ac.createBufferSource = () => { const o = mk(); const st = o.start.bind(o); o.start = (...a) => { if (o.buffer) window.__sq.push(Math.round(o.buffer.duration * 100) / 100); return st(...a); }; return o; }; return ac; };
+    window.__ln = [];
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: () => Promise.resolve(), createChannel: (c) => { (window.__ch = window.__ch || []).push(c.id); return Promise.resolve(); }, getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, channelId: n.channelId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
+      App: { addListener: () => Promise.resolve({}) }
+    } };
+  });
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1203).map((n) => n.channelId))).toEqual(["pc_crack"]);
+  await expect.poll(() => page.evaluate(() => (window.__ch || []).includes("pc_crack"))).toBe(true);
+  await page.clock.fastForward(25 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1202).map((n) => n.channelId))).toEqual(["pc_crack"]);
+  await page.clock.fastForward(5 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  await expect.poll(() => page.evaluate(() => window.__sq.filter((d) => d > 0.6 && d < 0.9).length)).toBe(1);
+});

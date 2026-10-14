@@ -480,7 +480,7 @@ export function pomoTick() {
     if (p.phase === "break" && !p.breakDone && now >= p.bend) {
       p.breakDone = true;
       ch = true;
-      sfx("chime");
+      sfx("crack");
       try {
         if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
       } catch (x) {}

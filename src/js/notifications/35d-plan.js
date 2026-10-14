@@ -124,7 +124,7 @@ export function nfPlan() {
         pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
         pm.bend,
         null,
-        null,
+        "pc_crack",
         pm.auto ? null : "pc_pomo_brk",
       );
     if (pm.phase === "work" && !pm.paused)
@@ -134,7 +134,7 @@ export function nfPlan() {
         pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
         pm.end + pmBrk * 60000,
         null,
-        null,
+        "pc_crack",
         pm.auto ? null : "pc_pomo_brk",
       );
   }
@@ -438,6 +438,16 @@ export function ensureChannels() {
       vibration: true,
       lights: true,
       sound: "pc_squish.wav",
+    }),
+    ln.createChannel({
+      id: "pc_crack",
+      name: "Break over",
+      description: "A pomodoro break ended",
+      importance: 5,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+      sound: "pc_crack.wav",
     }),
     ln.createChannel({
       id: "pc_focus",
