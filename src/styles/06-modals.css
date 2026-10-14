@@ -117,12 +117,24 @@ body.calm .modal-card {
   color: #ffff55;
   margin: 0 0 8px;
 }
+/* three dots drawn in CSS: the ⋮ glyph isn't in Press Start 2P and the fallback font sat low */
 #sparkBar .kebab {
-  font-size: 16px;
+  font-size: 9px;
   line-height: 1;
-  padding: 6px 0;
+  padding: 10px 0;
   min-width: 44px;
   text-align: center;
+}
+#sparkBar .kebab i {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  background: currentColor;
+  box-shadow:
+    0 -6px 0 currentColor,
+    0 6px 0 currentColor;
+  vertical-align: middle;
+  margin-top: -1px;
 }
 .qmenu {
   position: absolute;
