@@ -680,6 +680,7 @@ export function schDraw(first) {
       (cl ? " clash" : "") +
       (bl.j5 ? " j5" : "") +
       (bl.rep ? " rep" : "") +
+      (bl.pm ? " pm" : "") +
       (G.schSel === bl.id ? " on" : "") +
       (ok ? " done" : "") +
       (sht ? " short" : "") +
@@ -694,6 +695,7 @@ export function schDraw(first) {
       Math.max(G.SCH_ROW, px(bl.t) - px(bl.f)) +
       'px"><b>' +
       (bl.rep ? "↻ " : "") +
+      (bl.pm ? '<i class="sch-tm" aria-label="Pomodoro"></i>' : "") +
       (bl.j5 ? "▶ 5 · " : "") +
       esc(bl.lb || q.label) +
       (sh.length > 1 ? " <em>" + (ix + 1) + "/" + sh.length + "</em>" : "") +

@@ -4,7 +4,7 @@ import { store } from "./00-state.js";
 /* ---- the store ----
      State lives in S; persistence goes through `store`, which thinks in documents so a sync backend can be plugged in
      without touching the app: `cfg` (one doc, carries `updated`), `refl` (one doc, a map by day), `days/<date>` (one doc
-     per day), and `session` (device-local: timer, sprint, sprint defaults, the answered call — never synced).
+     per day), and `session` (device-local: timer, sprint, pomodoro, sprint defaults, the answered call — never synced).
      cache() = store.flush(): it works out which docs changed since the last flush by identity (the app replaces S.cfg,
      S.refl and S.days[k] rather than mutating them in place), stamps S.meta.u[doc] with the time (and S.meta.del[doc] for
      days removed, so a sync can delete them), then hands the whole state plus the changed list to the adapter.

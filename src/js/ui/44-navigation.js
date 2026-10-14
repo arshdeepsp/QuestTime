@@ -12,6 +12,7 @@ import { renderSettings } from "../settings/10-settings.js";
 import { renderSubjects } from "../subjects/32-subjects.js";
 import { auGate, authOpen, closeAuth } from "../sync/55-auth-pages.js";
 import { spEl, spHide } from "../timer/43-sprint.js";
+import { closePomo, pmOpen } from "../timer/43b-pomodoro.js";
 import { render } from "./04-render.js";
 import { closeG } from "./18-modal.js";
 import { closeHelp, hpOpen } from "./24-help.js";
@@ -140,6 +141,10 @@ export function init() {
       }
       if (typeof schOpen === "function" && schOpen()) {
         closeSchedule();
+        return;
+      }
+      if (pmOpen()) {
+        closePomo();
         return;
       }
       if (G.groveOpen) {

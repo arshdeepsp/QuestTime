@@ -592,7 +592,7 @@ export function init() {
       /* Sign out removes this account's copy from the device. Refused while a timer or sprint runs (they belong to the
          account's data), and while changes haven't reached the cloud unless force (the UI asks first). */
       signOut: function (force) {
-        if (S.timer || (S.sprint && S.sprint.phase !== "done")) return Promise.reject({ code: "app/timer" });
+        if (S.timer || S.pomo || (S.sprint && S.sprint.phase !== "done")) return Promise.reject({ code: "app/timer" });
         if (!force && !settled) {
           return settle()
             .then(function () {
@@ -632,7 +632,7 @@ export function init() {
       /* Erase this device: every copy (guest and each account's), the rescue copy and the signed-in account, then reload
          to a fresh start on the sign-in page. Accounts keep their data in the cloud. Same timer/unsynced guards as sign-out. */
       eraseDevice: function (force) {
-        if (S.timer || (S.sprint && S.sprint.phase !== "done")) return Promise.reject({ code: "app/timer" });
+        if (S.timer || S.pomo || (S.sprint && S.sprint.phase !== "done")) return Promise.reject({ code: "app/timer" });
         if (user && !force && !settled) {
           return settle()
             .then(function () {

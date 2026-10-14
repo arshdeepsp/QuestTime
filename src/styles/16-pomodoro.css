@@ -1,0 +1,326 @@
+/* ---- the pomodoro page, its pill, pomodoro blocks on the schedule and the Trends section ---- */
+.tomato {
+  width: 20px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
+}
+body.pm-open {
+  overflow: hidden;
+}
+.pmpage {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  display: flex;
+  flex-direction: column;
+  background: #6b3c32;
+  color: #201e1c;
+}
+.pmpage[hidden] {
+  display: none !important;
+}
+.pmpage > * {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+.pm-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(10px + var(--sat)) 12px 8px;
+  background: #24211e;
+  color: #fff;
+  max-width: none;
+  border-bottom: 4px solid #000;
+}
+.pm-hd h2 {
+  margin: 0;
+  font: 12px/1.3 var(--px);
+  color: #ffff55;
+}
+.pm-hdt {
+  flex: 1;
+  min-width: 0;
+}
+.pm-sum {
+  margin: 4px 0 0;
+  font: 18px/1.2 var(--vt);
+  color: #c3cbd6;
+}
+.pm-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  max-width: none;
+  background-color: #6b3c32;
+  background-size: 192px 192px;
+  image-rendering: pixelated;
+}
+.pm-body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px 12px 20px;
+  display: grid;
+  gap: 14px;
+}
+.pm-card {
+  background: #24211e;
+  color: #fff;
+  border: 4px solid #60554a;
+  box-shadow: 0 0 0 4px #000;
+  padding: 18px 16px 14px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.pm-card.live.work {
+  border-color: #d7322a;
+}
+.pm-card.live.break {
+  border-color: #3e8a2c;
+}
+.pm-k {
+  font: 10px/1.4 var(--px);
+  color: #ffff55;
+}
+.pm-art {
+  line-height: 0;
+}
+.pm-big {
+  width: 150px;
+  height: 165px;
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.45));
+}
+.pm-time {
+  font: clamp(32px, 9vw, 56px) var(--px);
+  letter-spacing: 2px;
+  text-shadow: 4px 4px 0 #000;
+}
+.pm-card.break .pm-time {
+  color: #7fe05a;
+}
+.pm-sub {
+  font: 20px/1.2 var(--vt);
+  color: #c5bdb5;
+  min-height: 1.2em;
+}
+.pm-tally {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 4px;
+}
+.pm-tally .tomato {
+  width: 24px;
+  height: 26px;
+}
+.pm-pick,
+.pm-set,
+.pm-log {
+  background: #ccc6c0;
+  border: 4px solid;
+  border-color: #fff #60554a #60554a #fff;
+  box-shadow: 0 0 0 3px #000;
+  padding: 10px 12px;
+}
+.pm-pick .sh2,
+.pm-log .sh2 {
+  margin: 0 0 8px;
+}
+.pm-qs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pm-q small {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.pm-set summary {
+  font: 10px/1.6 var(--px);
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 0;
+}
+.pm-set summary::-webkit-details-marker {
+  display: none;
+}
+.pm-set summary::before {
+  content: "+ ";
+}
+.pm-set[open] summary::before {
+  content: "- ";
+}
+.pm-rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 8px 0 6px;
+}
+.pm-rows label {
+  display: grid;
+  gap: 4px;
+  font: 18px/1.2 var(--vt);
+}
+.pm-rows select {
+  width: 100%;
+}
+.pm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font: 18px/1.2 var(--vt);
+  padding: 6px 0;
+}
+.pm-set .help {
+  margin: 6px 0 2px;
+}
+.pm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.pm-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 18px/1.2 var(--vt);
+}
+.pm-list li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-list li em {
+  font-style: normal;
+  color: #60554a;
+}
+.pm-list li.no span {
+  color: #60554a;
+}
+.pm-ft {
+  padding: 10px 12px calc(12px + var(--sab));
+  background: #beb5ac;
+  border-top: 4px solid #60554a;
+}
+.pm-acts {
+  display: flex;
+  gap: 8px;
+}
+.pm-acts .stone {
+  flex: 1;
+  min-height: 48px;
+}
+.pm-acts .stone[hidden] {
+  display: none;
+}
+.pm-pill {
+  background: #b3261e;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pm-pill .tomato {
+  width: 12px;
+  height: 13px;
+}
+body.sch-open .pm-pill,
+body.hp-open .pm-pill,
+body.au-open .pm-pill {
+  display: none;
+}
+/* a pomodoro recorded on the schedule after the fact */
+.sch-b.pm {
+  background: #c97a72;
+  border-color: #7a2a24;
+}
+.sch-b.pm.done {
+  background: #c97a72;
+}
+.sch-tm {
+  display: inline-block;
+  width: 10px;
+  height: 11px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 11' shape-rendering='crispEdges'%3E%3Crect x='4' y='0' width='2' height='1' fill='%233E8A2C'/%3E%3Crect x='3' y='1' width='2' height='1' fill='%233E8A2C'/%3E%3Crect x='5' y='1' width='1' height='1' fill='%237BD35A'/%3E%3Crect x='6' y='1' width='1' height='1' fill='%233E8A2C'/%3E%3Crect x='2' y='2' width='2' height='1' fill='%23D7322A'/%3E%3Crect x='4' y='2' width='2' height='1' fill='%233E8A2C'/%3E%3Crect x='6' y='2' width='2' height='1' fill='%23D7322A'/%3E%3Crect x='1' y='3' width='8' height='1' fill='%23D7322A'/%3E%3Crect x='0' y='4' width='10' height='4' fill='%23D7322A'/%3E%3Crect x='2' y='4' width='1' height='1' fill='%23F26B5E'/%3E%3Crect x='1' y='5' width='1' height='1' fill='%23F26B5E'/%3E%3Crect x='9' y='7' width='1' height='1' fill='%239E1F18'/%3E%3Crect x='1' y='8' width='7' height='1' fill='%23D7322A'/%3E%3Crect x='8' y='8' width='1' height='1' fill='%239E1F18'/%3E%3Crect x='2' y='9' width='1' height='1' fill='%239E1F18'/%3E%3Crect x='3' y='9' width='4' height='1' fill='%23D7322A'/%3E%3Crect x='7' y='9' width='1' height='1' fill='%239E1F18'/%3E%3Crect x='3' y='10' width='4' height='1' fill='%239E1F18'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+/* Trends (the tile icon takes .tt-i svg's size from 07-subjects.css) */
+.pm-garden {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 3px;
+  align-items: end;
+  margin-top: 6px;
+}
+.pm-gcol {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.pm-gstack {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 1px;
+  min-height: calc(var(--mx) * 17px);
+  justify-content: flex-start;
+  width: 100%;
+  border-bottom: 4px solid #6b3c32;
+  padding-bottom: 2px;
+}
+.pm-gstack .tomato {
+  width: 14px;
+  height: 16px;
+}
+.pm-gn {
+  font: 14px/1 var(--vt);
+  color: #fff;
+  min-height: 14px;
+}
+.pm-gl {
+  font: 14px/1 var(--vt);
+  color: #c5bdb5;
+}
+.pm-gcol.today .pm-gl {
+  color: #ffff55;
+}
+@media (max-width: 720px) {
+  .pm-body {
+    padding: 10px 10px 16px;
+  }
+  .pm-big {
+    width: 120px;
+    height: 132px;
+  }
+  .pm-rows {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pm-gstack .tomato {
+    width: 10px;
+    height: 11px;
+  }
+  .pm-gstack {
+    min-height: calc(var(--mx) * 12px);
+  }
+}
+@media (max-width: 420px) {
+  .pm-acts .stone {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}

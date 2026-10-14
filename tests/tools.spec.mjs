@@ -13,16 +13,16 @@ test("the bar shows Just 5, Schedule and a tools menu", async ({ page }) => {
   await expect(page.locator("#schPage")).toBeVisible();
 });
 
-test("the tools menu has Sprint, plus Pick and Batch when quick-start tools are on", async ({ page }) => {
+test("the tools menu has Pomodoro and Sprint, plus Pick and Batch when quick-start tools are on", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q } });
   await page.click("#toolsBtn");
-  expect(await menu(page)).toEqual(["Sprint", "Edit quests", "Minimal view", "Cancel"]);
+  expect(await menu(page)).toEqual(["Pomodoro", "Sprint", "Edit quests", "Minimal view", "Cancel"]);
   await page.click("#toolsBtn");
   await expect(page.locator(".qmenu")).toHaveCount(0);
   await page.evaluate(() => { const c = JSON.parse(localStorage.getItem("pc-cache-v1")); c.cfg.sparkTools = true; localStorage.setItem("pc-cache-v1", JSON.stringify(c)); });
   await page.reload();
   await page.click("#toolsBtn");
-  expect(await menu(page)).toEqual(["Sprint", "Pick for me", "Batch to-dos", "Edit quests", "Minimal view", "Cancel"]);
+  expect(await menu(page)).toEqual(["Pomodoro", "Sprint", "Pick for me", "Batch to-dos", "Edit quests", "Minimal view", "Cancel"]);
   await page.click(".qmenu button:has-text('Batch to-dos')");
   await expect(page.locator("#gTitle")).toHaveText("Batch to-dos");
 });

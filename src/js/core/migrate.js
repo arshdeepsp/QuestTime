@@ -180,6 +180,9 @@ export function migrate(c) {
   if (v < 20) v = 20;
   /* 21 marks a day's e.schLock (a locked schedule, schedule/model.js); nothing to convert. */
   if (v < 21) v = 21;
+  /* 22 marks a day's e.pomo (finished and stopped pomodoros, timer/43b-pomodoro.js), cfg.pomo and pm schedule blocks;
+     nothing to convert. */
+  if (v < 22) v = 22;
   c.schema = v;
   return c;
 }

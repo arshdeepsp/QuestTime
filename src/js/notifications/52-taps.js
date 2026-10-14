@@ -22,6 +22,7 @@ import { schTap } from "../schedule/resume.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerCap, toggleTimer } from "../timer/13-focus-timer.js";
 import { spShow } from "../timer/43-sprint.js";
+import { openPomo } from "../timer/43b-pomodoro.js";
 import { timerGoal } from "../timer/44b-live-notification.js";
 import { openPick, start5 } from "../tools/28-spark-tools.js";
 import { sfx } from "../ui/01-sound.js";
@@ -234,6 +235,11 @@ export function nfSprint() {
     spShow();
   } else nfGo();
 }
+export function nfPomo() {
+  go("today");
+  if (!gEl.hidden) closeG();
+  openPomo();
+}
 export function nfQuestsLeft(title, icon, head, extra) {
   var T = todayKey(),
     e = S.days[T] || {},
@@ -274,6 +280,7 @@ export function notifAction(id, x) {
   if (id === 1002) return nfTimer("plan");
   if (id === 1003) return nfTimer("five");
   if (id >= 1101 && id <= 1103) return nfSprint();
+  if (id >= 1201 && id <= 1203) return nfPomo();
   if (id >= 2000 && id < 2100) return nfQuestsLeft("Evening check-in", "note");
   if (id === 2200 && rewardsOff()) {
     nfGo();

@@ -142,6 +142,7 @@ export function fullPageOpen() {
   var b = document.body.classList;
   return (
     b.contains("sch-open") ||
+    b.contains("pm-open") ||
     b.contains("hp-open") ||
     b.contains("au-open") ||
     b.contains("mgr-on") ||

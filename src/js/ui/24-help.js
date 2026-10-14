@@ -333,6 +333,18 @@ export function init() {
           ],
         ],
         [
+          "pomodoro",
+          "clock",
+          "Pomodoro",
+          "25 on, 5 off, long break after 4.",
+          [
+            "Pomodoro (in the ⋮ menu) is its own page: pick a time quest, start, and the tomato fills as the 25 minutes run. Then a 5-minute break, and a 15-minute one after every fourth.",
+            "A finished pomodoro logs its minutes to the quest like a timer, and is drawn onto today’s schedule afterwards, so the plan shows what really happened.",
+            "Stopping early keeps the minutes on the quest but the pomodoro doesn’t count. Set up (lengths, long break, auto-start) is on the page.",
+            "Trends › Pomodoro counts the week, days in a row, your best day, the longest chain and the harvest. No XP: the quest minutes are the reward.",
+          ],
+        ],
+        [
           "alerts",
           "note",
           "Reminders",

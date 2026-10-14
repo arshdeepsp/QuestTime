@@ -22,6 +22,7 @@ export function ptrBlocked() {
   var b = document.body.classList;
   if (
     b.contains("sch-open") ||
+    b.contains("pm-open") ||
     b.contains("hp-open") ||
     b.contains("au-open") ||
     b.contains("mgr-on") ||

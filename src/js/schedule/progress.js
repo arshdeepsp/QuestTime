@@ -55,7 +55,8 @@ export function schDoneIn(T, b) {
      time logged and blocks still ahead). Blocks already re-planned for it (rf = the short block's id) count against it, so
      removing one brings the shortfall back. Re-plan places that in the next free time. */
 export function schShort(T, b) {
-  if (T !== todayKey() || !b || !b.q || b.j5 || nowMinInDay() < b.t) return 0;
+  /* A pomodoro recorded after the fact (pm) is a record of work done, never short. */
+  if (T !== todayKey() || !b || !b.q || b.j5 || b.pm || nowMinInDay() < b.t) return 0;
   var q = schQuests(T).filter(function (x) {
     return x.id === b.q;
   })[0];

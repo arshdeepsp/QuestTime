@@ -611,7 +611,7 @@ test("schema 10: old busy blocks and busy repeats move into Busy times", async (
   await page.click("#quests .q .act button[aria-label^='More']");
   await page.waitForTimeout(900);
   const st = await store(page);
-  expect(st.schema).toBe(21);
+  expect(st.schema).toBe(22);
   expect(st.cfg.rep.map((r) => r.id)).toEqual(["r2"]);
   expect(st.cfg.busy).toEqual([{ id: "zr1", lb: "Class", f: 600, t: 660, dows: [1, 3], from: "2026-11-02", until: "2026-11-29" }, { id: "zx", lb: "Lab", f: 480, t: 540, dows: [1], from: "2026-11-02", until: "2026-11-02" }]);
   expect(st.days["2026-11-02"].sched.map((b) => b.id)).toEqual(["y"]);

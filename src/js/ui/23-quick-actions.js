@@ -6,6 +6,7 @@ import { shareWeek } from "../progress/share-week.js";
 import { closeQMenu } from "../quests/11-row-menu.js";
 import { openSchedule } from "../schedule/page.js";
 import { openSprintSetup } from "../timer/43-sprint.js";
+import { openPomo } from "../timer/43b-pomodoro.js";
 import { openBatch, openPick, start5 } from "../tools/28-spark-tools.js";
 import { go } from "./44-navigation.js";
 import { toggleFocusView } from "./48-declutter.js";
@@ -26,7 +27,10 @@ export function init() {
       return;
     }
     if (locked()) return;
-    var it = [["Sprint", openSprintSetup]];
+    var it = [
+      ["Pomodoro", openPomo],
+      ["Sprint", openSprintSetup],
+    ];
     if (cfg().sparkTools) it.push(["Pick for me", openPick], ["Batch to-dos", openBatch]);
     it.push(
       [

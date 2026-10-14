@@ -20,6 +20,6 @@ test("Trends shows this week's topic time, plan kept and reminders, and the top 
   await expect(page.locator(".ttop-r").last()).toContainText("3/5 → 4/5");
   await expect(page.locator(".ttop-f")).toContainText("▲ 2 levels gained in 30 days");
   await expect(page.locator(".tnote")).toHaveText("Most focus around 14:00");
-  await expect(page.locator(".tsec-h")).toHaveText(["This week", "Topics", "Charts", "Records"]);
+  await expect(page.locator(".tsec-h")).toHaveText(["This week", "Topics", "Pomodoro", "Charts", "Records"]);
   expect(errors).toEqual([]);
 });

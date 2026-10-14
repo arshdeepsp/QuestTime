@@ -30,5 +30,7 @@ export function heat() {
   });
   if (S.timer) h += (now - S.timer.start) / 60000;
   if (S.sprint && S.sprint.phase === "focus" && !S.sprint.paused) h += (now - S.sprint.start) / 60000;
+  if (S.pomo && S.pomo.phase === "work" && !S.pomo.paused)
+    h += (now - S.pomo.start - (S.pomo.pausedTotal || 0)) / 60000;
   return Math.min(180, h);
 }

@@ -11,6 +11,7 @@ import { schAll } from "../schedule/model.js";
 import { subjList } from "../subjects/32-subjects.js";
 import { allTopics, topicFlat, topicName, topicStats } from "../subjects/33-topics.js";
 import { topicById } from "../subjects/35-links.js";
+import { pomoTrendsHtml } from "../timer/43b-pomodoro.js";
 import { lastSt } from "../ui/04-render.js";
 
 export function svgBars(vals, labs, mx, col, fmt) {
@@ -56,6 +57,7 @@ export function renderTrends() {
       bl = schAll(d).filter(function (b) {
         return (
           b.q &&
+          !b.pm &&
           !D2.some(function (x) {
             return x.id === b.q && x.ign;
           })
@@ -284,6 +286,7 @@ export function renderTrends() {
     ">" +
     (due ? due + " due for review" : "Nothing due for review") +
     "</span></div></div></div>";
+  h += pomoTrendsHtml(T);
   var w = dayWin(T),
     h0 = Math.floor(w.s / 60),
     h1 = Math.ceil(w.e / 60),

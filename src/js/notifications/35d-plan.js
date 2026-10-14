@@ -100,6 +100,32 @@ export function nfPlan() {
         sp.end + (sp.longEvery && sp.block % sp.longEvery === 0 ? 30 : 15) * 60000,
       );
   }
+  var pm = S.pomo;
+  if (n.timer && pm) {
+    var pmLong = !!(pm.every && (pm.n + 1) % pm.every === 0),
+      pmBrk = pmLong ? pm.l : pm.b;
+    if (pm.phase === "work" && !pm.paused)
+      push(
+        1201,
+        "Pomodoro done \u2014 take your break",
+        pm.label + " logged. " + pmBrk + "-minute " + (pmLong ? "long " : "") + "break starts now.",
+        pm.end,
+      );
+    if (pm.phase === "break" && !pm.breakDone)
+      push(
+        1202,
+        "Break over",
+        pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
+        pm.bend,
+      );
+    if (pm.phase === "work" && !pm.paused)
+      push(
+        1203,
+        "Break over",
+        pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
+        pm.end + pmBrk * 60000,
+      );
+  }
   for (var i = 0; i < 7; i++) {
     var k = add(T, i),
       today = i === 0;

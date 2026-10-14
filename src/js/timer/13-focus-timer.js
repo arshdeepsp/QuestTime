@@ -58,6 +58,10 @@ export function toggleTimer(q) {
     stopTimer();
     return;
   }
+  if (S.pomo && S.pomo.phase === "work") {
+    setSync("A pomodoro is running on " + S.pomo.label + ". Stop it first.");
+    return;
+  }
   var quick = !!S.noTopicAsk;
   function startNow(first) {
     var now2 = Date.now();

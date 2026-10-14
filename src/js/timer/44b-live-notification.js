@@ -16,7 +16,7 @@ import { spLabel } from "./43-sprint.js";
 export var wakeOn, wakeLockObj, focusArtCache, focusBgCache;
 
 export function focusActive() {
-  return !!(S.timer || (S.sprint && S.sprint.phase !== "done"));
+  return !!(S.timer || S.pomo || (S.sprint && S.sprint.phase !== "done"));
 }
 export function focusArt() {
   if (focusArtCache) return focusArtCache;
@@ -226,6 +226,40 @@ export function focusSync(force) {
               chrono: true,
               next: { title: "Break over", body: "Start your next block", chrono: false },
             };
+      }
+    } else if (S.pomo && S.pomo.phase === "work") {
+      var pm = S.pomo;
+      t = "Pomodoro: " + pm.label;
+      if (pm.paused) b = "Paused";
+      else {
+        b = "Pomodoro " + (pm.n + 1) + (pm.every ? " of " + pm.every : "");
+        chrono = true;
+        down = true;
+        when = pm.end;
+        grow = growFor(pm.end - pm.w * 60000, pm.w);
+        var pmL = !!(pm.every && (pm.n + 1) % pm.every === 0);
+        next = {
+          title: pmL ? "Long break" : "Short break",
+          body: pm.auto ? "Next pomodoro when this reaches zero" : "Tap to start the next one when this reaches zero",
+          when: Math.round(pm.end + (pmL ? pm.l : pm.b) * 60000),
+          countdown: true,
+          chrono: true,
+          next: {
+            title: "Break over",
+            body: pm.auto ? "Next pomodoro running" : "Start your next pomodoro",
+            chrono: false,
+          },
+        };
+      }
+    } else if (S.pomo && S.pomo.phase === "break") {
+      t = S.pomo.long ? "Long break" : "Short break";
+      if (S.pomo.breakDone) b = "Break over \u2014 start your next pomodoro";
+      else {
+        b = "Pomodoro " + (S.pomo.n + 1) + " when this reaches zero";
+        chrono = true;
+        down = true;
+        when = S.pomo.bend;
+        next = { title: "Break over", body: "Start your next pomodoro", chrono: false };
       }
     } else if (S.sprint && S.sprint.phase === "break") {
       t = S.sprint.long ? "Long break" : "Decision break";

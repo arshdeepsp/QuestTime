@@ -74,7 +74,7 @@ export function init() {
   dirty = {};
   G.timer = null;
   /* Data schema. Bump SCHEMA and add a step to migrate() whenever the stored shape changes. */
-  SCHEMA = 21;
+  SCHEMA = 22;
   RERATE_MIN = 60;
   MID_FRAC = 1 / 3;
   /* If saved data can't be read, or comes from a newer app version, a copy goes to pc-cache-rescue and nothing is saved
@@ -163,6 +163,7 @@ export function init() {
           if (!S.meta.u) S.meta.u = {};
           S.timer = c.timer || null;
           S.sprint = c.sprint || null;
+          S.pomo = c.pomo || null;
           if (c.spLen) S.spLen = c.spLen;
           if (c.spRounds != null) S.spRounds = c.spRounds;
           if (c.spLongOn === false) S.spLongOn = false;
@@ -174,6 +175,7 @@ export function init() {
           S.meta = { u: {} };
           S.timer = null;
           S.sprint = null;
+          S.pomo = null;
           if (raw) {
             G.cacheBlock = e === "newer" ? "newer" : "error";
             try {
@@ -214,6 +216,7 @@ export function init() {
           session: {
             timer: S.timer,
             sprint: S.sprint,
+            pomo: S.pomo,
             spLen: S.spLen,
             spRounds: S.spRounds,
             spLongOn: S.spLongOn,

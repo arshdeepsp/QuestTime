@@ -21,6 +21,7 @@ export function hasEntry(e) {
         f !== "sched" &&
         f !== "schSkip" &&
         f !== "schLock" &&
+        f !== "pomo" &&
         f !== "calls" &&
         f !== "ck" &&
         f !== "rep" &&
