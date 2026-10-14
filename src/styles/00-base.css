@@ -212,6 +212,12 @@ html {
   body {
     overflow-x: hidden;
   }
+  /* no stretch/glow when a page that fits the screen is dragged (Android 12+ stretches the whole page otherwise);
+     pull to refresh is our own touch handler, so it keeps working */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
   :root {
     padding-top: 0;
     padding-bottom: 0;

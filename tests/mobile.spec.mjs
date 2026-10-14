@@ -19,6 +19,19 @@ test("no tab scrolls sideways on a small phone", async ({ page }) => {
   }
 });
 
+test("a page that fits the screen never scrolls: Notes, and Minimal view with a timer running", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, addNotes: true }, hash: "#notes" });
+  await expect(page.locator("[data-view=notes]")).toBeVisible();
+  const over = () => page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  expect(await over()).toBeLessThanOrEqual(0);
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overscrollBehaviorY)).toBe("none");
+  await page.evaluate(() => (location.hash = "#today"));
+  await page.click("#quests .q .qplay");
+  await expect(page.locator("body")).toHaveClass(/focusview/);
+  await page.waitForTimeout(150);
+  expect(await over()).toBeLessThanOrEqual(0);
+});
+
 test("the + button adds a to-do", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q } });
   await page.tap("#fabAdd");

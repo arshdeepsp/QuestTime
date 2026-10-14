@@ -993,8 +993,10 @@ details.rules > summary.sw-l {
   html body.focusview #gui #sparkBar {
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 44px;
   }
+  /* .top already fills the viewport (min-height 100dvh) and carries the bottom padding; any padding on the body here
+     made Minimal view scroll by that much on a phone */
   body.focusview {
-    padding-bottom: calc(16px + var(--sab)) !important;
+    padding-bottom: 0 !important;
   }
   .gui-r .lock {
     min-width: 0;
