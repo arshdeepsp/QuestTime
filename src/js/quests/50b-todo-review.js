@@ -188,7 +188,7 @@ export function init() {
         var n = ev && ev.notification;
         if (n)
           setTimeout(function () {
-            notifAction(n.id, n.extra || {});
+            notifAction(n.id, n.extra || {}, ev.actionId);
           }, 500);
       });
     } catch (x) {}

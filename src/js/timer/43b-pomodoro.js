@@ -317,6 +317,7 @@ export function pomoStart(q) {
     n: prev ? prev.n : c.every ? pomoDone(todayKey()) % c.every : 0,
     paused: null,
     pausedTotal: 0,
+    ints: 0,
     w: c.w,
     b: c.b,
     l: c.l,
@@ -338,7 +339,9 @@ export function pomoFinish() {
   addSession(T, p.q, s, p.end);
   if (p.topic) addTopicTime(T, p.topic, p.w);
   spAdd(p.q, p.w);
-  pomoRecord(T, { q: p.q, s: s, e: p.end, m: p.w, ok: true });
+  var rec = { q: p.q, s: s, e: p.end, m: p.w, ok: true };
+  if (p.ints) rec.i = p.ints;
+  pomoRecord(T, rec);
   pomoBlock(T, s, p.end, p.q);
   p.n++;
   p.long = !!(p.every && p.n % p.every === 0);
@@ -508,6 +511,13 @@ export function pmClick(ev) {
       }
     }
     haptic("light");
+  } else if (a === "int") {
+    /* Interruption tally (Cirillo's tick marks): counted, never a reason to stop. */
+    if (p && p.phase === "work") {
+      p.ints = (p.ints | 0) + 1;
+      pmSave();
+    }
+    haptic("light");
   } else if (a === "pause") pomoPause();
   else if (a === "stop") {
     if (!pmArmed()) {
@@ -613,6 +623,7 @@ export function pmDraw() {
         esc(pmLabel(r.q)) +
         "</span><em>" +
         hm(r.m) +
+        (r.i ? " \u00b7 " + r.i + " interrupt" + (r.i === 1 ? "" : "s") : "") +
         "</em></li>"
       );
     })
@@ -685,7 +696,9 @@ export function pmDraw() {
   var ft;
   if (p && p.phase === "work")
     ft =
-      '<div class="pm-acts"><button type="button" class="stone" data-pm="pause">' +
+      '<div class="pm-acts"><button type="button" class="stone" data-pm="int" aria-label="Count an interruption">+ Interrupted' +
+      (p.ints ? " (" + p.ints + ")" : "") +
+      '</button><button type="button" class="stone" data-pm="pause">' +
       (p.paused ? "Resume" : "Pause") +
       '</button><button type="button" class="stone del" data-pm="stop">' +
       (pmArmed() ? "Stop? Nothing logged" : "Stop") +
@@ -731,6 +744,8 @@ export function pomoStats(T) {
     total = 0,
     minutes = 0,
     chain = 0,
+    ints30 = 0,
+    n30 = 0,
     days14 = [],
     dayRun = 0;
   for (var d = ws0; d <= T; d = add(d, 1)) {
@@ -745,6 +760,10 @@ export function pomoStats(T) {
       run = 0,
       lastEnd = 0;
     L.forEach(function (r) {
+      if (k >= add(T, -29)) {
+        n30++;
+        ints30 += r.i | 0;
+      }
       n++;
       total++;
       minutes += r.m | 0;
@@ -770,6 +789,8 @@ export function pomoStats(T) {
     total: total,
     minutes: minutes,
     chain: chain,
+    ints30: ints30,
+    n30: n30,
     days14: days14,
     dayRun: dayRun,
   };
@@ -826,7 +847,7 @@ export function pomoTrendsHtml(T) {
       .join("") +
     "</div>";
   return (
-    '<div class="tsec"><div class="tsec-h">Pomodoro</div><div class="tgrid five">' +
+    '<div class="tsec"><div class="tsec-h">Pomodoro</div><div class="tgrid">' +
     tile(
       "#C0392B",
       "This week",
@@ -846,6 +867,12 @@ export function pomoTrendsHtml(T) {
     ) +
     tile("#16A085", "Best day", s.bestDay || "—", s.bestDayK ? fmtD(s.bestDayK) : "") +
     tile("#8A3A9E", "Longest chain", s.chain || "—", s.chain ? "finished back to back" : "") +
+    tile(
+      "#2C6FB0",
+      "Interruptions",
+      s.n30 ? (Math.round((s.ints30 / s.n30) * 10) / 10).toString() : "—",
+      s.n30 ? "per pomodoro, 30 days" : "tap + Interrupted while one runs",
+    ) +
     tile(
       "#3C8527",
       "Harvest",

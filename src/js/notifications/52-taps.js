@@ -22,7 +22,7 @@ import { schTap } from "../schedule/resume.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerCap, toggleTimer } from "../timer/13-focus-timer.js";
 import { spShow } from "../timer/43-sprint.js";
-import { openPomo } from "../timer/43b-pomodoro.js";
+import { openPomo, pomoNext, pomoStop } from "../timer/43b-pomodoro.js";
 import { timerGoal } from "../timer/44b-live-notification.js";
 import { openPick, start5 } from "../tools/28-spark-tools.js";
 import { sfx } from "../ui/01-sound.js";
@@ -235,9 +235,13 @@ export function nfSprint() {
     spShow();
   } else nfGo();
 }
-export function nfPomo() {
+/* act = the notification's action button: "next" skips what's left of the break and starts the next pomodoro, "end" ends
+     the session; a plain tap (or "tap", the default) just opens the page. */
+export function nfPomo(act) {
   go("today");
   if (!gEl.hidden) closeG();
+  if (act === "next" && S.pomo && S.pomo.phase === "break") pomoNext();
+  else if (act === "end" && S.pomo) pomoStop();
   openPomo();
 }
 export function nfQuestsLeft(title, icon, head, extra) {
@@ -257,7 +261,7 @@ export function nfQuestsLeft(title, icon, head, extra) {
     [nfJust5(q), ["Schedule", openSchedule], ["Later"]].filter(Boolean),
   );
 }
-export function notifAction(id, x) {
+export function notifAction(id, x, act) {
   x = x || {};
   var now = Date.now();
   S.call =
@@ -280,7 +284,7 @@ export function notifAction(id, x) {
   if (id === 1002) return nfTimer("plan");
   if (id === 1003) return nfTimer("five");
   if (id >= 1101 && id <= 1103) return nfSprint();
-  if (id >= 1201 && id <= 1203) return nfPomo();
+  if (id >= 1201 && id <= 1203) return nfPomo(act);
   if (id >= 2000 && id < 2100) return nfQuestsLeft("Evening check-in", "note");
   if (id === 2200 && rewardsOff()) {
     nfGo();

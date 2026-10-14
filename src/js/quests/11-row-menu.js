@@ -12,6 +12,7 @@ import { openDetails } from "./47-phone-rows.js";
 import { easeInfo, guardEasing } from "../rules/easing.js";
 import { ignoredOn, rewardsOff, setIgnore } from "../rules/modes.js";
 import { activeDefs } from "../rules/quests-on-day.js";
+import { openPomo, pomoStart } from "../timer/43b-pomodoro.js";
 import { start5 } from "../tools/28-spark-tools.js";
 import { render } from "../ui/04-render.js";
 import { setSync } from "../ui/feedback.js";
@@ -125,6 +126,13 @@ export function openQMenu(q, btn) {
       sun ? "Pause for today" : "Pause until " + DAYF[wkEndDay()],
       function () {
         pauseQuest(q);
+      },
+    ]);
+  if (q.type === "time" && !(S.pomo && S.pomo.phase === "work"))
+    items.unshift([
+      "Pomodoro on this",
+      function () {
+        if (pomoStart(q)) openPomo();
       },
     ]);
   if (q.type === "time" && !(S.timer && S.timer.id === q.id))

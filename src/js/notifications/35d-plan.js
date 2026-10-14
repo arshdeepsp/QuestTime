@@ -38,17 +38,20 @@ export function nfPlan() {
     e = S.days[T] || {},
     st = lastSt || compute();
   if (!n.on) return out;
-  function push(id, title, body, at, extra, ch) {
+  function push(id, title, body, at, extra, ch, act) {
     var t = at instanceof Date ? at.getTime() : at;
-    if (t > now + 5000)
-      out.push({
+    if (t > now + 5000) {
+      var o = {
         id: id,
         title: title,
         body: body,
         channelId: ch || "pc_alerts2",
         extra: Object.assign({ at: t }, extra || {}),
         schedule: { at: new Date(t), allowWhileIdle: true },
-      });
+      };
+      if (act) o.actionTypeId = act;
+      out.push(o);
+    }
   }
   if (n.timer && S.timer) {
     var q = activeDefs(T).filter(function (x) {
@@ -112,6 +115,7 @@ export function nfPlan() {
         pm.end,
         null,
         "pc_squish",
+        pm.auto ? "pc_pomo_auto" : "pc_pomo_done",
       );
     if (pm.phase === "break" && !pm.breakDone)
       push(
@@ -119,6 +123,9 @@ export function nfPlan() {
         "Break over",
         pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
         pm.bend,
+        null,
+        null,
+        pm.auto ? null : "pc_pomo_brk",
       );
     if (pm.phase === "work" && !pm.paused)
       push(
@@ -126,6 +133,9 @@ export function nfPlan() {
         "Break over",
         pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
         pm.end + pmBrk * 60000,
+        null,
+        null,
+        pm.auto ? null : "pc_pomo_brk",
       );
   }
   for (var i = 0; i < 7; i++) {
@@ -372,7 +382,33 @@ export function ensureChannels() {
   var ln = LN();
   if (!ln || !ln.createChannel) return Promise.resolve();
   if (chReady) return chReady;
+  /* Action buttons on the pomodoro notifications (actionTypeId): a tap carries actionId "next" (skip the break / start
+     the next one) or "end" (end the session) into notifAction. With auto-start on, the done notification only offers End. */
+  var acts = ln.registerActionTypes
+    ? ln
+        .registerActionTypes({
+          types: [
+            {
+              id: "pc_pomo_done",
+              actions: [
+                { id: "next", title: "Skip break" },
+                { id: "end", title: "End session" },
+              ],
+            },
+            {
+              id: "pc_pomo_brk",
+              actions: [
+                { id: "next", title: "Start next" },
+                { id: "end", title: "End session" },
+              ],
+            },
+            { id: "pc_pomo_auto", actions: [{ id: "end", title: "End session" }] },
+          ],
+        })
+        .catch(function () {})
+    : Promise.resolve();
   chReady = Promise.all([
+    acts,
     ln.createChannel({
       id: "pc_alerts2",
       name: "Alerts and reminders",

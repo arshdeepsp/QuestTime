@@ -161,7 +161,7 @@ test("Settings on the page change the next pomodoro and are kept in cfg", async 
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 2");
 });
 
-test("Trends has a Pomodoro section: week count, days in a row, best day, chain, harvest and the garden; old stop records are ignored", async ({ page }) => {
+test("Trends has a Pomodoro section: week count, days in a row, best day, chain, interruptions, harvest and the garden; old stop records are ignored", async ({ page }) => {
   const P = (k, h, n, ok = true) => Array.from({ length: n }, (_, i) => ({ q: "th", s: new Date(`${k}T${String(h).padStart(2, "0")}:00:00-05:00`).getTime() + i * 30 * 60000, e: new Date(`${k}T${String(h).padStart(2, "0")}:25:00-05:00`).getTime() + i * 30 * 60000, m: ok ? 25 : 9, ok }));
   const days = {
     "2026-11-02": { q: Q, th: 50, pomo: P("2026-11-02", 9, 2) },
@@ -177,7 +177,7 @@ test("Trends has a Pomodoro section: week count, days in a row, best day, chain,
   await expect(tile("Best day").locator(".tt-v")).toHaveText("4");
   await expect(tile("Best day").locator(".tt-s")).toHaveText("Oct 28");
   await expect(tile("Longest chain").locator(".tt-v")).toHaveText("4");
-  await expect(page.locator(".pm-tile")).toHaveCount(5);
+  await expect(page.locator(".pm-tile")).toHaveCount(6);
   await expect(tile("Harvest").locator(".tt-v")).toHaveText("10");
   await expect(tile("Harvest").locator(".tt-s")).toHaveText("4h 10m of focus · 15 more to 25");
   await expect(page.locator(".pm-gcol.today .tomato")).toHaveCount(2);
@@ -227,4 +227,69 @@ test("start and finish play the recorded tomato squish, and the done notificatio
   await page.clock.fastForward(25 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
   await expect.poll(() => page.evaluate(() => window.__sq)).toBe(2);
+});
+
+test("a quest row's menu starts a pomodoro on that quest and opens the page", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q }, now: `${T}T10:00:00-05:00` });
+  await page.click("#quests .q:has-text('CS') .pzb");
+  await page.click(".qmenu button:has-text('Pomodoro on this')");
+  await expect(page.locator("#pomoPage")).toBeVisible();
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
+  await expect(page.locator("#pomoPage .pm-sub")).toContainText("CS");
+  await page.click("#pmOk");
+  await page.click("#quests .q:has-text('Thesis') .pzb");
+  await expect(page.locator(".qmenu button:has-text('Pomodoro on this')")).toHaveCount(0);
+});
+
+test("a schedule block's footer starts a pomodoro on its quest", async ({ page }) => {
+  const days = { [T]: { q: Q, sched: [{ id: "x", q: "th", f: 600, t: 660 }] } };
+  await openApp(page, { cfg: { quests: Q }, days, now: `${T}T10:05:00-05:00` });
+  await page.click("#schBtn");
+  await page.click(".sch-b[data-sb='x']");
+  await page.click("#schPomo");
+  await expect(page.locator("#schPage")).toBeHidden();
+  await expect(page.locator("#pomoPage")).toBeVisible();
+  await expect(page.locator("#pomoPage .pm-sub")).toContainText("Thesis");
+});
+
+test("interruptions are tallied on the running card, kept on the record and averaged in Trends", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, addTrends: true }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  await expect(page.locator("[data-pm=int]")).toHaveText("+ Interrupted");
+  await page.click("[data-pm=int]");
+  await page.click("[data-pm=int]");
+  await expect(page.locator("[data-pm=int]")).toHaveText("+ Interrupted (2)");
+  await page.clock.fastForward(25 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  expect((await day(page)).pomo[0].i).toBe(2);
+  await expect(page.locator(".pm-list li em")).toHaveText("25m · 2 interrupts");
+  await page.click("#pmOk");
+  await page.goto("http://127.0.0.1:4173/index.html#trends");
+  await expect(page.locator(".pm-tile", { hasText: "Interruptions" }).locator(".tt-v")).toHaveText("2");
+  await expect(page.locator(".pm-tile", { hasText: "Interruptions" }).locator(".tt-s")).toHaveText("per pomodoro, 30 days");
+});
+
+test("the done notification carries action buttons: Skip break starts the next pomodoro, End session ends it", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__ln = []; window.__acts = null;
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: (o) => { window.__acts = o.types.map((t) => [t.id, t.actions.map((a) => a.id)]); return Promise.resolve(); }, createChannel: () => Promise.resolve(), getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, act: n.actionTypeId || null })); return Promise.resolve(); }, addListener: (n, cb) => { if (n === "localNotificationActionPerformed") window.__tap = cb; return Promise.resolve({}); }, removeDeliveredNotifications: () => Promise.resolve() },
+      App: { addListener: () => Promise.resolve({}) }
+    } };
+  });
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  await expect.poll(() => page.evaluate(() => window.__acts)).toEqual([["pc_pomo_done", ["next", "end"]], ["pc_pomo_brk", ["next", "end"]], ["pc_pomo_auto", ["end"]]]);
+  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id >= 1201 && n.id <= 1203).map((n) => [n.id, n.act]))).toEqual([[1201, "pc_pomo_done"], [1203, "pc_pomo_brk"]]);
+  await page.clock.fastForward(25 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  await page.evaluate(() => window.__tap({ actionId: "next", notification: { id: 1201, extra: {} } }));
+  await page.clock.runFor(700);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 2 of 4");
+  await page.evaluate(() => window.__tap({ actionId: "end", notification: { id: 1201, extra: {} } }));
+  await page.clock.runFor(700);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("1 today");
+  expect((await state(page)).pomo).toBeNull();
 });

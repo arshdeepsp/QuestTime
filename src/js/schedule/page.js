@@ -60,6 +60,7 @@ import { repById, repText, schRepCount, schRepDays, schRepEvery, schRepSave, sch
 import { schLeftIn, schResWord, schResumable } from "./resume.js";
 import { renderSettings } from "../settings/10-settings.js";
 import { toggleTimer } from "../timer/13-focus-timer.js";
+import { openPomo, pomoStart } from "../timer/43b-pomodoro.js";
 import { render } from "../ui/04-render.js";
 import { go } from "../ui/44-navigation.js";
 import { haptic } from "../ui/45-gestures.js";
@@ -917,7 +918,10 @@ export function schDraw(first) {
             hm(lf0) +
             " left</button>"
           : "") +
-        (sht0 ? '<button type="button" class="stone save" id="schRpl">Re-plan ' + hm(sht0) + "</button>" : "");
+        (sht0 ? '<button type="button" class="stone save" id="schRpl">Re-plan ' + hm(sht0) + "</button>" : "") +
+        (sb.q && !schEnded(T, sb) && !FT && !(S.pomo && S.pomo.phase === "work")
+          ? '<button type="button" class="stone" id="schPomo">Pomodoro</button>'
+          : "");
     f2 =
       '<p class="sch-ft-h"><b>' +
       esc(nameOf(sb)) +
@@ -1248,6 +1252,20 @@ export function schDraw(first) {
         return x.id === G.schSel;
       })[0],
     );
+  });
+  on("schPomo", function () {
+    var b = L.filter(function (x) {
+        return x.id === G.schSel;
+      })[0],
+      q =
+        b &&
+        schQuests(T).filter(function (x) {
+          return x.id === b.q;
+        })[0];
+    if (!q) return;
+    closeSchedule();
+    go("today");
+    if (pomoStart(q)) openPomo();
   });
   on("schResA", function () {
     var r = schResumable(T);
