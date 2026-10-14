@@ -22,7 +22,7 @@ import { schTap } from "../schedule/resume.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerCap, toggleTimer } from "../timer/13-focus-timer.js";
 import { spShow } from "../timer/43-sprint.js";
-import { openPomo, pomoNext, pomoStop } from "../timer/43b-pomodoro.js";
+import { openPomo, pomoNext, pomoStop, pomoTick } from "../timer/43b-pomodoro.js";
 import { timerGoal } from "../timer/44b-live-notification.js";
 import { openPick, start5 } from "../tools/28-spark-tools.js";
 import { sfx } from "../ui/01-sound.js";
@@ -238,6 +238,9 @@ export function nfSprint() {
 /* act = the notification's action button: "next" skips what's left of the break and starts the next pomodoro, "end" ends
      the session; a plain tap (or "tap", the default) just opens the page. */
 export function nfPomo(act) {
+  /* The tap can land before the tick has applied an interval that ended while the app slept; catch up first, so
+     "End session" on "Pomodoro done" ends the break, not the finished pomodoro. */
+  pomoTick();
   go("today");
   if (!gEl.hidden) closeG();
   if (act === "next" && S.pomo && S.pomo.phase === "break") pomoNext();

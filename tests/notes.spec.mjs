@@ -176,3 +176,21 @@ test.describe("phone", () => {
     await expect(page.locator("#ntT")).toBeFocused();
   });
 });
+
+test("opening several notes in a row doesn't stack editor handlers: Delete still arms first, Pin toggles once", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, addNotes: true }, now: NOW, hash: "#notes", notes: { a: note("A", "one", 1000), b: note("B", "two", 2000), c: note("C", "three", 3000) } });
+  for (const id of ["a", "b"]) {
+    await page.locator(`.nt-card[data-nt=${id}]`).click();
+    await page.click("#gClose");
+  }
+  await page.locator(".nt-card[data-nt=c]").click();
+  await page.click("#ntPin");
+  await expect(page.locator("#ntPin")).toHaveText("Unpin");
+  expect((await store(page)).notes.c.pin).toBe(true);
+  await page.click("#ntDel");
+  await expect(page.locator("#ntDel")).toHaveText("Delete?");
+  await expect(page.locator("#gModal")).toBeVisible();
+  await page.click("#ntDel");
+  await expect(page.locator("#gModal")).toBeHidden();
+  await expect(page.locator(".nt-card")).toHaveCount(2);
+});

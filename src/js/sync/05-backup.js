@@ -182,11 +182,15 @@ export function init() {
         }
         /* Notes come in only where this device has nothing under that id (a note edited here stays as it is). */
         if (j.notes && typeof j.notes === "object") {
-          var nn = Object.assign({}, S.notes);
+          var nn = Object.assign({}, S.notes),
+            nAdd = 0;
           Object.keys(j.notes).forEach(function (k) {
-            if (!nn[k] && j.notes[k] && typeof j.notes[k] === "object") nn[k] = j.notes[k];
+            if (!nn[k] && j.notes[k] && typeof j.notes[k] === "object") {
+              nn[k] = j.notes[k];
+              nAdd++;
+            }
           });
-          S.notes = nn;
+          if (nAdd) S.notes = nn;
         }
         var cu = false;
         if (j.cfg && j.cfg.quests && (!S.cfg || (j.cfg.updated || "") > (S.cfg.updated || ""))) {

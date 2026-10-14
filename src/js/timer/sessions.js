@@ -10,10 +10,11 @@ export function addSession(T, id, start, end, apart) {
     m = Math.round((end - start) / 60000);
   if (m < 1) return;
   var last = ss[ss.length - 1];
-  if (!apart && last && last.id === id && start - last.e < 120000) {
+  /* an `a` (apart) session is never merged with, in either direction, so End set can still find it by its bounds */
+  if (!apart && last && !last.a && last.id === id && start - last.e < 120000) {
     last = Object.assign({}, last, { e: end, m: last.m + m });
     ss[ss.length - 1] = last;
-  } else ss.push({ id: id, s: start, e: end, m: m });
+  } else ss.push(apart ? { id: id, s: start, e: end, m: m, a: 1 } : { id: id, s: start, e: end, m: m });
   e.sess = ss;
   S.days[T] = e;
   dirty[T] = true;

@@ -15,7 +15,7 @@ import { cache, cloudAccount } from "../core/storage.js";
 import { lockReset } from "../rules/past-days.js";
 import { renderSettings } from "../settings/10-settings.js";
 import { render } from "../ui/04-render.js";
-import { hashOf, merge3 } from "./merge.js";
+import { hashOf, merge3, mergeNotes } from "./merge.js";
 import { welcomeCheck } from "../ui/24-help.js";
 import { applyLook } from "../ui/look.js";
 
@@ -362,17 +362,25 @@ export function init() {
         return false;
       }
       if (emptyLocal(id)) return take();
-      if (hb == null) {
+      /* No agreed version yet: cfg and days fall back to the newer stamp once; a map doc (reflections, notes) is a
+         union of independent entries, so it merges instead of one side's entries being dropped. */
+      if (hb == null && !MAPS[id]) {
         if (ru > lu) return take();
         queue[id] = true;
         return false;
       }
-      if (hl === hb) return take();
-      if (hr === hb) {
-        queue[id] = true;
-        return false;
+      if (hb != null) {
+        if (hl === hb) return take();
+        if (hr === hb) {
+          queue[id] = true;
+          return false;
+        }
       }
-      var mg = merge3(id === "cfg" ? m.cb : MAPS[id] ? { map: {} } : {}, l, rc, lu >= ru ? "l" : "r");
+      /* Notes merge note by note on each note's own stamp (its last edit `u`, or its deletion `x`), not the doc's. */
+      var mg =
+        id === "notes"
+          ? { map: mergeNotes(l.map, rc.map) }
+          : merge3(id === "cfg" ? m.cb : MAPS[id] ? { map: {} } : {}, l, rc, lu >= ru ? "l" : "r");
       if (id === "cfg") {
         dedupeQuests(mg);
         S.cfg = mg;

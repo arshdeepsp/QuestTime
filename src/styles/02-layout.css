@@ -122,9 +122,6 @@ footer {
   .wrap {
     padding: 0 14px calc(74px + var(--sab));
   }
-  body.focusview .wrap {
-    padding-bottom: 16px;
-  }
   .gui-r {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -197,7 +194,7 @@ footer {
 }
 @media (max-width: 420px) {
   .wrap {
-    padding: 0 10px;
+    padding: 0 10px calc(74px + var(--sab));
   }
 }
 @media (min-width: 800px) and (max-width: 1099px) {

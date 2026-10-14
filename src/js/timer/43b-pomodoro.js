@@ -224,6 +224,8 @@ export function pmSet(k, v) {
   if (k !== "auto" && k !== "chain" && pmLocked()) return;
   var c = clone(cfg());
   c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
+  /* Long break turned on after pomodoros ran without sets: those are settled, the first set starts from here. */
+  if (k === "every" && !c.pomo.every && v) pomoSettle(todayKey());
   c.pomo[k] = v;
   saveCfg(c);
 }
@@ -256,20 +258,26 @@ export function pomoDone(k) {
 /* Pomodoros in the day's open (unfinished) set: those after the last one that closed a set (`c: 1`, stamped by
      pomoFinish when the long break follows). The boundary is remembered on the record, not recomputed from the current
      cadence, so changing "every" right after a set closed doesn't reopen it (3 done, every 3 -> 5 used to read as "2 to
-     go" and End set wiped the finished set). Records from before the marker existed fall back to count % every. */
+     go" and End set wiped the finished set). SCHEMA 24 stamped the marker onto older records; turning the long break on
+     (every 0 -> N) marks the day's last pomodoro so the ones run without sets stay settled (pmSet). */
 export function pomoOpen(k) {
   var L = pomoOf(k),
-    c = pmCfg(),
     i = L.length;
   while (i > 0 && !L[i - 1].c) i--;
-  if (
-    i === 0 &&
-    !L.some(function (r) {
-      return r.c;
-    })
-  )
-    return c.every ? L.length % c.every : 0;
   return L.length - i;
+}
+/* Mark the day's last finished pomodoro as closing a set, so what came before is settled. */
+export function pomoSettle(k) {
+  var e = S.days[k];
+  if (!e || !(e.pomo || []).length) return;
+  var L = e.pomo.slice(),
+    i = L.length - 1;
+  while (i >= 0 && !L[i].ok) i--;
+  if (i < 0 || L[i].c) return;
+  L[i] = Object.assign({}, L[i], { c: 1 });
+  S.days[k] = Object.assign({}, e, { pomo: L });
+  dirty[k] = true;
+  cache();
 }
 export function pomoRecord(T, rec) {
   var e = Object.assign({}, S.days[T] || {});
@@ -331,7 +339,8 @@ export function pmArmed() {
      start (auto-start catching up after the app slept: the next pomodoro began when the break ended, not when the app
      woke); `quiet` skips the sound for a start that happened a while ago. */
 export function pomoStart(q, at, quiet) {
-  if (locked()) return false;
+  /* Viewing a past day refuses a hand start (it would log into the wrong day); an auto-start catching up (at) goes on. */
+  if (locked() && !at) return false;
   if (S.timer) stopTimer();
   var c = pmCfg(),
     now = at || Date.now(),
@@ -344,7 +353,13 @@ export function pomoStart(q, at, quiet) {
     phase: "work",
     start: now,
     end: now + c.w * 60000,
-    n: c.every ? (prev ? prev.n : pomoOpen(todayKey())) % c.every : prev ? prev.n : 0,
+    /* A session still on its closing long break counts as a finished set: the next start is pomodoro 1, whatever
+       `every` has been changed to in the meantime (prev.n is the unreduced count). */
+    n: c.every
+      ? (prev && !(prev.phase === "break" && prev.long) ? prev.n : pomoOpen(todayKey())) % c.every
+      : prev && !(prev.phase === "break" && prev.long)
+        ? prev.n
+        : 0,
     paused: null,
     pausedTotal: 0,
     ints: 0,
@@ -810,9 +825,7 @@ export function pmDraw() {
     kick +
     '</div><div class="pm-art">' +
     big +
-    '</div><div class="pm-time">' +
-    time +
-    '</div><div class="pm-sub">' +
+    '</div><div class="pm-time"></div><div class="pm-sub">' +
     sub +
     '</div><div class="pm-tally" aria-label="' +
     today +
@@ -913,8 +926,14 @@ export function pmDraw() {
       c.w +
       "-min pomodoro</button></div>";
   var sum = (today ? today + " today" : "None today") + " · " + week + " this week";
-  var sig = [h, ft, sum].join("|");
-  if (sig === pmSig) return;
+  /* The countdown changes every second and is written into .pm-time in place; the rest of the page is only rebuilt when
+     something else changed, so the Set up selects survive a redraw (a dropdown rebuilt each second can't be used). */
+  var sig = [h, ft, sum].join("|"),
+    tm = pmPg.querySelector(".pm-time");
+  if (sig === pmSig) {
+    if (tm && tm.textContent !== time) tm.textContent = time;
+    return;
+  }
   /* Set up stays as the user left it across redraws, but folds when a pomodoro starts and opens again when idle. */
   var set = pmPg.querySelector(".pm-set"),
     ph = p ? p.phase : "idle",
@@ -924,6 +943,7 @@ export function pmDraw() {
   pmPg.querySelector("#pmSum").textContent = sum;
   pmPg.querySelector("#pmBody").innerHTML = h;
   pmPg.querySelector("#pmFt").innerHTML = ft;
+  pmPg.querySelector(".pm-time").textContent = time;
   if (wasOpen !== null) pmPg.querySelector(".pm-set").open = wasOpen;
 }
 /* Pomodoro figures for Trends (progress/trends.js): counts, streaks and the 14-day garden. */

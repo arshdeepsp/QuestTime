@@ -166,3 +166,34 @@ export function mergeSet(b, l, r) {
   });
   return out;
 }
+
+/* Notes (a map by note id, notes/30-notes.js): each note merges on its own. A note only one side has is kept; one both
+     sides have goes to the newer stamp — its last edit `u` or its deletion `x`, whichever is later — so an edit on one
+     phone never loses to an older edit of another note on the other, and a deletion wins only if it is the latest
+     thing that happened to that note. Equal stamps break the tie by content, so both devices pick the same version. */
+export function noteStamp(n) {
+  return Math.max((n && n.u) || 0, (n && n.x) || 0);
+}
+export function mergeNotes(l, r) {
+  var out = {},
+    L = l || {},
+    R = r || {};
+  Object.keys(L)
+    .concat(
+      Object.keys(R).filter(function (k) {
+        return !(k in L);
+      }),
+    )
+    .forEach(function (k) {
+      var a = L[k],
+        b = R[k];
+      if (!b) out[k] = a;
+      else if (!a) out[k] = b;
+      else {
+        var sa = noteStamp(a),
+          sb = noteStamp(b);
+        out[k] = sa > sb ? a : sb > sa ? b : canon(a) >= canon(b) ? a : b;
+      }
+    });
+  return out;
+}

@@ -244,9 +244,10 @@ export function focusSync(force) {
       }
     } else if (S.pomo && S.pomo.phase === "break") {
       t = S.pomo.long ? "Long break" : "Short break";
-      if (S.pomo.breakDone) b = "Break over \u2014 start your next pomodoro";
+      if (S.pomo.breakDone)
+        b = S.pomo.long ? "Set done \u2014 start a new set when ready" : "Break over \u2014 start your next pomodoro";
       else {
-        b = "Pomodoro " + (S.pomo.n + 1) + " when this reaches zero";
+        b = "Pomodoro " + pomoNth(S.pomo, S.pomo.n + 1) + " when this reaches zero";
         chrono = true;
         down = true;
         when = S.pomo.bend;
@@ -323,6 +324,10 @@ export function focusSync(force) {
   legacy();
 }
 
+/* The pomodoro's number within its set (n is the unreduced count). */
+export function pomoNth(pm, n) {
+  return pm.every ? ((n - 1) % pm.every) + 1 : n;
+}
 export function pomoOverCard(pm, x) {
   /* x = the "brk" phase this card follows (pomoAhead): a set's end without chain waits for a new set. */
   var setDone = x && x.long && !x.cont;
@@ -344,7 +349,11 @@ export function pomoChain(pm, ph, i) {
       mins = (brk.at - x.at) / 60000;
     return {
       title: x.long ? "Long break" : "Short break",
-      body: pm.auto ? "Next pomodoro when this reaches zero" : "Tap to start the next one when this reaches zero",
+      body: brk.cont
+        ? "Next pomodoro when this reaches zero"
+        : brk.long
+          ? "Set done when this reaches zero"
+          : "Tap to start the next one when this reaches zero",
       when: Math.round(brk.at),
       countdown: true,
       chrono: true,
@@ -357,7 +366,7 @@ export function pomoChain(pm, ph, i) {
   var done = ph[i + 1];
   return {
     title: "Pomodoro: " + pm.label,
-    body: "Pomodoro " + x.n + (pm.every ? " of " + pm.every : ""),
+    body: "Pomodoro " + pomoNth(pm, x.n) + (pm.every ? " of " + pm.every : ""),
     when: Math.round(done.at),
     countdown: true,
     chrono: true,

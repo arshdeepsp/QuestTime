@@ -65,6 +65,8 @@ test("on a phone the document never scrolls: the content scrolls inside .wrap, a
   expect(await page.evaluate(() => document.documentElement.scrollHeight - innerHeight)).toBeLessThanOrEqual(0);
   await page.click("#mainnav [data-go=rules]");
   expect(await page.evaluate(() => document.querySelector(".wrap").scrollTop)).toBe(0);
+  /* the scroller keeps room for the fixed tab bar on narrow phones too (the 420px rule once zeroed it) */
+  expect(parseFloat(await page.evaluate(() => getComputedStyle(document.querySelector(".wrap")).paddingBottom))).toBeGreaterThanOrEqual(74);
 });
 
 test("trends tiles fit on a small phone", async ({ page }) => {

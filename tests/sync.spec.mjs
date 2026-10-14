@@ -97,6 +97,30 @@ test("a signed-in device with nothing local pulls everything; remote changes arr
   expect((await store(page)).meta.del["days/2026-11-05"]).toBe(Date.parse("2026-11-02T09:50:00-05:00"));
 });
 
+test("notes merge note by note: an edit here and a different note's edit on the other phone both survive, and a deletion wins only when it is the latest thing", async ({ page }) => {
+  await page.addInitScript(fake);
+  const t0 = Date.parse("2026-11-02T08:00:00-05:00");
+  await openApp(page, { cfg: { quests: [J], repFrozen: true, addNotes: true }, notes: { a: { t: "A", b: "one", c: t0, u: t0 }, b: { t: "B", b: "two", c: t0, u: t0 }, d: { t: "D", b: "four", c: t0, u: t0 } } });
+  await signIn(page);
+  await expect(page.locator(".srow", { has: page.locator("b", { hasText: /^Sync$/ }) })).toContainText("Up to date");
+  // this phone edits A at 10:00 and deletes D at 10:05; the other phone edited A at 09:00, B at 10:30, added C, and the doc stamp is newer there
+  await page.evaluate((t0) => { window.__cloud.fail = true; }, t0);
+  await page.goto("http://127.0.0.1:4173/index.html#notes");
+  await page.locator(".nt-card[data-nt=a]").click();
+  await page.fill("#ntB", "one edited here");
+  await page.click("#gClose");
+  await page.locator(".nt-card[data-nt=d]").click();
+  await page.click("#ntDel");
+  await page.click("#ntDel");
+  const mine = (await store(page)).notes;
+  await page.evaluate(([t0, mine]) => { window.__cloud.fail = false; window.__cloud.remote("users/u1/data/notes", { map: { a: { t: "A", b: "one edited there earlier", c: t0, u: mine.a.u - 3600000 }, b: { t: "B", b: "two edited there", c: t0, u: mine.a.u + 1800000 }, c: { t: "C", b: "three", c: t0, u: mine.a.u + 60000 }, d: { t: "D", b: "four", c: t0, u: t0 } }, u: mine.a.u + 1800000 }); }, [t0, mine]);
+  await expect.poll(async () => (await store(page)).notes.b.b).toBe("two edited there");
+  const n = (await store(page)).notes;
+  expect(n.a.b).toBe("one edited here");
+  expect(n.c.b).toBe("three");
+  expect(Object.keys(n.d)).toEqual(["x"]);
+});
+
 test("sign out removes the account's data from this device and signing back in brings it back; a wrong password is explained", async ({ page }) => {
   await page.addInitScript(fake);
   await openApp(page, { cfg: { quests: [J], repFrozen: true }, extra: gate });

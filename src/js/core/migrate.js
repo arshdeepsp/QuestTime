@@ -185,6 +185,24 @@ export function migrate(c) {
   if (v < 22) v = 22;
   /* 23 adds the notes doc (S.notes, a map by note id; notes/30-notes.js). Nothing to convert. */
   if (v < 23) v = 23;
+  /* 24: a pomodoro that closed a set carries c: 1 (timer/43b-pomodoro.js pomoOpen). Older records get the mark from the
+     cadence in force at upgrade (every N-th finished one per day), so today's open set is counted the way it was. */
+  if (v < 24) {
+    var ev = ((c.cfg || {}).pomo || {}).every;
+    if (ev === undefined) ev = 4;
+    Object.keys(c.days || {}).forEach(function (k) {
+      var d = c.days[k],
+        L = d && d.pomo;
+      if (!Array.isArray(L) || !ev) return;
+      var n = 0;
+      d.pomo = L.map(function (r) {
+        if (!r || !r.ok) return r;
+        n++;
+        return n % ev === 0 ? Object.assign({}, r, { c: 1 }) : r;
+      });
+    });
+    v = 24;
+  }
   c.schema = v;
   return c;
 }

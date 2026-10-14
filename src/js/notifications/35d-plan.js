@@ -110,16 +110,19 @@ export function nfPlan() {
        break, 1203 pre-scheduled at focus end), then with auto-start three more pomodoros (1204/1205, 1206/1207,
        1208/1209: done, break over), so a phone that sleeps through a break still hears the next ones. */
     var ahead = pomoAhead(pm, 3),
-      k = 0;
-    ahead.forEach(function (ph) {
+      kk = 0;
+    ahead.forEach(function (ph, pi) {
       if (ph.kind === "start") return;
-      var id;
+      var id,
+        k = kk;
       if (ph.kind === "done") id = k === 0 ? 1201 : 1204 + 2 * (k - 1);
       else {
         id = k === 0 ? (pm.phase === "break" ? 1202 : 1203) : 1205 + 2 * (k - 1);
-        k++;
+        kk++;
       }
       if (id > 1209) return;
+      /* the break that follows this "done" decides whether anything auto-starts after it */
+      var nb = ahead[pi + 1] || {};
       if (ph.kind === "done")
         push(
           id,
@@ -133,7 +136,7 @@ export function nfPlan() {
           ph.at,
           null,
           ph.long ? "pc_beep3" : "pc_beep2",
-          pm.auto ? "pc_pomo_auto" : "pc_pomo_done",
+          nb.cont ? "pc_pomo_auto" : "pc_pomo_done",
         );
       else
         push(
@@ -350,7 +353,15 @@ export function notifSync() {
     var plan = nfPlan(),
       sig = JSON.stringify(
         plan.map(function (x) {
-          return [x.id, Math.round(x.schedule.at.getTime() / 60000), x.title, x.body, JSON.stringify(x.extra || {})];
+          return [
+            x.id,
+            Math.round(x.schedule.at.getTime() / 60000),
+            x.title,
+            x.body,
+            JSON.stringify(x.extra || {}),
+            x.channelId || "",
+            x.actionTypeId || "",
+          ];
         }),
       );
     if (sig === G.nfSig) return;

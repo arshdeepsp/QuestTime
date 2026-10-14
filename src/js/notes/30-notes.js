@@ -15,7 +15,7 @@ import { G } from "../core/g.js";
 import { S, store } from "../core/00-state.js";
 import { cache } from "../core/storage.js";
 import { esc } from "../core/util.js";
-import { closeG, gEl, openG } from "../ui/18-modal.js";
+import { closeG, gBody, gEl, openG } from "../ui/18-modal.js";
 import { haptic } from "../ui/45-gestures.js";
 import { curView, go } from "../ui/44-navigation.js";
 import { setSync } from "../ui/feedback.js";
@@ -220,7 +220,15 @@ export function ntFlush() {
     return;
   }
   if (had && n.t === t && n.b === b) return;
-  noteSave(ntEd.id, { t: t, b: b });
+  /* A colour or pin picked before the first keystroke goes on with the first save, then lives on the note. */
+  var patch = { t: t, b: b };
+  if (!had) {
+    if (ntEd.col) patch.col = ntEd.col;
+    if (ntEd.pin) patch.pin = true;
+    ntEd.col = 0;
+    ntEd.pin = false;
+  }
+  noteSave(ntEd.id, patch);
   edMeta();
 }
 export function edQueue() {
@@ -286,45 +294,6 @@ export function openNote(id) {
       document.getElementById("ntT").value = n ? n.t || "" : "";
       document.getElementById("ntB").value = n ? n.b || "" : "";
       edMeta();
-      bd.addEventListener("input", function (ev) {
-        if (ev.target.id === "ntT" || ev.target.id === "ntB") edQueue();
-      });
-      bd.addEventListener("click", function (ev) {
-        var c = ev.target.closest("[data-col]");
-        if (c) {
-          var v = c.getAttribute("data-col") | 0;
-          edCols(v);
-          ntFlush();
-          if (noteLive((S.notes || {})[ntEd.id])) noteSave(ntEd.id, { col: v });
-          else ntEd.col = v;
-          haptic("light");
-          return;
-        }
-        if (ev.target.id === "ntPin") {
-          ntFlush();
-          var cur = (S.notes || {})[ntEd.id],
-            on = !(cur && cur.pin);
-          if (noteLive(cur)) noteSave(ntEd.id, { pin: on });
-          else ntEd.pin = on;
-          ev.target.textContent = on ? "Unpin" : "Pin";
-          ev.target.setAttribute("aria-pressed", String(on));
-          haptic("light");
-          return;
-        }
-        if (ev.target.id === "ntDel") {
-          if (!ntArm || Date.now() - ntArm > 4000) {
-            ntArm = Date.now();
-            ev.target.textContent = "Delete?";
-            haptic("light");
-            return;
-          }
-          clearTimeout(ntEd.t);
-          noteDelete(ntEd.id);
-          ntEd = null;
-          closeG();
-          setSync("Note deleted.");
-        }
-      });
     },
     function () {
       gEl.classList.remove("nt");
@@ -333,9 +302,6 @@ export function openNote(id) {
         return;
       }
       ntFlush();
-      /* Colour or pin chosen before the first keystroke land once there's a note to put them on. */
-      var cur = (S.notes || {})[ntEd.id];
-      if (noteLive(cur) && (ntEd.col || ntEd.pin)) noteSave(ntEd.id, { col: ntEd.col | 0, pin: !!ntEd.pin });
       ntEd = null;
       renderNotes();
     },
@@ -357,6 +323,50 @@ export function init() {
   ntQ = "";
   ntEd = null;
   ntArm = 0;
+  /* One delegated input/click handler on the modal body for the life of the app (a handler added per opened note piled
+ up and ran twice: the first Delete tap armed and deleted). Only active while a note is open. */
+  gBody.addEventListener("input", function (ev) {
+    if (!ntEd) return;
+    if (ev.target.id === "ntT" || ev.target.id === "ntB") edQueue();
+  });
+  gBody.addEventListener("click", function (ev) {
+    if (!ntEd) return;
+    var c = ev.target.closest("[data-col]");
+    if (c) {
+      var v = c.getAttribute("data-col") | 0;
+      edCols(v);
+      ntFlush();
+      if (noteLive((S.notes || {})[ntEd.id])) noteSave(ntEd.id, { col: v });
+      else ntEd.col = v;
+      haptic("light");
+      return;
+    }
+    if (ev.target.id === "ntPin") {
+      ntFlush();
+      var cur = (S.notes || {})[ntEd.id],
+        live = noteLive(cur),
+        on = !(live ? cur.pin : ntEd.pin);
+      if (live) noteSave(ntEd.id, { pin: on });
+      else ntEd.pin = on;
+      ev.target.textContent = on ? "Unpin" : "Pin";
+      ev.target.setAttribute("aria-pressed", String(on));
+      haptic("light");
+      return;
+    }
+    if (ev.target.id === "ntDel") {
+      if (!ntArm || Date.now() - ntArm > 4000) {
+        ntArm = Date.now();
+        ev.target.textContent = "Delete?";
+        haptic("light");
+        return;
+      }
+      clearTimeout(ntEd.t);
+      noteDelete(ntEd.id);
+      ntEd = null;
+      closeG();
+      setSync("Note deleted.");
+    }
+  });
   var nb = document.getElementById("notesBtn");
   if (nb)
     nb.addEventListener("click", function () {
