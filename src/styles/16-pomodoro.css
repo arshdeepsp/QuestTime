@@ -181,15 +181,17 @@ body.pm-open {
   font: 18px/1.2 var(--vt);
   padding: 6px 0;
 }
+/* sized from the row's text (18px → 58 × 28, 20px knob), so it scales with the font rather than a fixed box */
 .pm-row .sw {
-  width: 58px;
-  height: 28px;
-  --k: 20px;
+  width: 3.2em;
+  height: 1.55em;
+  --k: 1.1em;
   flex: none;
+  font-size: inherit;
 }
 .pm-row .sw::after {
-  right: 5px;
-  font-size: 6px;
+  right: 0.3em;
+  font-size: 0.34em;
 }
 .pm-set .help {
   margin: 6px 0 2px;
