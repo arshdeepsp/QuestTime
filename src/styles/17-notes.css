@@ -219,6 +219,9 @@
     max-height: 40vh;
   }
   /* a note takes the whole screen on a phone (Keep's open-note view): the sheet is full height and the text fills it */
+  body .modal.nt {
+    padding-top: var(--sat);
+  }
   body .modal.nt .modal-card {
     height: 100%;
     max-height: 100%;

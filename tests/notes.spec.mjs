@@ -164,8 +164,10 @@ test.describe("phone", () => {
     await page.locator(".nt-card").click();
     await expect(page.locator("#gModal")).toBeVisible();
     expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).not.toMatch(/^nt[TB]$/);
+    await page.evaluate(() => document.documentElement.style.setProperty("--sat", "40px"));
     const card = await page.locator("#gModal .modal-card").boundingBox();
-    expect(Math.round(card.height)).toBeGreaterThanOrEqual(840);
+    expect(Math.round(card.y)).toBe(40);
+    expect(Math.round(card.height)).toBeGreaterThanOrEqual(800);
     const ta = await page.locator("#ntB").boundingBox();
     expect(ta.height).toBeGreaterThan(300);
     await page.click("#gClose");
