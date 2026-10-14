@@ -378,3 +378,15 @@ test("End set early takes back every pomodoro of the unfinished set: minutes, se
   await expect(page.locator("select[data-pk=w]")).toBeEnabled();
   await expect(page.locator("#pmSum")).toHaveText("None today · 0 this week");
 });
+
+test("tapping the live notification while a pomodoro runs opens the Pomodoro page", async ({ page }) => {
+  await page.addInitScript(`window.__taps=["live"];window.Capacitor={isNativePlatform:()=>true,Plugins:{
+    FocusNotify:{show:()=>Promise.resolve({}),hide:()=>Promise.resolve(),takeTap:()=>Promise.resolve({tap:window.__taps.shift()||null})},
+    LocalNotifications:{requestPermissions:()=>Promise.resolve({display:'granted'}),createChannel:()=>Promise.resolve(),getPending:()=>Promise.resolve({notifications:[]}),cancel:()=>Promise.resolve(),schedule:()=>Promise.resolve(),addListener:()=>Promise.resolve({}),removeDeliveredNotifications:()=>Promise.resolve()},
+    App:{addListener:()=>Promise.resolve({})},KeepAwake:{keepAwake:()=>Promise.resolve(),allowSleep:()=>Promise.resolve()}}};`);
+  await page.addInitScript((s) => { if (!localStorage.getItem("pc-cache-v1")) localStorage.setItem("pc-cache-v1", s); }, JSON.stringify({ days: {}, cfg: { quests: Q, rules: [], idleGrove: 0, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z", nf: { on: true, timer: true } }, pomo: { q: "th", label: "Thesis", topic: null, phase: "work", start: at(9, 59), end: at(10, 24), n: 0, paused: null, pausedTotal: 0, ints: 0, w: 25, b: 5, l: 15, every: 4, auto: false } }));
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
+  await expect(page.locator("#pomoPage")).toBeVisible();
+  await expect(page.locator("#pomoPage .pm-k")).toContainText("Focus");
+  await expect(page.locator("#gModal")).toBeHidden();
+});

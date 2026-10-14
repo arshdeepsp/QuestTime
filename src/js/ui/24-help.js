@@ -8,6 +8,7 @@ import { applyStyle, styleCards } from "../settings/27-work-styles.js";
 import { cloud } from "../sync/54-account.js";
 import { authOpen } from "../sync/55-auth-pages.js";
 import { closeG, gTitle, openG } from "./18-modal.js";
+import { pageBack, pageNav, viewHash } from "./routes.js";
 
 export var HELP, hpPg;
 
@@ -88,12 +89,14 @@ export function openHelp(topic) {
   }
   var d = hpPg.querySelector("#hlpClose");
   if (d) d.focus();
+  pageNav(topic ? "#help/" + topic : "#help");
 }
 export function closeHelp() {
   if (!hpPg) return;
   hpPg.hidden = true;
   document.body.classList.remove("hp-open");
   maybeReviewTodos();
+  if (/^#help/.test(location.hash)) pageBack(viewHash());
 }
 export function openWelcome() {
   var pick = null,

@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { openApp } from "./helpers.mjs";
+/* Settings › <category>; a no-op when the hash already opened it (a reload comes back on #settings/<cat>). */
+const openCat = async (page, id) => { const b = page.locator(`[data-st='${id}']`); if (await b.count()) await b.click(); };
 
 /* In-memory Firebase facade: accounts by email, documents by path, and a log of emails "sent". */
 const fake = `window.__fb={users:{"arsh@example.com":{pw:"secret1",uid:"u1",verified:true}},user:null,docs:{},sent:[],cbs:[]};
@@ -40,7 +42,7 @@ async function reloadOn(page, fn) {
 }
 async function account(page) {
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
 }
 
 test("signed out, the app opens on Sign in until you sign in or choose to use it without an account", async ({ page }) => {
@@ -116,7 +118,7 @@ test("create an account: checks the passwords, sends a verification email, and S
   await expect(page.locator("#authPage")).toHaveCount(0);
   expect((await fb(page)).sent).toEqual([["verify", "new@example.com"]]);
   await page.evaluate(() => { location.hash = "settings"; });
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await expect(page.locator(".srow", { hasText: "Signed in as" })).toContainText("not verified");
   await page.click("#acVer");
   expect((await fb(page)).sent.length).toBe(2);
@@ -237,7 +239,7 @@ test("Erase this device removes every copy on it and starts fresh on the sign-in
   await page.locator("#quests .q .sw").first().click();
   await page.evaluate(() => localStorage.setItem("pc-cache-u-zz", "{}"));
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='data']");
+  await openCat(page, "data");
   await page.click("#setErase");
   await expect(page.locator("#setErase")).toHaveText("Tap again to erase");
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")).days["2026-11-02"].j)).toBe(true);
@@ -253,7 +255,7 @@ test("Erase this device while signed in signs out too; the account keeps its dat
   await openApp(page, { cfg: { quests: [J] }, extra: gate });
   await expect.poll(async () => Object.keys((await fb(page)).docs)).toContain("users/u1/data/cfg");
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='data']");
+  await openCat(page, "data");
   await expect(page.locator(".srow", { hasText: "Erase this device" })).toContainText("Signs you out");
   await page.click("#setErase");
   await reloadOn(page, () => page.click("#setErase"));

@@ -65,6 +65,7 @@ import { render } from "../ui/04-render.js";
 import { go } from "../ui/44-navigation.js";
 import { haptic } from "../ui/45-gestures.js";
 import { popMenu } from "../ui/menus.js";
+import { pageBack, pageNav, pageSwap, viewHash } from "../ui/routes.js";
 
 export function schOpen() {
   return !!G.schPg && !G.schPg.hidden;
@@ -110,6 +111,7 @@ export function schGoDay(n) {
   G.schAdj = false;
   haptic("light");
   schDraw(true);
+  pageSwap(k === T ? "#schedule" : "#schedule/" + k);
 }
 export function schDayName(k) {
   var T = todayKey();
@@ -129,6 +131,7 @@ export function openSchedule() {
   G.schRep = null;
   schEnsure();
   schDraw(true);
+  pageNav("#schedule");
 }
 export function openBusy(wd, at, back) {
   if (locked()) return;
@@ -143,6 +146,7 @@ export function openBusy(wd, at, back) {
   G.schRep = null;
   schEnsure();
   schDraw(true);
+  pageNav("#schedule");
 }
 export function closeSchedule() {
   if (!G.schPg) return;
@@ -164,6 +168,7 @@ export function closeSchedule() {
   G.schMd = "today";
   render();
   if (typeof renderSettings === "function" && G.setTab === "day") renderSettings();
+  if (/^#schedule/.test(location.hash)) pageBack(viewHash());
 }
 /* "Now" button: sticky at the bottom of the scroller on today, shown only while the now line is off screen; tapping scrolls the now line a third of the way down. */
 export function schNowVis() {

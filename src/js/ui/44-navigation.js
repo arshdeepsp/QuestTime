@@ -16,6 +16,7 @@ import { closePomo, pmOpen } from "../timer/43b-pomodoro.js";
 import { render } from "./04-render.js";
 import { closeG } from "./18-modal.js";
 import { closeHelp, hpOpen } from "./24-help.js";
+import { applyRoute, pageBack } from "./routes.js";
 
 export var VIEWS, curView;
 
@@ -86,10 +87,10 @@ export function init() {
     });
   });
   window.addEventListener("popstate", function () {
-    go((location.hash || "#today").slice(1), true);
+    applyRoute(location.hash);
   });
   window.addEventListener("hashchange", function () {
-    go((location.hash || "#today").slice(1), true);
+    applyRoute(location.hash);
   });
   if (nativeApp()) {
     var FS = capPlugin("Filesystem"),
@@ -162,6 +163,7 @@ export function init() {
       if (curView === "settings" && G.setTab) {
         G.setTab = null;
         renderSettings();
+        if (/^#settings\//.test(location.hash)) pageBack("#settings");
         return;
       }
       if (curView !== "today") {

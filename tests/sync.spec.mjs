@@ -4,6 +4,8 @@ const expect = baseExpect.configure({ timeout: 15000 });
 import { openApp } from "./helpers.mjs";
 import { Q, SUBJ, RULES, days, busy, rep } from "./fixture.mjs";
 import { fake } from "./fakecloud.mjs";
+/* Settings › <category>; a no-op when the hash already opened it (a reload comes back on #settings/<cat>). */
+const openCat = async (page, id) => { const b = page.locator(`[data-st='${id}']`); if (await b.count()) await b.click(); };
 
 const J = { id: "j", type: "check", label: "Journal" };
 const CS = { id: "cs", type: "time", label: "Coursework", min: 60 };
@@ -25,12 +27,12 @@ async function reloadOn(page, fn) {
 
 async function signIn(page) {
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await page.click("#acOpen");
   await page.fill("#auEmail", "arsh@example.com");
   await page.fill("#auPw", "secret1");
   await reloadOn(page, () => page.click("#auGo"));
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await expect(page.locator(".srow", { hasText: "Signed in as" })).toContainText("arsh@example.com");
 }
 const docs = (page) => page.evaluate(() => window.__cloud.docs);
@@ -108,7 +110,7 @@ test("sign out removes the account's data from this device and signing back in b
   await page.locator("#quests .q .sw").first().click();
   await expect.poll(async () => ((await docs(page))["users/u1/days/2026-11-02"] || {}).j).toBe(true);
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await reloadOn(page, () => page.click("#acOut"));
   await expect(page.locator("#auNote")).toHaveText("Signed out. Your data is in your account and comes back when you sign in.");
   expect(await page.evaluate(() => [localStorage.getItem("pc-account"), localStorage.getItem("pc-cache-u-u1")])).toEqual([null, null]);
@@ -129,7 +131,7 @@ test("sign out asks first when changes haven't synced, and waits for a running t
   await page.locator("#quests .q .sw").first().click();
   await page.waitForTimeout(600);
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await page.click("#acOut");
   await expect(page.locator("#sync")).toHaveText("Some changes haven’t synced yet. Signing out now loses them.");
   await expect(page.locator("#acOut")).toHaveText("Sign out anyway");
@@ -148,7 +150,7 @@ test("a failed push is retried on the next change, and the Account page says so"
   await page.locator("#quests .q .sw").first().click();
   await page.waitForTimeout(600);
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await expect(page.locator(".srow", { has: page.locator("b", { hasText: /^Sync$/ }) })).toContainText("Problem: offline");
   await page.evaluate(() => { window.__cloud.fail = false; });
   await page.click("#acSync");
@@ -214,7 +216,7 @@ test("signing out and back in works without live listeners; a session that ends 
   await expect.poll(async () => (await docs(page))["users/u1/data/cfg"]).toBeTruthy();
   await expect.poll(async () => !!(await docs(page))["users/u1/data/cfg"]).toBe(true);
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await reloadOn(page, () => page.click("#acOut"));
   await expect(page.locator("#authPage")).toBeVisible();
   expect(await page.evaluate(() => window.__cloud.listeners.length)).toBe(0);
@@ -235,12 +237,12 @@ test("a sync error on sign-in still signs you in and shows the problem in Settin
   await page.addInitScript(() => { if (!sessionStorage.getItem("thrown")) { window.__cloud.throwGet = "Invalid document reference"; } });
   await openApp(page, { cfg: { quests: [J], repFrozen: true } });
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await page.click("#acOpen");
   await page.fill("#auEmail", "arsh@example.com");
   await page.fill("#auPw", "secret1");
   await reloadOn(page, () => page.click("#auGo"));
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await expect(page.locator(".srow", { has: page.locator("b", { hasText: /^Sync$/ }) })).toContainText("Problem: Invalid document reference");
   await page.evaluate(() => { window.__cloud.throwGet = ""; sessionStorage.setItem("thrown", "1"); });
   await page.click("#acSync");
@@ -260,7 +262,7 @@ test("signing in to an account that already has data shows that account's data; 
   expect(((await docs(page))["users/u1/data/cfg"].quests || []).map((q) => q.label)).toEqual(["Account quest"]);
   expect(JSON.parse(await page.evaluate(() => localStorage.getItem("pc-cache-v1"))).cfg.quests.map((q) => q.label)).toEqual(["Device quest"]);
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await reloadOn(page, () => page.click("#acOut"));
   await page.click("#auSkip");
   await expect(page.locator("#quests .q .lbl")).toHaveText(["Device quest"]);
@@ -439,7 +441,7 @@ test("signing out clears this account's reminders, pending and shown; signing ba
   await reloadOn(page, () => page.click("#auGo"));
   await expect.poll(async () => (await st()).pend.some((n) => n.title === "Time for CS work")).toBe(true);
   await page.goto("http://127.0.0.1:4173/index.html#settings");
-  await page.click("[data-st='account']");
+  await openCat(page, "account");
   await reloadOn(page, () => page.click("#acOut"));
   await expect(page.locator("#authPage")).toBeVisible();
   const after = await st();

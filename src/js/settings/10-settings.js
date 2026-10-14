@@ -27,6 +27,7 @@ import { closeG, openG } from "../ui/18-modal.js";
 import { QUICK, quickSlots } from "../ui/23-quick-actions.js";
 import { openHelp } from "../ui/24-help.js";
 import { go } from "../ui/44-navigation.js";
+import { pageBack, pageNav } from "../ui/routes.js";
 import { haptic } from "../ui/45-gestures.js";
 import { applyHide, hideOpts } from "../ui/48-declutter.js";
 import { lockIn, setSync } from "../ui/feedback.js";
@@ -248,6 +249,7 @@ export function renderSettings() {
         G.setTab = b.getAttribute("data-st");
         renderSettings();
         window.scrollTo(0, 0);
+        pageNav("#settings/" + G.setTab);
       });
     });
     el.querySelectorAll("[data-help]").forEach(function (b) {
@@ -699,6 +701,7 @@ export function renderSettings() {
     G.setTab = null;
     renderSettings();
     window.scrollTo(0, 0);
+    if (/^#settings\//.test(location.hash)) pageBack("#settings");
   });
   el.querySelectorAll("[data-help]").forEach(function (b) {
     b.addEventListener("click", function () {

@@ -272,7 +272,8 @@ export function notifAction(id, x, act) {
     nfGo();
     return;
   }
-  if (id === 901) return S.sprint && S.sprint.phase !== "done" ? nfSprint() : nfTimer("live");
+  /* The live notification: a pomodoro's goes straight to its page, a sprint's to the panel, a timer's to the prompt. */
+  if (id === 901) return S.pomo ? nfPomo() : S.sprint && S.sprint.phase !== "done" ? nfSprint() : nfTimer("live");
   if (id === 1004) {
     timerCap();
     go("today");

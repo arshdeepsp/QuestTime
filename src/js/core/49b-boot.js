@@ -9,7 +9,7 @@ import { hasEntry } from "../rules/day-rules.js";
 import { elapsed, render } from "../ui/04-render.js";
 import { closeG, openG } from "../ui/18-modal.js";
 import { welcomeCheck } from "../ui/24-help.js";
-import { go } from "../ui/44-navigation.js";
+import { bootRoute } from "../ui/routes.js";
 import { lockIn, setSync } from "../ui/feedback.js";
 import { calmSync } from "../ui/look.js";
 
@@ -30,7 +30,7 @@ export function init() {
   elapsed();
   render();
   calmSync();
-  go((location.hash || "#today").slice(1), true);
+  bootRoute();
   setTimeout(function () {
     try {
       var logged = Object.keys(S.days).filter(function (k) {

@@ -31,6 +31,7 @@ import { sfx } from "../ui/01-sound.js";
 import { render } from "../ui/04-render.js";
 import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
+import { pageBack, pageNav, viewHash } from "../ui/routes.js";
 
 export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
 
@@ -551,6 +552,7 @@ export function openPomo() {
   pmSig = "";
   pmPill.hidden = true;
   pmDraw();
+  pageNav("#pomodoro");
 }
 export function closePomo() {
   if (!pmPg) return;
@@ -558,6 +560,7 @@ export function closePomo() {
   document.body.classList.remove("pm-open");
   pmPillSync();
   render();
+  if (location.hash === "#pomodoro") pageBack(viewHash());
 }
 export function pmClick(ev) {
   var b = ev.target.closest("[data-pm]");
