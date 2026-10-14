@@ -208,9 +208,6 @@ body.pm-open {
   font-style: normal;
   color: #60554a;
 }
-.pm-list li.no span {
-  color: #60554a;
-}
 .pm-ft {
   padding: 10px 12px calc(12px + var(--sab));
   background: #beb5ac;

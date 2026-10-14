@@ -145,6 +145,9 @@ test("a pomodoro's live notification carries a filling tomato, one frame a minut
   await page.clock.runFor(4000);
   let last = (await page.evaluate(() => window.__fn)).filter((c) => c && c.title).pop();
   expect(last.title).toBe("Pomodoro: CS work");
+  expect(last.bg.dark).toBe(true);
+  expect(last.bg.big.length).toBeGreaterThan(40);
+  expect(last.next.bg.big).toBe(last.bg.big);
   expect(last.grow.dur).toBe(20 * 60000);
   expect(last.grow.art.length).toBe(21);
   expect(last.grow.art[0]).not.toBe(last.grow.art[20]);

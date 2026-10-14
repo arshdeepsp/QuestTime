@@ -20,6 +20,9 @@ test("Pomodoro is its own full-screen page, opened from the tools menu and close
   await expect(page.locator("#pomoPage .pm-time")).toHaveText("25:00");
   await expect(page.locator(".pm-q")).toHaveText(["Thesis 0m", "CS 0m"]);
   await expect(page.locator(".pm-set summary")).toContainText("25/5 · long 15 every 4");
+  await expect(page.locator("select[data-pk=b] option")).toHaveText(["3 min", "5 min", "10 min", "15 min"]);
+  await expect(page.locator("select[data-pk=l] option")).toHaveText(["10 min", "15 min", "20 min", "30 min", "45 min", "60 min"]);
+  await expect(page.locator("[data-pm=auto] span")).toBeVisible();
   expect(await page.evaluate(() => document.body.classList.contains("pm-open"))).toBe(true);
   await page.click("#pmOk");
   await expect(page.locator("#pomoPage")).toBeHidden();
@@ -85,7 +88,7 @@ test("the break ends with Start pomodoro 2, Skip break skips it, and the fourth 
   expect(errors).toEqual([]);
 });
 
-test("Stop arms first; a stopped pomodoro logs nothing to the quest and isn't counted", async ({ page }) => {
+test("Stop arms first; a stopped pomodoro logs nothing to the quest and isn't stored or shown", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
@@ -101,11 +104,10 @@ test("Stop arms first; a stopped pomodoro logs nothing to the quest and isn't co
   expect(e.th).toBeUndefined();
   expect(e.sess).toBeUndefined();
   expect(e.tt).toBeUndefined();
-  expect(e.pomo.length).toBe(1);
-  expect(e.pomo[0]).toMatchObject({ q: "th", m: 7, ok: false });
+  expect(e.pomo).toBeUndefined();
   expect(e.sched).toBeUndefined();
   await expect(page.locator("#sync")).toContainText("Nothing logged");
-  await expect(page.locator(".pm-list li.no")).toContainText("stopped at 7m");
+  await expect(page.locator(".pm-list li")).toHaveCount(0);
   await expect(page.locator("#pmSum")).toHaveText("None today · 0 this week");
 });
 
@@ -159,7 +161,7 @@ test("Settings on the page change the next pomodoro and are kept in cfg", async 
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 2");
 });
 
-test("Trends has a Pomodoro section: week count, days in a row, best day, chain, finish rate, harvest and the garden", async ({ page }) => {
+test("Trends has a Pomodoro section: week count, days in a row, best day, chain, harvest and the garden; old stop records are ignored", async ({ page }) => {
   const P = (k, h, n, ok = true) => Array.from({ length: n }, (_, i) => ({ q: "th", s: new Date(`${k}T${String(h).padStart(2, "0")}:00:00-05:00`).getTime() + i * 30 * 60000, e: new Date(`${k}T${String(h).padStart(2, "0")}:25:00-05:00`).getTime() + i * 30 * 60000, m: ok ? 25 : 9, ok }));
   const days = {
     "2026-11-02": { q: Q, th: 50, pomo: P("2026-11-02", 9, 2) },
@@ -175,7 +177,7 @@ test("Trends has a Pomodoro section: week count, days in a row, best day, chain,
   await expect(tile("Best day").locator(".tt-v")).toHaveText("4");
   await expect(tile("Best day").locator(".tt-s")).toHaveText("Oct 28");
   await expect(tile("Longest chain").locator(".tt-v")).toHaveText("4");
-  await expect(tile("Finish rate").locator(".tt-v")).toHaveText("91%");
+  await expect(page.locator(".pm-tile")).toHaveCount(5);
   await expect(tile("Harvest").locator(".tt-v")).toHaveText("10");
   await expect(tile("Harvest").locator(".tt-s")).toHaveText("4h 10m of focus · 15 more to 25");
   await expect(page.locator(".pm-gcol.today .tomato")).toHaveCount(2);

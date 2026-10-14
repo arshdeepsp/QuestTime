@@ -6,8 +6,7 @@
      pausedTotal, long, breakDone, w, b, l, every, auto}; n counts finished pomodoros toward the long break. Time progresses by wall clock, so phases finish while the app
      is closed and the tick catches up on return.
      A finished focus interval is logged like a timer stop (session, topic time, quest minutes via spAdd), recorded on the
-     day as e.pomo = [{q, s, e, m, ok}] (ok = ran to the end; a stopped one logs nothing and only counts against the
-     finish rate), and
+     day as e.pomo = [{q, s, e, m, ok: true}] (a stopped one logs nothing and is not recorded), and
      written onto today's schedule after the fact (pomoBlock: an ended block {pm: true} in the free parts of its span), so
      the plan shows what happened without ever planning it. Nothing here grants XP or levels of its own; the rewards are
      the quest minutes and the Trends section (progress/trends.js, pomoStats). hasEntry ignores e.pomo. */
@@ -32,7 +31,7 @@ import { render } from "../ui/04-render.js";
 import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
 
-export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache;
+export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache;
 
 /* Pixel tomato (10 × 11): R body, D shade, H highlight, G stem, L leaf light. */
 export var TOMATO;
@@ -157,6 +156,56 @@ export function tomatoArt(n, full) {
   }
   return (pmArtCache[key] = out);
 }
+/* Background for the live notification while a pomodoro runs: the page's tomato field (soil with scattered tomatoes)
+     at the sizes FocusNotify's bg takes, 96 × 54 (big) and 120 × 16 (small); dark, so the text is drawn light. */
+export function pomoBg() {
+  if (pmBgCache) return pmBgCache;
+  var P = { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
+    Q = { R: "#B9433B", D: "#8E2E27", H: "#CF6A61", G: "#4F7A32", L: "#6FA64E" };
+  function field(W, H, spots) {
+    var cv = document.createElement("canvas");
+    cv.width = W;
+    cv.height = H;
+    var c = cv.getContext("2d");
+    c.fillStyle = "#6B3C32";
+    c.fillRect(0, 0, W, H);
+    c.fillStyle = "#7A4A3E";
+    for (var i = 0; i < (W * H) / 90; i++) c.fillRect((i * 37) % W, (i * 53 + 7) % H, 3, 1);
+    spots.forEach(function (sp) {
+      TOMATO.forEach(function (row, y) {
+        for (var x = 0; x < row.length; x++) {
+          var ch = row[x];
+          if (ch === ".") continue;
+          c.fillStyle = (sp[2] ? Q : P)[ch];
+          c.fillRect(sp[0] + x, sp[1] + y, 1, 1);
+        }
+      });
+    });
+    return cv.toDataURL("image/png").split(",")[1] || "";
+  }
+  try {
+    pmBgCache = {
+      dark: true,
+      big: field(96, 54, [
+        [4, 6],
+        [28, 30],
+        [50, 3, 1],
+        [72, 38],
+        [84, 14, 1],
+        [12, 40, 1],
+      ]),
+      small: field(120, 16, [
+        [6, 3],
+        [40, 2, 1],
+        [74, 3],
+        [104, 2, 1],
+      ]),
+    };
+  } catch (x) {
+    pmBgCache = null;
+  }
+  return pmBgCache;
+}
 export function pomoGrow(from, mins, full) {
   var n = Math.max(2, Math.min(30, Math.round(mins)));
   return mins > 0 ? { from: Math.round(from), dur: Math.round(mins * 60000), art: tomatoArt(n, !!full) } : null;
@@ -186,14 +235,15 @@ export function pmLabel(id) {
     })[0];
   return q ? q.label : "Quest";
 }
-/* Pomodoros recorded on day k: {q, s, e, m, ok}. */
+/* Finished pomodoros on day k: {q, s, e, m, ok: true}. Only finished ones are stored; entries with ok false (an older
+     build recorded stops) are ignored everywhere. */
 export function pomoOf(k) {
-  return ((S.days[k] || {}).pomo || []).slice();
+  return ((S.days[k] || {}).pomo || []).filter(function (p) {
+    return p.ok;
+  });
 }
 export function pomoDone(k) {
-  return pomoOf(k).filter(function (p) {
-    return p.ok;
-  }).length;
+  return pomoOf(k).length;
 }
 export function pomoRecord(T, rec) {
   var e = Object.assign({}, S.days[T] || {});
@@ -304,15 +354,12 @@ export function pomoFinish() {
   } catch (x) {}
 }
 /* Stop early. A pomodoro is all or nothing: a stopped focus interval logs nothing to the quest (that is the point of cutting
-     work into pomodoros) and is only recorded as not finished, for the finish rate; during a break it just ends the session. */
+     work into pomodoros) and isn't stored or shown anywhere; during a break it just ends the session. */
 export function pomoStop() {
-  var p = S.pomo,
-    T = todayKey();
+  var p = S.pomo;
   if (!p) return;
   if (p.phase === "work") {
-    var at = p.paused || Date.now(),
-      m = Math.floor((at - p.start - (p.pausedTotal || 0)) / 60000);
-    pomoRecord(T, { q: p.q, s: p.start, e: at, m: Math.max(0, m), ok: false });
+    var m = Math.floor(((p.paused || Date.now()) - p.start - (p.pausedTotal || 0)) / 60000);
     setSync("Pomodoro stopped at " + hm(m) + ". Nothing logged: only a finished pomodoro counts.");
   }
   S.pomo = null;
@@ -558,10 +605,8 @@ export function pmDraw() {
     .map(function (r) {
       var d = new Date(r.s);
       return (
-        '<li class="' +
-        (r.ok ? "ok" : "no") +
-        '">' +
-        (r.ok ? tomatoSvg("tomato") : tomatoDim()) +
+        '<li class="ok">' +
+        tomatoSvg("tomato") +
         "<span>" +
         String(d.getHours()).padStart(2, "0") +
         ":" +
@@ -569,7 +614,7 @@ export function pmDraw() {
         " · " +
         esc(pmLabel(r.q)) +
         "</span><em>" +
-        (r.ok ? hm(r.m) : "stopped at " + hm(r.m)) +
+        hm(r.m) +
         "</em></li>"
       );
     })
@@ -626,14 +671,14 @@ export function pmDraw() {
     '</summary><div class="pm-rows"><label>Focus' +
     pmSel("w", [15, 20, 25, 30, 45, 50], c.w) +
     "</label><label>Short break" +
-    pmSel("b", [3, 5, 10], c.b) +
+    pmSel("b", [3, 5, 10, 15], c.b) +
     "</label><label>Long break" +
-    pmSel("l", [10, 15, 20, 30], c.l) +
+    pmSel("l", [10, 15, 20, 30, 45, 60], c.l) +
     "</label><label>Long break" +
     pmSel("every", [0, 2, 3, 4, 5], c.every, "n") +
     '</label></div><div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
     !!c.auto +
-    '" aria-label="Auto-start next pomodoro" data-pm="auto"><i></i></button></div><p class="help">Changes apply from the next pomodoro. A pomodoro is all or nothing: stop early and nothing is logged.</p></details>' +
+    '" aria-label="Auto-start next pomodoro" data-pm="auto"><span></span></button></div><p class="help">Changes apply from the next pomodoro. A pomodoro is all or nothing: stop early and nothing is logged.</p></details>' +
     '<div class="pm-log"><div class="sh2">Today</div>' +
     (log
       ? '<ul class="pm-list">' + log + "</ul>"
@@ -683,8 +728,6 @@ export function pomoStats(T) {
     nIn = 0,
     thisW = 0,
     lastW = 0,
-    started30 = 0,
-    ok30 = 0,
     bestDay = 0,
     bestDayK = null,
     total = 0,
@@ -701,19 +744,16 @@ export function pomoStats(T) {
     if (k > T) return;
     var L = pomoOf(k),
       n = 0,
-      run = 0;
+      run = 0,
+      lastEnd = 0;
     L.forEach(function (r) {
-      if (k >= add(T, -29)) {
-        started30++;
-        if (r.ok) ok30++;
-      }
-      if (r.ok) {
-        n++;
-        total++;
-        minutes += r.m | 0;
-        run++;
-        if (run > chain) chain = run;
-      } else run = 0;
+      n++;
+      total++;
+      minutes += r.m | 0;
+      /* back to back: the next one started within a long break of this one ending */
+      run = run && r.s - lastEnd <= 65 * 60000 ? run + 1 : 1;
+      lastEnd = r.e;
+      if (run > chain) chain = run;
     });
     if (n > bestDay) {
       bestDay = n;
@@ -727,8 +767,6 @@ export function pomoStats(T) {
     thisW: thisW,
     lastW: lastW,
     nIn: nIn,
-    started30: started30,
-    ok30: ok30,
     bestDay: bestDay,
     bestDayK: bestDayK,
     total: total,
@@ -748,9 +786,8 @@ export function pomoTrendsHtml(T) {
   for (var i = 13; i >= 0; i--)
     labs.push(new Date(atMin(add(T, -i), 720)).toLocaleDateString("en-CA", { weekday: "narrow" }));
   var next = [10, 25, 50, 100, 250, 500, 1000].filter(function (m) {
-      return m > s.total;
-    })[0],
-    rate = s.started30 ? Math.round((s.ok30 / s.started30) * 100) : null;
+    return m > s.total;
+  })[0];
   function tile(col, label, big, sub, cls) {
     return (
       '<div class="ttile pm-tile" style="--tc:' +
@@ -791,7 +828,7 @@ export function pomoTrendsHtml(T) {
       .join("") +
     "</div>";
   return (
-    '<div class="tsec"><div class="tsec-h">Pomodoro</div><div class="tgrid">' +
+    '<div class="tsec"><div class="tsec-h">Pomodoro</div><div class="tgrid five">' +
     tile(
       "#C0392B",
       "This week",
@@ -811,12 +848,6 @@ export function pomoTrendsHtml(T) {
     ) +
     tile("#16A085", "Best day", s.bestDay || "—", s.bestDayK ? fmtD(s.bestDayK) : "") +
     tile("#8A3A9E", "Longest chain", s.chain || "—", s.chain ? "finished back to back" : "") +
-    tile(
-      "#2C6FB0",
-      "Finish rate",
-      rate === null ? "—" : rate + "%",
-      rate === null ? "last 30 days" : s.ok30 + " of " + s.started30 + " in 30 days",
-    ) +
     tile(
       "#3C8527",
       "Harvest",
@@ -855,6 +886,7 @@ export function init() {
   PM_ARM_MS = 4000;
   pmSig = "";
   pmArtCache = {};
+  pmBgCache = null;
   G.pmQ = null;
   G.pmPhase = null;
   pmPill = document.getElementById("pmPill");

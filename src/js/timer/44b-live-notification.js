@@ -12,7 +12,7 @@ import { activeDefs } from "../rules/quests-on-day.js";
 import { schLen } from "../schedule/model.js";
 import { topicName } from "../subjects/33-topics.js";
 import { spLabel } from "./43-sprint.js";
-import { pomoGrow } from "./43b-pomodoro.js";
+import { pomoBg, pomoGrow } from "./43b-pomodoro.js";
 
 export var wakeOn, wakeLockObj, focusArtCache, focusBgCache;
 
@@ -279,7 +279,9 @@ export function focusSync(force) {
       }
     }
   }
-  var sig = t ? [t, b, when, down, grow ? grow.from + "/" + grow.dur : "", (focusBg() || {}).dark].join("|") : "";
+  /* A pomodoro gets the tomato field behind it instead of the sky. */
+  var bgOf = S.pomo ? pomoBg : focusBg,
+    sig = t ? [t, b, when, down, grow ? grow.from + "/" + grow.dur : "", !!S.pomo, (bgOf() || {}).dark].join("|") : "";
   if (sig === G.ongoingSig && force !== true) return;
   G.ongoingSig = sig;
   if (!t) {
@@ -313,7 +315,7 @@ export function focusSync(force) {
   }
   var FN = capPlugin("FocusNotify");
   if (FN && FN.show) {
-    var bg = focusBg();
+    var bg = bgOf();
     (function addBg(o) {
       if (o) {
         o.bg = bg;
