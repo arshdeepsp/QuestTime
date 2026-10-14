@@ -19,6 +19,7 @@ import { render } from "./04-render.js";
 import { closeG } from "./18-modal.js";
 import { closeHelp, hpOpen } from "./24-help.js";
 import { applyRoute, pageBack } from "./routes.js";
+import { pageScrollTo } from "./scroll.js";
 
 export var VIEWS, curView;
 
@@ -79,7 +80,7 @@ export function go(v, noHash) {
       location.hash = v;
     }
   }
-  window.scrollTo(0, 0);
+  pageScrollTo(0);
 }
 
 /* Runs once at startup, in file-number order (main.js). */

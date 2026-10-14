@@ -1306,7 +1306,7 @@ details.rules > summary.sw-l {
   .q .req {
     font-size: 8px;
   }
-  body.typing {
+  body.typing .wrap {
     padding-bottom: 16px !important;
   }
   #quests .q {

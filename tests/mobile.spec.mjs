@@ -22,9 +22,9 @@ test("no tab scrolls sideways on a small phone", async ({ page }) => {
 test("a page that fits the screen never scrolls: Notes, and Minimal view with a timer running", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q, addNotes: true }, hash: "#notes" });
   await expect(page.locator("[data-view=notes]")).toBeVisible();
-  const over = () => page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  const over = () => page.evaluate(() => { const w = document.querySelector(".wrap"); return Math.max(document.documentElement.scrollHeight - innerHeight, w.scrollHeight - w.clientHeight); });
   expect(await over()).toBeLessThanOrEqual(0);
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overscrollBehaviorY)).toBe("none");
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".wrap")).overscrollBehaviorY)).toBe("contain");
   await page.evaluate(() => (location.hash = "#today"));
   await page.click("#quests .q .qplay");
   await expect(page.locator("body")).toHaveClass(/focusview/);
@@ -48,11 +48,23 @@ test("the app header stays pinned while scrolling every tab", async ({ page }) =
     await page.evaluate((h) => (location.hash = "#" + h), v);
     await page.waitForTimeout(150);
     for (const y of [600, 200, 0]) {
-      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.evaluate((y) => { document.querySelector(".wrap").scrollTop = y; }, y);
       await page.waitForTimeout(80);
       expect(await page.evaluate(() => Math.round(document.querySelector(".titlebar").getBoundingClientRect().top)), `${v} at ${y}`).toBe(0);
+      expect(await page.evaluate(() => Math.round(document.querySelector("#mainnav").getBoundingClientRect().bottom)), `${v} nav at ${y}`).toBe(780);
     }
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
   }
+});
+
+test("on a phone the document never scrolls: the content scrolls inside .wrap, and switching tabs starts at the top", async ({ page }) => {
+  const SUBJ = [...Array(6)].map((_, i) => ({ id: "s" + i, name: "Subject " + i, topics: [...Array(4)].map((_, j) => ({ id: `t${i}${j}`, name: "Topic " + j, p: 2, hist: [] })) }));
+  await openApp(page, { cfg: { quests: Q, subjects: SUBJ }, hash: "#subjects" });
+  await page.evaluate(() => { document.querySelector(".wrap").scrollTop = 500; });
+  expect(await page.evaluate(() => document.querySelector(".wrap").scrollTop)).toBeGreaterThan(100);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight - innerHeight)).toBeLessThanOrEqual(0);
+  await page.click("#mainnav [data-go=rules]");
+  expect(await page.evaluate(() => document.querySelector(".wrap").scrollTop)).toBe(0);
 });
 
 test("trends tiles fit on a small phone", async ({ page }) => {

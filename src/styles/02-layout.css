@@ -100,8 +100,27 @@ footer {
   z-index: 1;
 }
 @media (max-width: 720px) {
+  /* The document doesn't scroll on phones: .wrap is the scroller (ui/scroll.js), so only the content between the fixed
+     title bar and tab bar moves, and a drag past the end stretches that region, not the whole app. The tab bar's room
+     moves from the body's padding to .wrap's. */
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    overflow: hidden;
+    padding-bottom: 0 !important;
+  }
   .wrap {
-    padding: 0 14px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .wrap {
+    padding: 0 14px calc(74px + var(--sab));
   }
   body.focusview .wrap {
     padding-bottom: 16px;
@@ -138,9 +157,6 @@ footer {
   }
   #gui {
     padding-bottom: 12px;
-  }
-  .wrap {
-    padding-bottom: 70px;
   }
   .gui-r {
     gap: 6px;

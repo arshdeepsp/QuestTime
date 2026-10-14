@@ -4,6 +4,7 @@
      account too. #ptr shows the state; the pull is damped by half. */
 import { G } from "../core/g.js";
 import { cache } from "../core/storage.js";
+import { pageScrollTop } from "./scroll.js";
 
 export var PTR_GO, ptrEl;
 
@@ -75,11 +76,7 @@ export function init() {
     document.addEventListener(
       "touchstart",
       function (e) {
-        if (
-          e.touches.length !== 1 ||
-          ptrBlocked() ||
-          (document.scrollingElement || document.documentElement).scrollTop > 0
-        ) {
+        if (e.touches.length !== 1 || ptrBlocked() || pageScrollTop() > 0) {
           y0 = null;
           return;
         }

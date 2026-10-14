@@ -32,6 +32,7 @@ import { haptic } from "../ui/45-gestures.js";
 import { applyHide, hideOpts } from "../ui/48-declutter.js";
 import { lockIn, setSync } from "../ui/feedback.js";
 import { calmSync } from "../ui/look.js";
+import { pageScrollTo } from "../ui/scroll.js";
 
 export var SET_CATS, THEME_NAMES;
 
@@ -253,7 +254,7 @@ export function renderSettings() {
       b.addEventListener("click", function () {
         G.setTab = b.getAttribute("data-st");
         renderSettings();
-        window.scrollTo(0, 0);
+        pageScrollTo(0);
         pageNav("#settings/" + G.setTab);
       });
     });
@@ -710,7 +711,7 @@ export function renderSettings() {
   bind("setBack", "click", function () {
     G.setTab = null;
     renderSettings();
-    window.scrollTo(0, 0);
+    pageScrollTo(0);
     if (/^#settings\//.test(location.hash)) pageBack("#settings");
   });
   el.querySelectorAll("[data-help]").forEach(function (b) {

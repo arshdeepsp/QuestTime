@@ -1,4 +1,5 @@
 /* ---- keep the field being typed just above the on-screen keyboard (phones) ---- */
+import { pageScrollBy } from "./scroll.js";
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
@@ -27,7 +28,7 @@ export function init() {
       if (vv) {
         var r = active.getBoundingClientRect(),
           bottom = vv.offsetTop + vv.height;
-        if (r.bottom > bottom - 12) window.scrollBy(0, r.bottom - bottom + 24);
+        if (r.bottom > bottom - 12) pageScrollBy(r.bottom - bottom + 24);
       }
     }
     /* The keyboard can close without the field losing focus (Android back, or a list re-rendering under it), which used

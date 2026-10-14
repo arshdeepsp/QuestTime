@@ -1,5 +1,6 @@
 /* ---- drag to reorder (hold to pick up on phones) ---- */
 import { haptic } from "./45-gestures.js";
+import { pageScrollBy } from "./scroll.js";
 
 export var HOLD_MS;
 
@@ -26,8 +27,8 @@ export function sortable(container, itemSel, handleSel, onDrop, holdSkip) {
       function mv(e) {
         var rows = sibs(),
           placed = false;
-        if (e.clientY < 60) window.scrollBy(0, -12);
-        else if (e.clientY > window.innerHeight - 60) window.scrollBy(0, 12);
+        if (e.clientY < 60) pageScrollBy(-12);
+        else if (e.clientY > window.innerHeight - 60) pageScrollBy(12);
         var sc = container.closest(".modal-b,.drawer-b");
         if (sc) {
           var sb = sc.getBoundingClientRect();
