@@ -98,6 +98,14 @@ export function vowHint() {
   if (a) return "Ends after today";
   return "Tick " + w + " each morning before your quests show. You pick the start day";
 }
+/* Sign-out and Erase refuse while something is timing (sync/54-account.js "app/timer"); the note names what. */
+export function runningNote() {
+  return S.pomo
+    ? "End the pomodoro session first (End session on the Pomodoro page)."
+    : S.sprint && S.sprint.phase !== "done"
+      ? "Stop the sprint first."
+      : "Stop the timer first.";
+}
 export function swc(id, on, label, attr) {
   return (
     '<button type="button" class="sw" role="switch" ' +
@@ -1078,7 +1086,7 @@ export function renderSettings() {
       .eraseDevice(G.eraseForce)
       .catch(function (e) {
         var c = e && e.code;
-        if (c === "app/timer") setSync("Stop the timer first.");
+        if (c === "app/timer") setSync(runningNote());
         else if (c === "app/unsynced") {
           G.eraseArm = Date.now();
           G.eraseForce = true;
@@ -1102,7 +1110,7 @@ export function renderSettings() {
       .signOut(force)
       .catch(function (e) {
         var c = e && e.code;
-        if (c === "app/timer") setSync("Stop the timer first.");
+        if (c === "app/timer") setSync(runningNote());
         else if (c === "app/unsynced") {
           G.acOutArm = Date.now();
           b = document.getElementById("acOut");

@@ -140,6 +140,21 @@ test("sign out asks first when changes haven't synced, and waits for a running t
   expect(await page.evaluate(() => [localStorage.getItem("pc-account"), localStorage.getItem("pc-cache-u-u1")])).toEqual([null, null]);
 });
 
+test("sign out is refused while a pomodoro runs, and says so", async ({ page }) => {
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [J, CS], repFrozen: true } });
+  await signIn(page);
+  await page.goto("http://127.0.0.1:4173/index.html#pomodoro");
+  await page.click("[data-pm=start]");
+  await expect(page.locator("#pomoPage .pm-k")).toContainText("Focus");
+  await page.click("#pmOk");
+  await page.goto("http://127.0.0.1:4173/index.html#settings");
+  await openCat(page, "account");
+  await page.click("#acOut");
+  await expect(page.locator("#sync")).toHaveText("End the pomodoro session first (End session on the Pomodoro page).");
+  expect(await page.evaluate(() => localStorage.getItem("pc-account"))).not.toBeNull();
+});
+
 test("a failed push is retried on the next change, and the Account page says so", async ({ page }) => {
   await page.addInitScript(fake);
   await openApp(page, { cfg: { quests: [J], repFrozen: true } });
