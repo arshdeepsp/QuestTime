@@ -219,11 +219,11 @@ test("start and finish play the tomato squish, and the done notification goes on
   await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
-  expect(await page.evaluate(() => window.__osc)).toContain(640);
+  expect(await page.evaluate(() => window.__osc)).toContain(95);
   await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1201).map((n) => n.channelId))).toEqual(["pc_squish"]);
   await expect.poll(() => page.evaluate(() => (window.__ch || []).includes("pc_squish"))).toBe(true);
   await page.evaluate(() => { window.__osc = []; });
   await page.clock.fastForward(25 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
-  expect(await page.evaluate(() => window.__osc)).toContain(640);
+  expect(await page.evaluate(() => window.__osc)).toContain(95);
 });
