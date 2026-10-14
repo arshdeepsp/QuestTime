@@ -180,10 +180,24 @@ test("Trends has a Pomodoro section: week count, days in a row, best day, chain,
   await expect(page.locator(".pm-tile")).toHaveCount(6);
   await expect(tile("Harvest").locator(".tt-v")).toHaveText("10");
   await expect(tile("Harvest").locator(".tt-s")).toHaveText("4h 10m of focus · 15 more to 25");
-  await expect(page.locator(".pm-gcol.today .tomato")).toHaveCount(2);
-  await expect(page.locator(".pm-garden .tomato")).toHaveCount(10);
+  await expect(page.locator(".pm-gcol.today .pm-gbar")).toHaveAttribute("data-n", "2");
+  expect(await page.evaluate(() => [...document.querySelectorAll(".pm-gbar")].reduce((a, b) => a + +b.dataset.n, 0))).toBe(10);
+  expect(Math.round((await page.locator(".pm-gcol.today .pm-gbar").boundingBox()).height)).toBe(32);
+  const grid = await page.locator(".tsec:has(.pm-gcard) .tgrid").boundingBox(), card = await page.locator(".pm-gcard").boundingBox();
+  expect(card.y - (grid.y + grid.height)).toBeGreaterThanOrEqual(14);
   await expect(page.locator(".tsec-h")).toHaveText(["This week", "Topics", "Pomodoro", "Charts", "Records"]);
   expect(errors).toEqual([]);
+});
+
+test("the tomato garden scales to its tallest day: 20 pomodoros fit the same height as 10, with smaller tomatoes", async ({ page }) => {
+  const rec = (k, n) => Array.from({ length: n }, (_, i) => ({ q: "th", s: Date.parse(k + "T06:00:00-05:00") + i * 30 * 60000, e: Date.parse(k + "T06:00:00-05:00") + i * 30 * 60000 + 25 * 60000, m: 25, ok: true }));
+  await openApp(page, { cfg: { quests: Q, addTrends: true }, days: { "2026-10-30": { q: Q, th: 500, pomo: rec("2026-10-30", 20) }, "2026-10-31": { q: Q, th: 75, pomo: rec("2026-10-31", 3) } }, now: `${T}T10:00:00-05:00` });
+  await page.click("#trendsBtn");
+  const big = await page.locator(".pm-gbar[data-n='20']").boundingBox(), small = await page.locator(".pm-gbar[data-n='3']").boundingBox();
+  expect(Math.round(big.height)).toBe(200);
+  expect(Math.round(small.height)).toBe(30);
+  expect(Math.round(big.width)).toBeLessThanOrEqual(9);
+  await expect(page.locator(".pm-gcol", { has: page.locator("[data-n='20']") }).locator(".pm-gn")).toHaveText("20");
 });
 
 test("a day's a-posteriori pomodoro blocks don't count toward Plan kept", async ({ page }) => {

@@ -928,21 +928,18 @@ export function pomoTrendsHtml(T) {
       "</div></div>"
     );
   }
+  /* One bar per day, --n tomatoes tall (a repeating background, 16-pomodoro.css), scaled by the tallest day --mx. */
   var garden =
-    '<div class="pm-garden" role="img" aria-label="Pomodoros per day, last 14 days">' +
+    '<div class="pm-garden" role="img" aria-label="Pomodoros per day, last 14 days" style="--mx:' +
+    mx +
+    '">' +
     s.days14
       .map(function (n, i) {
-        var col = "";
-        for (var j = 0; j < Math.min(n, 12); j++) col += tomatoSvg("tomato");
         return (
           '<div class="pm-gcol' +
           (i === 13 ? " today" : "") +
-          '"><div class="pm-gstack" style="--n:' +
-          Math.min(n, 12) +
-          ";--mx:" +
-          Math.min(mx, 12) +
-          '">' +
-          col +
+          '"><div class="pm-gstack">' +
+          (n ? '<i class="pm-gbar" style="--n:' + n + '" data-n="' + n + '"></i>' : "") +
           '</div><span class="pm-gn">' +
           (n || "") +
           '</span><span class="pm-gl">' +
