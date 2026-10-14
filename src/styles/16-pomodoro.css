@@ -144,6 +144,11 @@ body.pm-open {
   font-size: 0.85em;
   opacity: 0.8;
 }
+/* <details> puts a UA shadow slot between itself and its children, so the app's box-sizing: inherit picks up
+   content-box there; restore border-box for everything in the fold (the switch's knob geometry depends on it) */
+.pm-set > * {
+  box-sizing: border-box;
+}
 .pm-set summary {
   font: 10px/1.6 var(--px);
   cursor: pointer;
@@ -181,17 +186,8 @@ body.pm-open {
   font: 18px/1.2 var(--vt);
   padding: 6px 0;
 }
-/* sized from the row's text (18px → 58 × 28, 20px knob), so it scales with the font rather than a fixed box */
 .pm-row .sw {
-  width: 3.2em;
-  height: 1.55em;
-  --k: 1.1em;
   flex: none;
-  font-size: inherit;
-}
-.pm-row .sw::after {
-  right: 0.3em;
-  font-size: 0.34em;
 }
 .pm-set .help {
   margin: 6px 0 2px;
@@ -318,6 +314,12 @@ body.au-open .pm-pill {
   }
   .pm-rows {
     grid-template-columns: 1fr 1fr;
+  }
+  /* the same switch as the quest rows */
+  .pm-row .sw {
+    width: 64px;
+    height: 32px;
+    --k: 24px;
   }
   .pm-gstack .tomato {
     width: 10px;

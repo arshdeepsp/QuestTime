@@ -293,3 +293,49 @@ test("the done notification carries action buttons: Skip break starts the next p
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("1 today");
   expect((await state(page)).pomo).toBeNull();
 });
+
+test("the lengths are locked while a set is under way, and open again at a set boundary or in the long break", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 3, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await expect(page.locator("select[data-pk=w]")).toBeEnabled();
+  await page.click("[data-pm=start]");
+  await page.click(".pm-set summary");
+  await expect(page.locator("select[data-pk=w]")).toBeDisabled();
+  await expect(page.locator(".pm-lock")).toHaveText("Locked until this set ends · 2 of 2 to go");
+  await page.evaluate(() => { const s = document.querySelector("select[data-pk=w]"); s.value = "50"; s.dispatchEvent(new Event("change", { bubbles: true })); });
+  expect((await state(page)).cfg.pomo.w).toBe(15);
+  await page.click("[data-pm=auto]");
+  expect((await state(page)).cfg.pomo.auto).toBe(true);
+  await page.click("[data-pm=auto]");
+  await page.clock.fastForward(15 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  await page.click("[data-pm=end]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("1 today");
+  await expect(page.locator(".pm-set")).toHaveAttribute("open", "");
+  await expect(page.locator("select[data-pk=w]")).toBeDisabled();
+  await expect(page.locator(".pm-lock")).toContainText("1 of 2 to go");
+  await page.click("[data-pm=start]");
+  await page.clock.fastForward(15 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
+  await page.click(".pm-set summary");
+  await expect(page.locator("select[data-pk=w]")).toBeEnabled();
+  await page.selectOption("select[data-pk=w]", "25");
+  expect((await state(page)).cfg.pomo.w).toBe(25);
+});
+
+test("the tab title counts the pomodoro down and comes back when it ends", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q }, now: `${T}T10:00:00-05:00` });
+  const t0 = await page.title();
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  await page.clock.runFor(1500);
+  await expect.poll(() => page.title()).toMatch(/^24:5\d · /);
+  await page.click("#pmOk");
+  await page.clock.fastForward(25 * 60000 + 1500);
+  await page.clock.runFor(1200);
+  await expect.poll(() => page.title()).toMatch(/^Break [45]:\d\d · /);
+  await openPm(page);
+  await page.click("[data-pm=end]");
+  await page.clock.runFor(1200);
+  await expect.poll(() => page.title()).toBe(t0);
+});

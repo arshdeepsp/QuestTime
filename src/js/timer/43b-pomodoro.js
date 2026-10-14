@@ -32,7 +32,7 @@ import { render } from "../ui/04-render.js";
 import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
 
-export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache;
+export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
 
 export function tomatoSvg(cls, pal) {
   var P = pal || { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
@@ -211,7 +211,16 @@ export function pomoGrow(from, mins, full) {
 export function pmCfg() {
   return Object.assign({}, PM_DEF, cfg().pomo || {});
 }
+/* The lengths and the long-break cadence are locked while a set is under way: a pomodoro running (except the long break
+     that closes a set), or today's count not at a set boundary (pomoDone % every), since a new session continues the set. */
+export function pmLocked() {
+  var p = S.pomo,
+    c = pmCfg();
+  if (p && !(p.phase === "break" && p.long)) return true;
+  return !!(c.every && pomoDone(todayKey()) % c.every);
+}
 export function pmSet(k, v) {
+  if (k !== "auto" && pmLocked()) return;
   var c = clone(cfg());
   c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
   c.pomo[k] = v;
@@ -424,7 +433,21 @@ export function pomoTick() {
     if (ch) pmSave();
   }
   pmPillSync();
+  pmTitleSync();
   if (pmOpen()) pmDraw();
+}
+/* The browser tab shows the countdown while a pomodoro runs ("24:59 · QuestTime", "Break 4:30 · QuestTime"). */
+export function pmTitleSync() {
+  var p = S.pomo,
+    t = p
+      ? p.phase === "work"
+        ? (p.paused ? "Paused " : "") + spFmt(p.end - (p.paused || Date.now()))
+        : p.breakDone
+          ? "Break over"
+          : "Break " + spFmt(p.bend - Date.now())
+      : "";
+  var want = t ? t + " \u00b7 " + pmTitle0 : pmTitle0;
+  if (document.title !== want) document.title = want;
 }
 export function pmPillSync() {
   var p = S.pomo;
@@ -537,13 +560,15 @@ export function pmChange(ev) {
   pmSig = "";
   pmDraw();
 }
-export function pmSel(k, vals, cur, unit) {
+export function pmSel(k, vals, cur, unit, dis) {
   return (
     '<select data-pk="' +
     k +
     '" aria-label="' +
     k +
-    '">' +
+    '"' +
+    (dis ? " disabled" : "") +
+    ">" +
     vals
       .map(function (v) {
         return (
@@ -604,7 +629,8 @@ export function pmDraw() {
     time = c.w + ":00";
     sub = defs.length ? "Pick a quest and start" : "No Time quest on today’s list";
   }
-  var tally = "";
+  var lk = pmLocked(),
+    tally = "";
   for (var i = 0; i < Math.max(c.every || 4, today); i++) tally += i < today ? tomatoSvg("tomato") : tomatoDim();
   var log = pomoOf(T)
     .slice()
@@ -678,16 +704,22 @@ export function pmDraw() {
     (c.every ? " · long " + c.l + " every " + c.every : "") +
     (c.auto ? " · auto" : "") +
     '</summary><div class="pm-rows"><label>Focus' +
-    pmSel("w", [15, 20, 25, 30, 45, 50], c.w) +
+    pmSel("w", [15, 20, 25, 30, 45, 50], c.w, null, lk) +
     "</label><label>Short break" +
-    pmSel("b", [3, 5, 10, 15], c.b) +
+    pmSel("b", [3, 5, 10, 15], c.b, null, lk) +
     "</label><label>Long break" +
-    pmSel("l", [10, 15, 20, 30, 45, 60], c.l) +
+    pmSel("l", [10, 15, 20, 30, 45, 60], c.l, null, lk) +
     "</label><label>Long break" +
-    pmSel("every", [0, 2, 3, 4, 5], c.every, "n") +
-    '</label></div><div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
+    pmSel("every", [0, 2, 3, 4, 5], c.every, "n", lk) +
+    "</label></div>" +
+    (lk
+      ? '<p class="help pm-lock">Locked until this set ends' +
+        (c.every ? " \u00b7 " + (c.every - (pomoDone(T) % c.every)) + " of " + c.every + " to go" : "") +
+        "</p>"
+      : "") +
+    '<div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
     !!c.auto +
-    '" aria-label="Auto-start next pomodoro" data-pm="auto"><span></span></button></div><p class="help">Changes apply from the next pomodoro. A pomodoro is all or nothing: stop early and nothing is logged.</p></details>' +
+    '" aria-label="Auto-start next pomodoro" data-pm="auto"><span></span></button></div><p class="help">Lengths are set for a whole set of pomodoros. All or nothing: stop early and nothing is logged.</p></details>' +
     '<div class="pm-log"><div class="sh2">Today</div>' +
     (log
       ? '<ul class="pm-list">' + log + "</ul>"
@@ -901,6 +933,7 @@ export function init() {
   pmBgCache = null;
   G.pmQ = null;
   G.pmPhase = null;
+  pmTitle0 = document.title;
   pmPill = document.getElementById("pmPill");
   pmPill.addEventListener("click", openPomo);
   setInterval(pomoTick, 1000);
