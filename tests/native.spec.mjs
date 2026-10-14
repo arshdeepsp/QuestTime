@@ -167,3 +167,30 @@ test("a pomodoro's live notification carries a filling tomato, one frame a minut
   expect(last.grow.dur).toBe(5 * 60000);
   expect(last.grow.art.length).toBe(6);
 });
+
+test("with auto-start the pomodoro's live notification hands off through the break into the next pomodoro and its break", async ({ page }) => {
+  await page.addInitScript(mock(false));
+  await openApp(page, { cfg: { quests: Q, nf: { on: true }, pomo: { w: 20, b: 5, l: 15, every: 4, auto: true } } });
+  await page.click("#toolsBtn");
+  await page.click(".qmenu button:has-text('Pomodoro')");
+  await page.click("[data-pm=start]");
+  await page.clock.runFor(4000);
+  const last = (await page.evaluate(() => window.__fn)).filter((c) => c && c.title).pop();
+  const t0 = last.when;
+  expect(last.next.title).toBe("Short break");
+  expect(last.next.body).toBe("Next pomodoro when this reaches zero");
+  expect(last.next.when).toBe(t0 + 5 * 60000);
+  const p2 = last.next.next;
+  expect(p2.title).toBe("Pomodoro: CS work");
+  expect(p2.body).toBe("Pomodoro 2 of 4");
+  expect(p2.countdown).toBe(true);
+  expect(p2.when).toBe(t0 + 25 * 60000);
+  expect(p2.grow.from).toBe(t0 + 5 * 60000);
+  expect(p2.grow.art.length).toBe(21);
+  expect(p2.bg.big).toBe(last.bg.big);
+  expect(p2.next.title).toBe("Short break");
+  expect(p2.next.next.title).toBe("Pomodoro: CS work");
+  expect(p2.next.next.body).toBe("Pomodoro 3 of 4");
+  expect(p2.next.next.next.next.title).toBe("Break over");
+  expect(p2.next.next.next.next.chrono).toBe(false);
+});

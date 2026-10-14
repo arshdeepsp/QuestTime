@@ -16,6 +16,7 @@ import { resumeSync, schNotifs } from "../schedule/resume.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerMin } from "../timer/13-focus-timer.js";
 import { spLabel } from "../timer/43-sprint.js";
+import { pomoAhead } from "../timer/43b-pomodoro.js";
 import { lastSt } from "../ui/04-render.js";
 import { setSync } from "../ui/feedback.js";
 
@@ -105,38 +106,46 @@ export function nfPlan() {
   }
   var pm = S.pomo;
   if (n.timer && pm) {
-    var pmLong = !!(pm.every && (pm.n + 1) % pm.every === 0),
-      pmBrk = pmLong ? pm.l : pm.b;
-    if (pm.phase === "work" && !pm.paused)
-      push(
-        1201,
-        "Pomodoro done \u2014 take your break",
-        pm.label + " logged. " + pmBrk + "-minute " + (pmLong ? "long " : "") + "break starts now.",
-        pm.end,
-        null,
-        pmLong ? "pc_beep3" : "pc_beep2",
-        pm.auto ? "pc_pomo_auto" : "pc_pomo_done",
-      );
-    if (pm.phase === "break" && !pm.breakDone)
-      push(
-        1202,
-        "Break over",
-        pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
-        pm.bend,
-        null,
-        "pc_beep1",
-        pm.auto ? null : "pc_pomo_brk",
-      );
-    if (pm.phase === "work" && !pm.paused)
-      push(
-        1203,
-        "Break over",
-        pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
-        pm.end + pmBrk * 60000,
-        null,
-        "pc_beep1",
-        pm.auto ? null : "pc_pomo_brk",
-      );
+    /* The phases ahead on the wall clock (pomoAhead): the running interval's end (1201) and break over (1202 during the
+       break, 1203 pre-scheduled at focus end), then with auto-start three more pomodoros (1204/1205, 1206/1207,
+       1208/1209: done, break over), so a phone that sleeps through a break still hears the next ones. */
+    var ahead = pomoAhead(pm, 3),
+      k = 0;
+    ahead.forEach(function (ph) {
+      if (ph.kind === "start") return;
+      var id;
+      if (ph.kind === "done") id = k === 0 ? 1201 : 1204 + 2 * (k - 1);
+      else {
+        id = k === 0 ? (pm.phase === "break" ? 1202 : 1203) : 1205 + 2 * (k - 1);
+        k++;
+      }
+      if (id > 1209) return;
+      if (ph.kind === "done")
+        push(
+          id,
+          "Pomodoro done — take your break",
+          pm.label +
+            " logged. " +
+            (ph.long ? pm.l : pm.b) +
+            "-minute " +
+            (ph.long ? "long " : "") +
+            "break starts now.",
+          ph.at,
+          null,
+          ph.long ? "pc_beep3" : "pc_beep2",
+          pm.auto ? "pc_pomo_auto" : "pc_pomo_done",
+        );
+      else
+        push(
+          id,
+          "Break over",
+          pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
+          ph.at,
+          null,
+          "pc_beep1",
+          pm.auto ? null : "pc_pomo_brk",
+        );
+    });
   }
   for (var i = 0; i < 7; i++) {
     var k = add(T, i),

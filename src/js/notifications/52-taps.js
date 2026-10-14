@@ -285,7 +285,7 @@ export function notifAction(id, x, act) {
   if (id === 1002) return nfTimer("plan");
   if (id === 1003) return nfTimer("five");
   if (id >= 1101 && id <= 1103) return nfSprint();
-  if (id >= 1201 && id <= 1203) return nfPomo(act);
+  if (id >= 1201 && id <= 1209) return nfPomo(act);
   if (id >= 2000 && id < 2100) return nfQuestsLeft("Evening check-in", "note");
   if (id === 2200 && rewardsOff()) {
     nfGo();

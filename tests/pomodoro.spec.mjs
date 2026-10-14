@@ -465,3 +465,67 @@ test("a pomodoro whose interval ended while the app was closed is finished on la
   expect(errors).toEqual([]);
 });
 
+
+test("auto-start catches up after the app slept: the next pomodoro is back-dated to the break's end, and one already over is logged too", async ({ page }) => {
+  await page.addInitScript((s) => { if (!localStorage.getItem("pc-cache-v1")) localStorage.setItem("pc-cache-v1", s); }, JSON.stringify({ days: {}, cfg: { quests: Q, rules: [], idleGrove: 0, pomo: { w: 25, b: 5, l: 15, every: 4, auto: true }, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z" }, pomo: { q: "th", label: "Thesis", topic: null, phase: "work", start: at(9, 0), end: at(9, 25), n: 0, paused: null, pausedTotal: 0, ints: 0, w: 25, b: 5, l: 15, every: 4, auto: true } }));
+  /* asleep from 9:25 (first done) through 9:30 (break over → #2 starts) and 9:55 (#2 done) to 10:05: now in #2's break, 5 minutes in */
+  const errors = await openApp(page, { cfg: { quests: Q }, now: `${T}T10:05:00-05:00`, hash: "#pomodoro" });
+  await expect(page.locator("#pomoPage")).toBeVisible();
+  const e = await day(page);
+  expect(e.th).toBe(50);
+  expect(e.pomo.map((r) => [r.s, r.e])).toEqual([[at(9, 0), at(9, 25)], [at(9, 30), at(9, 55)]]);
+  const p = (await state(page)).pomo;
+  expect(p.phase).toBe("work");
+  expect(p.start).toBe(at(10, 0));
+  expect(p.end).toBe(at(10, 25));
+  expect(p.n).toBe(2);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 3 of 4");
+  await expect(page.locator("#pomoPage .pm-time")).toHaveText(/^19:5\d$/);
+  expect(errors).toEqual([]);
+});
+
+test("with auto-start on, the next pomodoros' reminders are scheduled ahead, and a tap on any of them opens the page", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__ln = [];
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: () => Promise.resolve(), createChannel: () => Promise.resolve(), getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, at: n.schedule.at.getTime(), ch: n.channelId, title: n.title })); return Promise.resolve(); }, addListener: (ev, fn) => { if (ev === "localNotificationActionPerformed") window.__tap = fn; return Promise.resolve({}); }, removeDeliveredNotifications: () => Promise.resolve() },
+      App: { addListener: () => Promise.resolve({}) }
+    } };
+  });
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true }, pomo: { w: 25, b: 5, l: 15, every: 4, auto: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  const ids = async () => page.evaluate(() => { const m = {}; window.__ln.forEach((n) => { if (n.id >= 1201 && n.id <= 1209) m[n.id] = n; }); return m; });
+  await expect.poll(async () => Object.keys(await ids()).map(Number).sort()).toEqual([1201, 1203, 1204, 1205, 1206, 1207, 1208, 1209]);
+  const m = await ids();
+  /* the fake clock runs in real time after install, so the start is a few hundred ms past 10:00 */
+  const near = (id, h, mi) => expect(Math.abs(m[id].at - at(h, mi)), String(id)).toBeLessThan(5000);
+  near(1201, 10, 25);
+  near(1203, 10, 30);
+  near(1204, 10, 55);
+  near(1205, 11, 0);
+  near(1206, 11, 25);
+  near(1207, 11, 30);
+  near(1208, 11, 55);
+  expect(m[1208].ch).toBe("pc_beep3");
+  near(1209, 12, 10);
+  expect(m[1204].ch).toBe("pc_beep2");
+  await page.click("#pmOk");
+  await expect(page.locator("#pomoPage")).toBeHidden();
+  await page.evaluate(() => window.__tap({ notification: { id: 1206, extra: {} } }));
+  await expect(page.locator("#pomoPage")).toBeVisible();
+});
+
+test("without auto-start only the current pomodoro's reminders are planned", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__ln = [];
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: () => Promise.resolve(), createChannel: () => Promise.resolve(), getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push(n.id)); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
+      App: { addListener: () => Promise.resolve({}) }
+    } };
+  });
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  await expect.poll(() => page.evaluate(() => [...new Set(window.__ln.filter((i) => i >= 1201 && i <= 1209))].sort())).toEqual([1201, 1203]);
+});

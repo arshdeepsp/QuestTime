@@ -12,7 +12,7 @@ import { activeDefs } from "../rules/quests-on-day.js";
 import { schLen } from "../schedule/model.js";
 import { topicName } from "../subjects/33-topics.js";
 import { spLabel } from "./43-sprint.js";
-import { pomoBg, pomoGrow } from "./43b-pomodoro.js";
+import { pomoAhead, pomoBg, pomoGrow } from "./43b-pomodoro.js";
 
 export var wakeOn, wakeLockObj, focusArtCache, focusBgCache;
 
@@ -240,21 +240,7 @@ export function focusSync(force) {
         /* A tomato that fills over the pomodoro, one frame a minute so the progress bar keeps moving; the break shows the
            whole tomato with the bar counting the break down. */
         grow = pomoGrow(pm.end - pm.w * 60000, pm.w);
-        var pmL = !!(pm.every && (pm.n + 1) % pm.every === 0),
-          pmB = pmL ? pm.l : pm.b;
-        next = {
-          title: pmL ? "Long break" : "Short break",
-          body: pm.auto ? "Next pomodoro when this reaches zero" : "Tap to start the next one when this reaches zero",
-          when: Math.round(pm.end + pmB * 60000),
-          countdown: true,
-          chrono: true,
-          grow: pomoGrow(pm.end, pmB, true),
-          next: {
-            title: "Break over",
-            body: pm.auto ? "Next pomodoro running" : "Start your next pomodoro",
-            chrono: false,
-          },
-        };
+        next = pomoChain(pm, pomoAhead(pm, 2), 0);
       }
     } else if (S.pomo && S.pomo.phase === "break") {
       t = S.pomo.long ? "Long break" : "Short break";
@@ -265,7 +251,7 @@ export function focusSync(force) {
         down = true;
         when = S.pomo.bend;
         grow = pomoGrow(S.pomo.bstart, (S.pomo.bend - S.pomo.bstart) / 60000, true);
-        next = { title: "Break over", body: "Start your next pomodoro", chrono: false };
+        next = pomoChain(S.pomo, pomoAhead(S.pomo, 2), 0) || pomoOverCard(S.pomo);
       }
     } else if (S.sprint && S.sprint.phase === "break") {
       t = S.sprint.long ? "Long break" : "Decision break";
@@ -335,6 +321,43 @@ export function focusSync(force) {
     return;
   }
   legacy();
+}
+
+export function pomoOverCard(pm) {
+  return { title: "Break over", body: pm.auto ? "Next pomodoro running" : "Start your next pomodoro", chrono: false };
+}
+/* The handoff chain after the state being posted, from pomoAhead's phases from index i: a break counting down (whole
+     tomato), then with auto-start the next pomodoro counting down (tomato filling), its break, and so on; the native
+     side posts each at its time, so the phone shows the right phase even if the app is asleep. Ends in a plain
+     "Break over" card. */
+export function pomoChain(pm, ph, i) {
+  var x = ph[i];
+  if (!x) return null;
+  if (x.kind === "done") {
+    var brk = ph[i + 1],
+      mins = (brk.at - x.at) / 60000;
+    return {
+      title: x.long ? "Long break" : "Short break",
+      body: pm.auto ? "Next pomodoro when this reaches zero" : "Tap to start the next one when this reaches zero",
+      when: Math.round(brk.at),
+      countdown: true,
+      chrono: true,
+      grow: pomoGrow(x.at, mins, true),
+      next: pomoChain(pm, ph, i + 2) || pomoOverCard(pm),
+    };
+  }
+  if (x.kind === "brk") return pomoChain(pm, ph, i + 1);
+  /* start: the next pomodoro, counting down to its end */
+  var done = ph[i + 1];
+  return {
+    title: "Pomodoro: " + pm.label,
+    body: "Pomodoro " + x.n + (pm.every ? " of " + pm.every : ""),
+    when: Math.round(done.at),
+    countdown: true,
+    chrono: true,
+    grow: pomoGrow(x.at, (done.at - x.at) / 60000),
+    next: pomoChain(pm, ph, i + 1),
+  };
 }
 
 /* Runs once at startup, in file-number order (main.js). */

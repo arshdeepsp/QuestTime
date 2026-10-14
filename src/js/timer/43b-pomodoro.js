@@ -33,7 +33,7 @@ import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
 import { pageBack, pageNav, viewHash } from "../ui/routes.js";
 
-export var PM_GCOL, PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
+export var PM_LATE_MS, PM_GCOL, PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
 
 export function tomatoSvg(cls, pal) {
   var P = pal || { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
@@ -309,12 +309,14 @@ export function pmSave() {
 export function pmArmed() {
   return pmArm && Date.now() - pmArm < PM_ARM_MS;
 }
-/* Start a focus interval on quest q (a running timer is stopped first; a sprint is left alone). */
-export function pomoStart(q) {
+/* Start a focus interval on quest q (a running timer is stopped first; a sprint is left alone). `at` back-dates the
+     start (auto-start catching up after the app slept: the next pomodoro began when the break ended, not when the app
+     woke); `quiet` skips the sound for a start that happened a while ago. */
+export function pomoStart(q, at, quiet) {
   if (locked()) return false;
   if (S.timer) stopTimer();
   var c = pmCfg(),
-    now = Date.now(),
+    now = at || Date.now(),
     prev = S.pomo;
   /* A fresh session continues today's set, so the long break comes after the day's 4th, not the session's. */
   S.pomo = {
@@ -338,11 +340,11 @@ export function pomoStart(q) {
   callCheck();
   pmSave();
   /* A new set starting gets the squish; every later start in the set is one beep (back to work). */
-  sfx(S.pomo.n === 0 && (c.every || !prev) ? "squish" : "beep1");
+  if (!quiet) sfx(S.pomo.n === 0 && (c.every || !prev) ? "squish" : "beep1");
   return true;
 }
 /* The focus interval ran to its end: log it, record it, put it on the schedule and start the break. */
-export function pomoFinish() {
+export function pomoFinish(quiet) {
   var p = S.pomo,
     T = todayKey();
   if (!p || p.phase !== "work") return;
@@ -361,6 +363,7 @@ export function pomoFinish() {
   p.bstart = p.end;
   p.bend = p.end + (p.long ? p.l : p.b) * 60000;
   p.breakDone = false;
+  if (quiet) return;
   sfx(p.long ? "beep3" : "beep2");
   try {
     if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
@@ -444,7 +447,7 @@ export function pomoSkipBreak() {
   p.bend = Date.now();
   pmSave();
 }
-export function pomoNext() {
+export function pomoNext(at, quiet) {
   var p = S.pomo;
   if (!p || p.phase !== "break") return;
   var q = pmDefs().filter(function (x) {
@@ -456,7 +459,42 @@ export function pomoNext() {
     setSync(p.label + " isn’t on today’s list any more.");
     return;
   }
-  pomoStart(q);
+  pomoStart(q, at, quiet);
+}
+/* The phases ahead of the running one, on the wall clock: [{kind: "done"|"brk"|"start", at, n, long?}] — the current
+     interval's end and break, then, with auto-start on, `max` more pomodoros (each start, done and break over).
+     Reminders (35d-plan) and the live notification's handoff chain are planned from it, so a phone that sleeps through
+     a break still beeps and shows the next pomodoro counting down; pomoTick catches the model up when the app wakes. */
+export function pomoAhead(p, max) {
+  var out = [],
+    n = p.n,
+    t,
+    L;
+  if (p.phase === "work") {
+    if (p.paused) return out;
+    t = p.end;
+    n++;
+    L = !!(p.every && n % p.every === 0);
+    out.push({ kind: "done", at: t, n: n, long: L });
+    t += (L ? p.l : p.b) * 60000;
+    out.push({ kind: "brk", at: t, n: n });
+  } else {
+    if (p.breakDone) return out;
+    t = p.bend;
+    out.push({ kind: "brk", at: t, n: n });
+  }
+  if (!p.auto) return out;
+  for (var i = 0; i < (max || 0); i++) {
+    var s = t;
+    n++;
+    t = s + p.w * 60000;
+    L = !!(p.every && n % p.every === 0);
+    out.push({ kind: "start", at: s, n: n });
+    out.push({ kind: "done", at: t, n: n, long: L });
+    t += (L ? p.l : p.b) * 60000;
+    out.push({ kind: "brk", at: t, n: n });
+  }
+  return out;
 }
 export function pomoPause() {
   var p = S.pomo;
@@ -469,26 +507,41 @@ export function pomoPause() {
   } else p.paused = Date.now();
   pmSave();
 }
+/* Phases run on the wall clock, so the tick also catches up after the app slept: every transition that is already due
+     is applied in order — a finished interval, a break that ended, and with auto-start the next pomodoro started at the
+     moment the break ended (back-dated), which may itself be over by now. A transition more than PM_LATE_MS ago is
+     applied silently; only one that just happened sounds. */
 export function pomoTick() {
   var p = S.pomo;
   if (p) {
     var now = Date.now(),
-      ch = false;
-    if (p.phase === "work" && !p.paused && now >= p.end) {
-      pomoFinish();
-      ch = true;
-    }
-    if (p.phase === "break" && !p.breakDone && now >= p.bend) {
-      p.breakDone = true;
-      ch = true;
-      sfx("beep1");
-      try {
-        if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
-      } catch (x) {}
-      if (p.auto) {
-        pomoNext();
-        ch = false;
+      ch = false,
+      steps = 0;
+    while (p && steps++ < 40) {
+      if (p.phase === "work" && !p.paused && now >= p.end) {
+        pomoFinish(now - p.end > PM_LATE_MS);
+        ch = true;
+        continue;
       }
+      if (p.phase === "break" && !p.breakDone && now >= p.bend) {
+        var late = now - p.bend > PM_LATE_MS,
+          at = p.bend;
+        p.breakDone = true;
+        ch = true;
+        if (!late) {
+          sfx("beep1");
+          try {
+            if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+          } catch (x) {}
+        }
+        if (p.auto) {
+          pomoNext(at, late);
+          ch = false;
+          p = S.pomo;
+          continue;
+        }
+      }
+      break;
     }
     if (ch) pmSave();
   }
@@ -1004,6 +1057,7 @@ export function pomoTrendsHtml(T) {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
+  PM_LATE_MS = 5000;
   PM_GCOL = 10;
   PM_DEF = { w: 25, b: 5, l: 15, every: 4, auto: false };
   /* The page redraws every second while a pomodoro runs, so Stop's "Stop? Not counted" arming lives outside the markup
