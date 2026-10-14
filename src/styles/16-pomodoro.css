@@ -181,6 +181,16 @@ body.pm-open {
   font: 18px/1.2 var(--vt);
   padding: 6px 0;
 }
+.pm-row .sw {
+  width: 58px;
+  height: 28px;
+  --k: 20px;
+  flex: none;
+}
+.pm-row .sw::after {
+  right: 5px;
+  font-size: 6px;
+}
 .pm-set .help {
   margin: 6px 0 2px;
 }
