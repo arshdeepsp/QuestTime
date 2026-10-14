@@ -163,7 +163,7 @@ test("a full account's worth of data pushes as documents Firestore accepts, and 
   const D = days();
   const cfg = { quests: Q, subjects: SUBJ, rules: RULES, busy, rep, nf: { on: true, checkinAt: "20:00" }, showPlan: true, addTrends: true, sparkTools: true, badges: { first: "2026-10-03" }, noStreak: [{ from: "2026-10-10", to: "2026-10-15" }], ignore: ["cl"], xpSpent: 200, weekStart: 0 };
   await openApp(page, { cfg, days: D, extra: { "pc-todoreview": "2026-11-02" } });
-  await page.evaluate(() => { const S = JSON.parse(localStorage.getItem("pc-cache-v1")); S.refl = { "2026-10-12": { text: "exam week", tags: ["tired"] } }; localStorage.setItem("pc-cache-v1", JSON.stringify(S)); });
+  await page.evaluate(() => { const S = JSON.parse(localStorage.getItem("pc-cache-v1")); S.refl = { "2026-10-12": { text: "exam week", tags: ["tired"] } }; S.notes = { n1: { t: "Office hours", b: "Tue 2-3, DC 2306", c: Date.now() - 86400000, u: Date.now() - 3600000, col: 2, pin: true }, n2: { x: Date.now() - 60000 } }; localStorage.setItem("pc-cache-v1", JSON.stringify(S)); });
   await page.reload();
   await signIn(page);
   await expect(page.locator(".srow", { has: page.locator("b", { hasText: /^Sync$/ }) })).toContainText("Up to date");
@@ -172,10 +172,12 @@ test("a full account's worth of data pushes as documents Firestore accepts, and 
   const local = await store(page);
   const dayKeys = Object.keys(local.days).sort();
   expect(dayKeys.length).toBeGreaterThanOrEqual(Object.keys(D).length);
-  expect(Object.keys(d).sort()).toEqual(["users/u1/data/cfg", "users/u1/data/refl"].concat(dayKeys.map((k) => "users/u1/days/" + k)).sort());
+  expect(Object.keys(d).sort()).toEqual(["users/u1/data/cfg", "users/u1/data/refl", "users/u1/data/notes"].concat(dayKeys.map((k) => "users/u1/days/" + k)).sort());
   const clean = (o) => { const x = JSON.parse(JSON.stringify(o)); delete x.u; delete x.at; return x; };
   expect(clean(d["users/u1/data/cfg"])).toEqual(local.cfg);
   expect(clean(d["users/u1/data/refl"]).map).toEqual(local.refl);
+  expect(clean(d["users/u1/data/notes"]).map).toEqual(local.notes);
+  expect(Object.keys(local.notes).sort()).toEqual(["n1", "n2"]);
   for (const k of dayKeys) expect(clean(d["users/u1/days/" + k])).toEqual(local.days[k]);
   // a second, empty device signed into the same account ends up with the same data
   const ctx = await browser.newContext({ timezoneId: "America/Toronto", serviceWorkers: "block" });
@@ -187,6 +189,7 @@ test("a full account's worth of data pushes as documents Firestore accepts, and 
   const mirror = await store(other);
   expect(mirror.cfg).toEqual(local.cfg);
   expect(mirror.refl).toEqual(local.refl);
+  expect(mirror.notes).toEqual(local.notes);
   for (const k of dayKeys) expect(mirror.days[k]).toEqual(local.days[k]);
   expect(await other.evaluate(() => window.__cloud.bad || [])).toEqual([]);
   await ctx.close();

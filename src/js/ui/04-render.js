@@ -56,7 +56,17 @@ export function sndLabel() {
    renders unless something already rendered since (an explicit render() still works and is immediate). Saves made
    while rendering (snapshots, housekeeping) don't schedule another render. */
 export var renderSeq, rendering, renderQueued;
-export function onStoreChange() {
+export function onStoreChange(ids) {
+  /* A save that only touched the notes doc (typing in a note) changes nothing on the other screens; the Notes page
+     draws itself (notes/30-notes.js). */
+  if (
+    ids &&
+    ids.length &&
+    ids.every(function (id) {
+      return id === "notes";
+    })
+  )
+    return;
   if (rendering || renderQueued) return;
   renderQueued = true;
   var seq = renderSeq;
@@ -286,6 +296,7 @@ export function renderBody(fromClick) {
   document.getElementById("sparkBar").hidden = !cf.sparkTools || past;
   document.getElementById("shareBtn").hidden = !cf.addShare;
   document.getElementById("trendsBtn").hidden = !cf.addTrends;
+  document.getElementById("notesBtn").hidden = !cf.addNotes;
   if (!past) {
     checkFinish();
     maybeReviewTodos();

@@ -67,14 +67,14 @@ export function init() {
     [180, "Master", "trophy"],
     [365, "Maestro", "star"],
   ];
-  S = { days: {}, refl: {}, cfg: null };
+  S = { days: {}, refl: {}, notes: {}, cfg: null };
   G.dl = null;
   G.dlChecked = false;
   view = "today";
   dirty = {};
   G.timer = null;
   /* Data schema. Bump SCHEMA and add a step to migrate() whenever the stored shape changes. */
-  SCHEMA = 22;
+  SCHEMA = 23;
   RERATE_MIN = 60;
   MID_FRAC = 1 / 3;
   /* If saved data can't be read, or comes from a newer app version, a copy goes to pc-cache-rescue and nothing is saved
@@ -91,12 +91,13 @@ export function init() {
       localStorage.setItem(storeKey(), JSON.stringify(state));
     },
   };
-  /* store.subscribe(fn): fn(ids) runs after every save that changed documents ("cfg", "refl", "days/<date>", "-days/<date>"
-     for a removed day) and after a document adopted from the cloud. ui/04-render.js subscribes to re-render. */
+  /* store.subscribe(fn): fn(ids) runs after every save that changed documents ("cfg", "refl", "notes", "days/<date>",
+     "-days/<date>" for a removed day) and after a document adopted from the cloud. ui/04-render.js subscribes to re-render.
+     refl and notes are "map docs": one document each, a map by key (S.refl by day, S.notes by note id). */
   store = (function () {
     var ad = localAdapter,
       subs = [],
-      last = { cfg: null, refl: null, days: {} };
+      last = { cfg: null, refl: null, notes: null, days: {} };
     function emit(ids) {
       subs.slice().forEach(function (fn) {
         try {
@@ -108,6 +109,7 @@ export function init() {
       var ch = [];
       if (S.cfg !== last.cfg) ch.push("cfg");
       if (S.refl !== last.refl) ch.push("refl");
+      if (S.notes !== last.notes) ch.push("notes");
       Object.keys(S.days).forEach(function (k) {
         if (S.days[k] !== last.days[k]) ch.push("days/" + k);
       });
@@ -119,6 +121,7 @@ export function init() {
     function remember() {
       last.cfg = S.cfg;
       last.refl = S.refl;
+      last.notes = S.notes;
       last.days = {};
       Object.keys(S.days).forEach(function (k) {
         last.days[k] = S.days[k];
@@ -143,6 +146,7 @@ export function init() {
       markClean: function (id, obj) {
         if (id === "cfg") last.cfg = obj;
         else if (id === "refl") last.refl = obj || S.refl;
+        else if (id === "notes") last.notes = obj || S.notes;
         else if (id.indexOf("days/") === 0) {
           var k = id.slice(5);
           if (obj) last.days[k] = obj;
@@ -158,6 +162,7 @@ export function init() {
           var c = migrate(c0);
           S.days = c.days || {};
           S.refl = c.refl || {};
+          S.notes = c.notes || {};
           S.cfg = c.cfg || null;
           S.meta = c.meta || { u: {} };
           if (!S.meta.u) S.meta.u = {};
@@ -171,6 +176,7 @@ export function init() {
         } catch (e) {
           S.days = {};
           S.refl = {};
+          S.notes = {};
           S.cfg = null;
           S.meta = { u: {} };
           S.timer = null;
@@ -212,6 +218,7 @@ export function init() {
         var d = {
           cfg: S.cfg,
           refl: { map: S.refl },
+          notes: { map: S.notes },
           days: S.days,
           session: {
             timer: S.timer,

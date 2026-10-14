@@ -183,6 +183,8 @@ export function migrate(c) {
   /* 22 marks a day's e.pomo (finished and stopped pomodoros, timer/43b-pomodoro.js), cfg.pomo and pm schedule blocks;
      nothing to convert. */
   if (v < 22) v = 22;
+  /* 23 adds the notes doc (S.notes, a map by note id; notes/30-notes.js). Nothing to convert. */
+  if (v < 23) v = 23;
   c.schema = v;
   return c;
 }

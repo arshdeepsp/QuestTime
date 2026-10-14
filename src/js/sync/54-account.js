@@ -1,7 +1,7 @@
 /* ---- account and cloud sync (Firebase: email/password auth + Firestore) ----
      Nothing here runs until someone signs in. cloud.boot() on startup: if pc-account says a user was signed in on this
      device, the SDK (vendor/firebase.js, built from src/firebase/fb.js) is imported and auth restores the session.
-     Data layout: users/<uid>/data/cfg, users/<uid>/data/refl, users/<uid>/days/<date> (document paths need an even number of segments). Every document carries u (ms, the store's
+     Data layout: users/<uid>/data/cfg, users/<uid>/data/refl, users/<uid>/data/notes, users/<uid>/days/<date> (document paths need an even number of segments). Every document carries u (ms, the store's
      stamp) and at (server write time); a removed day is written as {del:true, u} so other devices delete it too. Who
      wins is decided by content against the last agreed version (takeRemote; merge helpers in sync/merge.js), not by clocks. Local writes keep going to localStorage
      through the local adapter; the cloud adapter wraps it and pushes the changed docs a few seconds after the last edit.
@@ -20,9 +20,12 @@ import { welcomeCheck } from "../ui/24-help.js";
 import { applyLook } from "../ui/look.js";
 
 export var FIREBASE_CONFIG, ACCOUNT_KEY, cloud;
+/* The map docs: one document each, a map by key on S (S.refl by day, S.notes by note id); users/<uid>/data/<id>. */
+export var MAPS;
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
+  MAPS = { refl: 1, notes: 1 };
   FIREBASE_CONFIG = {
     apiKey: "AIzaSyA4UK9_-Ujodg0nYmj8wA9ILt-zNMxT63U",
     authDomain: "productivitycraft.firebaseapp.com",
@@ -81,13 +84,13 @@ export function init() {
     function strip(o) {
       return JSON.parse(JSON.stringify(o));
     }
-    /* Firestore document paths need an even number of segments: cfg and refl live in users/<uid>/data/, days in users/<uid>/days/. */
+    /* Firestore document paths need an even number of segments: cfg, refl and notes live in users/<uid>/data/, days in users/<uid>/days/. */
     function docPath(id) {
-      return id === "cfg" || id === "refl" ? base() + "/data/" + id : base() + "/" + id;
+      return id === "cfg" || MAPS[id] ? base() + "/data/" + id : base() + "/" + id;
     }
     function localDoc(id) {
       if (id === "cfg") return S.cfg;
-      if (id === "refl") return { map: S.refl };
+      if (MAPS[id]) return { map: S[id] };
       if (id.indexOf("days/") === 0) return S.days[id.slice(5)] || null;
       return null;
     }
@@ -298,7 +301,7 @@ export function init() {
       var l = localDoc(id);
       if (!l) return true;
       if (id === "cfg") return !(l.quests || []).length && !(l.subjects || []).length && !(l.rules || []).length;
-      if (id === "refl") return !Object.keys(l.map || {}).length;
+      if (MAPS[id]) return !Object.keys(l.map || {}).length;
       return Object.keys(l).every(function (f) {
         return f === "q" || f === "ck" || f === "schSkip";
       });
@@ -330,10 +333,10 @@ export function init() {
         return false;
       }
       var r = bare(data),
-        rc = id === "refl" ? { map: r.map || {} } : r,
+        rc = MAPS[id] ? { map: r.map || {} } : r,
         hr = hashOf(rc);
       function take() {
-        var obj = id === "refl" ? rc.map : r;
+        var obj = MAPS[id] ? rc.map : r;
         /* A cfg from a device that saved a quest twice: take it without the copies and push the repaired version back. */
         if (id === "cfg") {
           var fx = JSON.parse(JSON.stringify(r));
@@ -369,12 +372,12 @@ export function init() {
         queue[id] = true;
         return false;
       }
-      var mg = merge3(id === "cfg" ? m.cb : id === "refl" ? { map: {} } : {}, l, rc, lu >= ru ? "l" : "r");
+      var mg = merge3(id === "cfg" ? m.cb : MAPS[id] ? { map: {} } : {}, l, rc, lu >= ru ? "l" : "r");
       if (id === "cfg") {
         dedupeQuests(mg);
         S.cfg = mg;
         applyLook();
-      } else if (id === "refl") S.refl = mg.map || {};
+      } else if (MAPS[id]) S[id] = mg.map || {};
       else S.days[id.slice(5)] = mg;
       agree(id, rc);
       lockReset();
@@ -386,51 +389,59 @@ export function init() {
     function merge() {
       var t0 = Date.now();
       setStatus("syncing");
-      return Promise.all([fb.db.get(docPath("cfg")), fb.db.get(docPath("refl")), fb.db.list(base() + "/days")]).then(
-        function (r) {
-          var got = { cfg: 1, refl: 1 },
-            ch = false;
-          seen(r[0].data);
-          seen(r[1].data);
-          r[2].forEach(function (s) {
-            seen(s.data);
-          });
-          if (takeRemote("cfg", r[0].data)) ch = true;
-          else if (S.cfg && !r[0].data) queue.cfg = true;
-          if (takeRemote("refl", r[1].data)) ch = true;
-          else if (!r[1].data && Object.keys(S.refl || {}).length) queue.refl = true;
-          r[2].forEach(function (s) {
-            var id = "days/" + s.id;
-            got[id] = 1;
-            if (takeRemote(id, s.data)) ch = true;
-            if (!s.data.at) queue[id] = true;
-          });
-          /* Docs written before writes carried `at` are rewritten once, so incremental pulls can see them from now on. */
-          [
-            ["cfg", r[0].data],
-            ["refl", r[1].data],
-          ].forEach(function (x) {
-            if (x[1] && !x[1].at) queue[x[0]] = true;
-          });
-          Object.keys(S.days).forEach(function (k) {
-            var id = "days/" + k;
-            if (!got[id]) queue[id] = true;
-          });
-          Object.keys((S.meta && S.meta.del) || {}).forEach(function (id) {
-            if (!got[id]) queue[id] = true;
-          });
-          if (ch) {
-            G.qSig = "";
-            render();
-          }
-          cache();
-          flushQueue();
-          inSync(t0);
-          try {
-            localAdapter.save(S);
-          } catch (x) {}
-        },
-      );
+      return Promise.all([
+        fb.db.get(docPath("cfg")),
+        fb.db.get(docPath("refl")),
+        fb.db.get(docPath("notes")),
+        fb.db.list(base() + "/days"),
+      ]).then(function (rr) {
+        var r = [rr[0], rr[1], rr[3]],
+          got = { cfg: 1, refl: 1, notes: 1 },
+          ch = false;
+        seen(r[0].data);
+        seen(r[1].data);
+        seen(rr[2].data);
+        r[2].forEach(function (s) {
+          seen(s.data);
+        });
+        if (takeRemote("cfg", r[0].data)) ch = true;
+        else if (S.cfg && !r[0].data) queue.cfg = true;
+        if (takeRemote("refl", r[1].data)) ch = true;
+        else if (!r[1].data && Object.keys(S.refl || {}).length) queue.refl = true;
+        if (takeRemote("notes", rr[2].data)) ch = true;
+        else if (!rr[2].data && Object.keys(S.notes || {}).length) queue.notes = true;
+        r[2].forEach(function (s) {
+          var id = "days/" + s.id;
+          got[id] = 1;
+          if (takeRemote(id, s.data)) ch = true;
+          if (!s.data.at) queue[id] = true;
+        });
+        /* Docs written before writes carried `at` are rewritten once, so incremental pulls can see them from now on. */
+        [
+          ["cfg", r[0].data],
+          ["refl", r[1].data],
+          ["notes", rr[2].data],
+        ].forEach(function (x) {
+          if (x[1] && !x[1].at) queue[x[0]] = true;
+        });
+        Object.keys(S.days).forEach(function (k) {
+          var id = "days/" + k;
+          if (!got[id]) queue[id] = true;
+        });
+        Object.keys((S.meta && S.meta.del) || {}).forEach(function (id) {
+          if (!got[id]) queue[id] = true;
+        });
+        if (ch) {
+          G.qSig = "";
+          render();
+        }
+        cache();
+        flushQueue();
+        inSync(t0);
+        try {
+          localAdapter.save(S);
+        } catch (x) {}
+      });
     }
     /* start() is reached twice on a sign-in when boot's auth listener is live (the SDK notifies it before the sign-in promise resolves): the same uid reuses the first run. */
     function start(u) {
@@ -723,7 +734,11 @@ export function init() {
             return f.db.remove(
               L.map(function (d) {
                 return "users/" + u.uid + "/days/" + d.id;
-              }).concat(["users/" + u.uid + "/data/cfg", "users/" + u.uid + "/data/refl"]),
+              }).concat([
+                "users/" + u.uid + "/data/cfg",
+                "users/" + u.uid + "/data/refl",
+                "users/" + u.uid + "/data/notes",
+              ]),
             );
           })
           .then(function () {
@@ -774,8 +789,8 @@ export function init() {
     if (id === "cfg") {
       S.cfg = obj;
       applyLook();
-    } else if (id === "refl") {
-      S.refl = obj || {};
+    } else if (MAPS[id]) {
+      S[id] = obj || {};
     } else if (id.indexOf("days/") === 0) {
       var k = id.slice(5);
       if (obj) S.days[k] = obj;

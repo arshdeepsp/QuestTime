@@ -348,6 +348,17 @@ export function init() {
           ],
         ],
         [
+          "notes",
+          "note",
+          "Notes",
+          "Jot it down; it clears itself.",
+          [
+            "Turn on the Notes page in Settings › Add-ons and it joins the title bar. Take a note, give it a colour, pin the ones you keep coming back to, search the rest.",
+            "Nothing here is for keeps: a note clears itself 30 days after you last edited it, and the card says how long it has left. Edit it to keep it another 30.",
+            "Signed in, notes sync with everything else.",
+          ],
+        ],
+        [
           "alerts",
           "note",
           "Reminders",

@@ -44,6 +44,7 @@ export function init() {
         exported: new Date().toISOString(),
         days: S.days,
         refl: S.refl,
+        notes: S.notes,
         cfg: S.cfg,
       },
       null,
@@ -178,6 +179,14 @@ export function init() {
               r++;
             }
           });
+        }
+        /* Notes come in only where this device has nothing under that id (a note edited here stays as it is). */
+        if (j.notes && typeof j.notes === "object") {
+          var nn = Object.assign({}, S.notes);
+          Object.keys(j.notes).forEach(function (k) {
+            if (!nn[k] && j.notes[k] && typeof j.notes[k] === "object") nn[k] = j.notes[k];
+          });
+          S.notes = nn;
         }
         var cu = false;
         if (j.cfg && j.cfg.quests && (!S.cfg || (j.cfg.updated || "") > (S.cfg.updated || ""))) {

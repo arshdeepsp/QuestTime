@@ -3,13 +3,13 @@ import { store } from "./00-state.js";
 
 /* ---- the store ----
      State lives in S; persistence goes through `store`, which thinks in documents so a sync backend can be plugged in
-     without touching the app: `cfg` (one doc, carries `updated`), `refl` (one doc, a map by day), `days/<date>` (one doc
+     without touching the app: `cfg` (one doc, carries `updated`), `refl` (one doc, a map by day), `notes` (one doc, a map by note id), `days/<date>` (one doc
      per day), and `session` (device-local: timer, sprint, pomodoro, sprint defaults, the answered call — never synced).
      cache() = store.flush(): it works out which docs changed since the last flush by identity (the app replaces S.cfg,
      S.refl and S.days[k] rather than mutating them in place), stamps S.meta.u[doc] with the time (and S.meta.del[doc] for
      days removed, so a sync can delete them), then hands the whole state plus the changed list to the adapter.
      The only adapter today writes the whole state to localStorage["pc-cache-v1"] as before; a Firestore adapter would
-     write the changed docs (users/<uid>/data/cfg, users/<uid>/data/refl, users/<uid>/days/<date>) and merge remote docs by their
+     write the changed docs (users/<uid>/data/cfg, users/<uid>/data/refl, users/<uid>/data/notes, users/<uid>/days/<date>) and merge remote docs by their
      `u` stamp — the Firestore SDK's own offline cache covers the local side, so no IndexedDB code is needed here.
      store.docs() returns the state in that document shape. Loading, schema migration and the rescue copy
      (pc-cache-rescue + cacheBlock when the data can't be read or is from a newer version) are unchanged. */

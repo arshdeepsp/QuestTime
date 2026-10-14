@@ -1,0 +1,225 @@
+/* ---- notes page ---- */
+#notesBtn.on {
+  background: #3c8527;
+  border-color: #2a5e1b #5db33f #5db33f #2a5e1b;
+}
+.notes {
+  margin: 10px 3px;
+}
+.nt-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.nt-new,
+.nt-q {
+  box-sizing: border-box;
+  font: 20px/1.25 var(--vt);
+  background: #3d3731;
+  color: #fff;
+  border: 3px solid;
+  border-color: #201e1c #9d8b79 #9d8b79 #201e1c;
+  padding: 9px 12px;
+  min-width: 0;
+}
+.nt-new {
+  flex: 1 1 auto;
+  text-align: left;
+  color: #c5bdb5;
+  cursor: text;
+}
+.nt-new:hover {
+  background: #463f38;
+}
+.nt-q {
+  flex: 0 1 200px;
+}
+.nt-q::placeholder {
+  color: #9d8b79;
+}
+.nt-h {
+  font: 9px var(--px);
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  margin: 16px 0 10px;
+}
+.nt-grid {
+  columns: 220px;
+  column-gap: 14px;
+}
+.nt-card {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  break-inside: avoid;
+  margin: 0 0 14px;
+  position: relative;
+  text-align: left;
+  background: #ccc6c0;
+  color: #463f38;
+  border: 4px solid;
+  border-color: #fff #60554a #60554a #fff;
+  box-shadow: 0 0 0 3px #000;
+  padding: 10px 12px 9px;
+  cursor: pointer;
+  font: 18px/1.25 var(--vt);
+}
+.nt-card:hover {
+  filter: brightness(1.06);
+}
+.nt-t {
+  display: block;
+  font: 9px/1.5 var(--px);
+  margin: 2px 14px 7px 0;
+  overflow-wrap: anywhere;
+}
+.nt-b {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 10;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.nt-f {
+  margin-top: 8px;
+  font-size: 15px;
+  color: #60554a;
+}
+.nt-pin {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  background: #9e2a1f;
+}
+.nt-pin::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 3px;
+  height: 5px;
+  background: #463f38;
+}
+.nt-empty {
+  margin: 8px 0;
+  color: #c5bdb5;
+}
+.nt-hint {
+  margin: 10px 0 0;
+  color: #9d8b79;
+}
+/* colours: the stone default and five warm pixel tints, on cards, the editor's edge and the swatches */
+.c1.nt-card,
+.c1.nt-c {
+  background: #e8cf6a;
+  border-color: #fff0b0 #9a8428 #9a8428 #fff0b0;
+}
+.c2.nt-card,
+.c2.nt-c {
+  background: #a9d17a;
+  border-color: #d6f0b4 #5a7d33 #5a7d33 #d6f0b4;
+}
+.c3.nt-card,
+.c3.nt-c {
+  background: #9cc7e3;
+  border-color: #d3ebf7 #4d7d9c #4d7d9c #d3ebf7;
+}
+.c4.nt-card,
+.c4.nt-c {
+  background: #e8a7b4;
+  border-color: #f7d4db #9c5566 #9c5566 #f7d4db;
+}
+.c5.nt-card,
+.c5.nt-c {
+  background: #e0a26a;
+  border-color: #f5d2ae #935a2a #935a2a #f5d2ae;
+}
+/* editor (inside the generic modal) */
+.nt-ed {
+  display: grid;
+  gap: 10px;
+  border-left: 8px solid #9d8b79;
+  padding-left: 10px;
+}
+.nt-ed.c1 {
+  border-left-color: #e8cf6a;
+}
+.nt-ed.c2 {
+  border-left-color: #a9d17a;
+}
+.nt-ed.c3 {
+  border-left-color: #9cc7e3;
+}
+.nt-ed.c4 {
+  border-left-color: #e8a7b4;
+}
+.nt-ed.c5 {
+  border-left-color: #e0a26a;
+}
+.nt-ed #ntT {
+  font-family: var(--px);
+  font-size: 10px;
+  line-height: 1.6;
+  padding: 10px 8px;
+}
+.nt-ed #ntB {
+  min-height: 160px;
+  max-height: 50vh;
+  resize: vertical;
+}
+.nt-cols {
+  display: flex;
+  gap: 10px;
+}
+.nt-c {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: #ccc6c0;
+  border: 3px solid;
+  border-color: #fff #60554a #60554a #fff;
+  cursor: pointer;
+}
+.nt-c[aria-checked="true"] {
+  outline: 3px solid #000;
+  outline-offset: 1px;
+}
+.nt-acts {
+  align-items: center;
+}
+.nt-acts #ntMeta {
+  flex: 1 1 auto;
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .nt-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .nt-q {
+    flex: none;
+    width: 100%;
+  }
+  .nt-grid {
+    columns: 2;
+    column-gap: 10px;
+  }
+  .nt-card {
+    margin-bottom: 10px;
+    font-size: 17px;
+  }
+  .nt-b {
+    -webkit-line-clamp: 8;
+  }
+  .nt-ed #ntB {
+    min-height: 140px;
+    max-height: 40vh;
+  }
+  /* beats 06-modals' phone "input 17px !important"; the title is Press Start, so 17px would be a headline */
+  .modal-b .nt-ed #ntT {
+    font-size: 10px !important;
+  }
+}

@@ -1,8 +1,8 @@
 export const APP = "http://127.0.0.1:4173/index.html";
 
-export async function openApp(page, { now = "2026-11-02T09:00:00-05:00", cfg = {}, days = {}, extra = {}, hash = "" } = {}) {
+export async function openApp(page, { now = "2026-11-02T09:00:00-05:00", cfg = {}, days = {}, notes, extra = {}, hash = "" } = {}) {
   await page.clock.install({ time: new Date(now) });
-  const state = { days, cfg: { quests: [], rules: [], idleGrove: 0, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z", ...cfg } };
+  const state = { days, ...(notes ? { notes } : {}), cfg: { quests: [], rules: [], idleGrove: 0, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z", ...cfg } };
   await page.addInitScript(([s, x]) => {
     localStorage.setItem("pc-welcomed", "1");
     if (!("pc-splash" in x)) localStorage.setItem("pc-splash", "off");

@@ -1,6 +1,7 @@
 /* ---- main navigation, and the native app shell (downloads, back button) ---- */
 import { G } from "../core/g.js";
 import { S } from "../core/00-state.js";
+import { cfg } from "../core/config.js";
 import { capPlugin, nativeApp, toB64 } from "../core/native.js";
 import { closeGrove, openGrove } from "../progress/42-grove-sky.js";
 import { renderTrends } from "../progress/trends.js";
@@ -9,6 +10,7 @@ import { closeMgr } from "../quests/38-quest-editor.js";
 import { rewardsOff } from "../rules/modes.js";
 import { closeSchedule, schOpen } from "../schedule/page.js";
 import { renderSettings } from "../settings/10-settings.js";
+import { renderNotes } from "../notes/30-notes.js";
 import { renderSubjects } from "../subjects/32-subjects.js";
 import { auGate, authOpen, closeAuth } from "../sync/55-auth-pages.js";
 import { spEl, spHide } from "../timer/43-sprint.js";
@@ -21,7 +23,11 @@ import { applyRoute, pageBack } from "./routes.js";
 export var VIEWS, curView;
 
 export function go(v, noHash) {
+  var v0 = v;
   if ((v === "grove" || v === "achievements") && rewardsOff()) v = "today";
+  if (v === "notes" && !cfg().addNotes) v = "today";
+  /* A hash naming a view that isn't available (a deep link to a switched-off add-on) is rewritten to where we landed. */
+  if (noHash && v !== v0) pageBack("#" + v);
   if (v === "grove") {
     openGrove(false);
     return;
@@ -46,6 +52,7 @@ export function go(v, noHash) {
         today: "Today",
         subjects: "Subjects",
         rules: "Rules",
+        notes: "Notes",
         achievements: "Badges",
         trends: "Trends",
         settings: "Settings",
@@ -54,6 +61,8 @@ export function go(v, noHash) {
   if (sb) sb.classList.toggle("on", v === "settings");
   var tb = document.getElementById("trendsBtn");
   if (tb) tb.classList.toggle("on", v === "trends");
+  var nb = document.getElementById("notesBtn");
+  if (nb) nb.classList.toggle("on", v === "notes");
   if (v === "settings") {
     if (prevView !== "settings") G.setTab = null;
     renderSettings();
@@ -61,6 +70,7 @@ export function go(v, noHash) {
   if (v === "subjects") renderSubjects();
   if (v === "today" || v === "achievements") render();
   if (v === "trends") renderTrends();
+  if (v === "notes") renderNotes();
 
   if (!noHash && location.hash !== "#" + v) {
     try {
@@ -74,7 +84,7 @@ export function go(v, noHash) {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
-  VIEWS = ["today", "subjects", "rules", "achievements", "trends", "settings"];
+  VIEWS = ["today", "subjects", "rules", "achievements", "trends", "notes", "settings"];
   curView = "today";
   (function () {
     var sb = document.getElementById("settingsBody"),

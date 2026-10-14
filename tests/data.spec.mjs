@@ -9,7 +9,7 @@ const openCat = async (page, id) => { const b = page.locator(`[data-st='${id}']`
 const Q = [{ id: "cs", type: "time", label: "CS work", min: 60 }];
 
 test("export then import round-trips data and stamps the schema", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q }, days: { "2026-11-01": { cs: 75, q: Q, ended: true } } });
+  await openApp(page, { cfg: { quests: Q }, days: { "2026-11-01": { cs: 75, q: Q, ended: true } }, notes: { n1: { t: "Keys", b: "In the blue jar", c: 1, u: Date.parse("2026-11-01T12:00:00-05:00") } } });
   await page.click("#setBtn");
   await openCat(page, "data");
   const dl = page.waitForEvent("download");
@@ -17,8 +17,9 @@ test("export then import round-trips data and stamps the schema", async ({ page 
   const file = join(tmpdir(), "pc-backup.json");
   await (await dl).saveAs(file);
   const data = JSON.parse(readFileSync(file, "utf8"));
-  expect(data.schema).toBe(22);
+  expect(data.schema).toBe(23);
   expect(data.days["2026-11-01"].cs).toBe(75);
+  expect(data.notes.n1.t).toBe("Keys");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await page.click("#setBtn");
@@ -29,6 +30,7 @@ test("export then import round-trips data and stamps the schema", async ({ page 
   await page.waitForTimeout(300);
   const cs = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")).days["2026-11-01"].cs);
   expect(cs).toBe(75);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")).notes.n1.b)).toBe("In the blue jar");
 });
 
 test("old schema-2 backups import and lose retired settings", async ({ page }) => {
@@ -44,7 +46,7 @@ test("old schema-2 backups import and lose retired settings", async ({ page }) =
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
   expect(st.days["2026-10-30"].cs).toBe(60);
   expect(st.cfg.bank).toBeUndefined();
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
 });
 
 test("newer backups are refused", async ({ page }) => {
@@ -64,7 +66,7 @@ test("schema 4: a one-block-per-quest schedule becomes a list of shots", async (
   await page.click("#quests .q .act button[aria-label^='More']");
   await page.waitForTimeout(900);
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.days["2026-11-02"].sched).toEqual([{ id: "b-cs", q: "cs", f: 600, t: 660, j5: true }]);
 });
 
@@ -100,7 +102,7 @@ test("schema 7: subject links become topic links, keeping a quest's old default 
   await page.click("#quests .q .act button[aria-label^='More']");
   await page.waitForTimeout(900);
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   const [cs, rd, sq] = st.cfg.quests;
   expect(cs).toMatchObject({ topics: ["t1", "t2", "t3"], subjs: ["s1", "s2"] });
   expect(rd).toMatchObject({ topics: ["t2"], subj: "s1", fin: { t: "topic", lvl: 4 } });
@@ -114,7 +116,7 @@ test("schema 9: custom achievements are dropped", async ({ page }) => {
   await page.click("#quests .q .act button[aria-label^='More']");
   await page.waitForTimeout(900);
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.cfg.customAch).toBeUndefined();
 });
 
@@ -127,7 +129,7 @@ test("streak pause ranges are kept through a backup", async ({ page }) => {
   const file = join(tmpdir(), "pc-backup-13.json");
   await (await dl).saveAs(file);
   const data = JSON.parse(readFileSync(file, "utf8"));
-  expect(data.schema).toBe(22);
+  expect(data.schema).toBe(23);
   expect(data.cfg.noStreak).toEqual([{ from: "2026-10-20", to: "2026-10-25" }]);
 });
 
@@ -140,14 +142,14 @@ test("schema 15: the ignore list is kept through a backup", async ({ page }) => 
   const file = join(tmpdir(), "pc-backup-15.json");
   await (await dl).saveAs(file);
   const data = JSON.parse(readFileSync(file, "utf8"));
-  expect(data.schema).toBe(22);
+  expect(data.schema).toBe(23);
   expect(data.cfg.ignore).toEqual(["cs"]);
 });
 
 test("schema 17 moves this device's look-and-feel choices into the settings, so they sync", async ({ page }) => {
   await openApp(page, { cfg: { quests: [{ id: "j", type: "check", label: "Journal" }] }, extra: { "pc-sfx": "off", "pc-focusview": "1", "pc-doneopen": "1", "pc-groveinfo": "0", "pc-sjfold": "[\"s1\"]" } });
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.cfg.ui).toEqual({ sfx: false, focus: true, done: true, groveInfo: false, sjfold: ["s1"] });
   await expect(page.locator("#sndBtn")).toHaveText("SFX off");
   await expect(page.locator("body")).toHaveClass(/focusview/);
@@ -156,7 +158,7 @@ test("schema 17 moves this device's look-and-feel choices into the settings, so 
 test("schema 18 drops leftovers of retired features: the bank, the old limit stamp and Top 3", async ({ page }) => {
   await openApp(page, { cfg: { quests: [{ id: "j", type: "check", label: "Journal" }], bank: false, capSet: "2026-10-20", cap: 6 }, days: { "2026-11-01": { j: true, top: [{ t: "call mum", d: true }] }, "2026-10-31": { top: [{ t: "", d: false }] } } });
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect("bank" in st.cfg).toBe(false);
   expect("capSet" in st.cfg).toBe(false);
   expect(st.cfg.cap).toBe(6);
@@ -172,7 +174,7 @@ test("schema 18 drops leftovers of retired features: the bank, the old limit sta
 test("schema 19 renames the Nether theme to Ember and draws its ground", async ({ page }) => {
   await openApp(page, { cfg: { quests: [{ id: "j", type: "check", label: "Journal" }], theme: "nether" } });
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.cfg.theme).toBe("ember");
   await expect(page.locator("#fx")).toHaveClass("ember");
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundImage)).toContain("data:image/svg+xml");
@@ -181,7 +183,7 @@ test("schema 19 renames the Nether theme to Ember and draws its ground", async (
 test("schema 20 keeps the Morning promise ranges (schema 21 too)", async ({ page }) => {
   await openApp(page, { cfg: { quests: [{ id: "j", type: "check", label: "Journal" }], vow: [{ from: "2026-10-20", to: "2026-11-03" }] } });
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.cfg.vow).toEqual([{ from: "2026-10-20", to: "2026-11-03" }]);
 });
 
@@ -189,7 +191,7 @@ test("schema 21 keeps a locked day's schedule", async ({ page }) => {
   const lock = [{ id: "a", q: "j", f: 600, t: 660 }];
   await openApp(page, { cfg: { quests: [{ id: "j", type: "time", label: "Journal", min: 30 }] }, days: { "2026-11-02": { schLock: lock, sched: lock } } });
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.days["2026-11-02"].schLock).toEqual(lock);
 });
 
@@ -198,7 +200,7 @@ test("schema 22 keeps a day's pomodoros, the pomodoro settings and a-posteriori 
   const sched = [{ id: "p1", q: "j", f: 600, t: 625, pm: true }];
   await openApp(page, { cfg: { quests: [{ id: "j", type: "time", label: "Journal", min: 30 }], pomo: { w: 50, b: 10, l: 20, every: 2, auto: true } }, days: { "2026-11-02": { pomo, sched } } });
   const st = await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
-  expect(st.schema).toBe(22);
+  expect(st.schema).toBe(23);
   expect(st.days["2026-11-02"].pomo).toEqual(pomo);
   expect(st.days["2026-11-02"].sched).toEqual(sched);
   expect(st.cfg.pomo).toEqual({ w: 50, b: 10, l: 20, every: 2, auto: true });

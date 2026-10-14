@@ -189,7 +189,12 @@ export function setSummary(id) {
   if (id === "sound")
     return (G.sfxOn ? "Sound on" : "Sound off") + " · vibration " + (c.haptics !== false ? "on" : "off");
   if (id === "extras") {
-    var on = [c.sparkTools && "Quick-start", c.addShare && "Share week", c.addTrends && "Trends"].filter(Boolean);
+    var on = [
+      c.sparkTools && "Quick-start",
+      c.addShare && "Share week",
+      c.addTrends && "Trends",
+      c.addNotes && "Notes",
+    ].filter(Boolean);
     return on.length ? on.join(", ") : "No add-ons";
   }
   if (id === "account") {
@@ -578,6 +583,11 @@ export function renderSettings() {
         srow("Share week", "A summary card to send", swc("setShare", c.addShare, "Share week")) +
         srow("Trends page", "Weekly charts in the nav", swc("setTrends", c.addTrends, "Trends page")) +
         srow(
+          "Notes page",
+          "Quick notes in the title bar; each clears 30 days after its last edit",
+          swc("setNotes", c.addNotes, "Notes page"),
+        ) +
+        srow(
           "Quick actions",
           "The two buttons above the quest list; the rest sit in \u22ee",
           '<span class="qkpick"><select id="setQk0" aria-label="First quick action">' +
@@ -633,7 +643,7 @@ export function renderSettings() {
             ) +
             srow(
               "What syncs",
-              "Quests, rules, subjects, settings, look and feel, every day\u2019s log and reflections. Not the running timer.",
+              "Quests, rules, subjects, settings, look and feel, every day\u2019s log, reflections and notes. Not the running timer.",
             ),
           "account",
         ) +
@@ -959,6 +969,7 @@ export function renderSettings() {
     ["setSpark", "sparkTools"],
     ["setShare", "addShare"],
     ["setTrends", "addTrends"],
+    ["setNotes", "addNotes"],
   ].forEach(function (p) {
     bind(p[0], "click", function () {
       var c2 = clone(cfg());
