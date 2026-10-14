@@ -135,3 +135,32 @@ test("at night the live notification uses the night sky", async ({ page }) => {
   const up = (await page.evaluate(() => window.__fn)).filter((c) => c && c.title).pop();
   expect(up.bg.dark).toBe(true);
 });
+
+test("a pomodoro's live notification carries a filling tomato, one frame a minute, and a whole one through the break", async ({ page }) => {
+  await page.addInitScript(mock(false));
+  await openApp(page, { cfg: { quests: Q, nf: { on: true }, pomo: { w: 20, b: 5, l: 15, every: 4 } } });
+  await page.click("#toolsBtn");
+  await page.click(".qmenu button:has-text('Pomodoro')");
+  await page.click("[data-pm=start]");
+  await page.clock.runFor(4000);
+  let last = (await page.evaluate(() => window.__fn)).filter((c) => c && c.title).pop();
+  expect(last.title).toBe("Pomodoro: CS work");
+  expect(last.grow.dur).toBe(20 * 60000);
+  expect(last.grow.art.length).toBe(21);
+  expect(last.grow.art[0]).not.toBe(last.grow.art[20]);
+  expect(last.next.title).toBe("Short break");
+  expect(last.next.grow.dur).toBe(5 * 60000);
+  expect(last.next.grow.art.length).toBe(6);
+  expect(new Set(last.next.grow.art).size).toBe(1);
+  await page.click("[data-pm=pause]");
+  await page.clock.runFor(4000);
+  last = (await page.evaluate(() => window.__fn)).filter((c) => c && c.title).pop();
+  expect(last.grow).toBeNull();
+  await page.click("[data-pm=pause]");
+  await page.clock.fastForward(20 * 60000 + 2000);
+  await page.clock.runFor(4000);
+  last = (await page.evaluate(() => window.__fn)).filter((c) => c && c.title).pop();
+  expect(last.title).toBe("Short break");
+  expect(last.grow.dur).toBe(5 * 60000);
+  expect(last.grow.art.length).toBe(6);
+});

@@ -12,6 +12,7 @@ import { activeDefs } from "../rules/quests-on-day.js";
 import { schLen } from "../schedule/model.js";
 import { topicName } from "../subjects/33-topics.js";
 import { spLabel } from "./43-sprint.js";
+import { pomoGrow } from "./43b-pomodoro.js";
 
 export var wakeOn, wakeLockObj, focusArtCache, focusBgCache;
 
@@ -236,14 +237,18 @@ export function focusSync(force) {
         chrono = true;
         down = true;
         when = pm.end;
-        grow = growFor(pm.end - pm.w * 60000, pm.w);
-        var pmL = !!(pm.every && (pm.n + 1) % pm.every === 0);
+        /* A tomato that fills over the pomodoro, one frame a minute so the progress bar keeps moving; the break shows the
+           whole tomato with the bar counting the break down. */
+        grow = pomoGrow(pm.end - pm.w * 60000, pm.w);
+        var pmL = !!(pm.every && (pm.n + 1) % pm.every === 0),
+          pmB = pmL ? pm.l : pm.b;
         next = {
           title: pmL ? "Long break" : "Short break",
           body: pm.auto ? "Next pomodoro when this reaches zero" : "Tap to start the next one when this reaches zero",
-          when: Math.round(pm.end + (pmL ? pm.l : pm.b) * 60000),
+          when: Math.round(pm.end + pmB * 60000),
           countdown: true,
           chrono: true,
+          grow: pomoGrow(pm.end, pmB, true),
           next: {
             title: "Break over",
             body: pm.auto ? "Next pomodoro running" : "Start your next pomodoro",
@@ -259,6 +264,7 @@ export function focusSync(force) {
         chrono = true;
         down = true;
         when = S.pomo.bend;
+        grow = pomoGrow(S.pomo.bstart, (S.pomo.bend - S.pomo.bstart) / 60000, true);
         next = { title: "Break over", body: "Start your next pomodoro", chrono: false };
       }
     } else if (S.sprint && S.sprint.phase === "break") {

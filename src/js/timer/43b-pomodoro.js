@@ -31,7 +31,7 @@ import { render } from "../ui/04-render.js";
 import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
 
-export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig;
+export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache;
 
 /* Pixel tomato (10 × 11): R body, D shade, H highlight, G stem, L leaf light. */
 export var TOMATO;
@@ -119,6 +119,46 @@ export function tomatoField() {
     ) +
     '")'
   );
+}
+/* Art for the live notification (FocusNotify's grow = {from, dur, art}): n + 1 frames of a 24 × 36 PNG, the tomato
+     drawn at 2× and revealed in red from the bottom as the stages pass (full = every frame whole, for a break). The native
+     side picks frame floor(p × n) and re-posts at each boundary, which is also what moves its progress bar, so one frame
+     per minute keeps the bar moving. Base64 without the data: prefix, like focusArt. */
+export function tomatoArt(n, full) {
+  var key = n + (full ? "f" : "");
+  if (pmArtCache[key]) return pmArtCache[key];
+  var out = [],
+    P = { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
+    Q = { R: "#8E8277", D: "#6F6459", H: "#A89A8C", G: "#7E8A74", L: "#9BAA8E" };
+  try {
+    for (var s = 0; s <= n; s++) {
+      var cv = document.createElement("canvas"),
+        W = 24,
+        H = 36;
+      cv.width = W;
+      cv.height = H;
+      var c = cv.getContext("2d"),
+        x0 = 2,
+        y0 = 7,
+        cut = full ? 0 : 11 - Math.round((s / n) * 11);
+      TOMATO.forEach(function (row, y) {
+        for (var x = 0; x < row.length; x++) {
+          var ch = row[x];
+          if (ch === ".") continue;
+          c.fillStyle = (y >= cut ? P : Q)[ch];
+          c.fillRect(x0 + x * 2, y0 + y * 2, 2, 2);
+        }
+      });
+      out.push(cv.toDataURL("image/png").split(",")[1] || "");
+    }
+  } catch (x) {
+    out = [];
+  }
+  return (pmArtCache[key] = out);
+}
+export function pomoGrow(from, mins, full) {
+  var n = Math.max(2, Math.min(30, Math.round(mins)));
+  return mins > 0 ? { from: Math.round(from), dur: Math.round(mins * 60000), art: tomatoArt(n, !!full) } : null;
 }
 export function pmCfg() {
   return Object.assign({}, PM_DEF, cfg().pomo || {});
@@ -818,6 +858,7 @@ export function init() {
   pmArm = 0;
   PM_ARM_MS = 4000;
   pmSig = "";
+  pmArtCache = {};
   G.pmQ = null;
   G.pmPhase = null;
   pmPill = document.getElementById("pmPill");
