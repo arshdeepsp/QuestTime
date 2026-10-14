@@ -33,7 +33,7 @@ import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
 import { pageBack, pageNav, viewHash } from "../ui/routes.js";
 
-export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
+export var PM_GCOL, PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
 
 export function tomatoSvg(cls, pal) {
   var P = pal || { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
@@ -928,27 +928,37 @@ export function pomoTrendsHtml(T) {
       "</div></div>"
     );
   }
-  /* One bar per day, --n tomatoes tall (a repeating background, 16-pomodoro.css), scaled by the tallest day --mx. */
-  var garden =
-    '<div class="pm-garden" role="img" aria-label="Pomodoros per day, last 14 days" style="--mx:' +
-    mx +
-    '">' +
-    s.days14
-      .map(function (n, i) {
-        return (
-          '<div class="pm-gcol' +
-          (i === 13 ? " today" : "") +
-          '"><div class="pm-gstack">' +
-          (n ? '<i class="pm-gbar" style="--n:' + n + '" data-n="' + n + '"></i>' : "") +
-          '</div><span class="pm-gn">' +
-          (n || "") +
-          '</span><span class="pm-gl">' +
-          labs[i] +
-          "</span></div>"
-        );
-      })
-      .join("") +
-    "</div>";
+  /* Tomatoes stack PM_GCOL high (a repeating background per column, 16-pomodoro.css); a day with more starts another
+     column beside it, so a 20-pomodoro day is two columns of ten at full size. --cm = the most columns any day needs
+     (the phone narrows the tomatoes to fit three), --mxc = the tallest column. */
+  var cm = Math.max(1, Math.ceil(mx / PM_GCOL)),
+    garden =
+      '<div class="pm-garden" role="img" aria-label="Pomodoros per day, last 14 days" style="--cm:' +
+      cm +
+      ";--mxc:" +
+      Math.min(mx, PM_GCOL) +
+      '">' +
+      s.days14
+        .map(function (n, i) {
+          var bars = "";
+          for (var c = 0; c < n; c += PM_GCOL) {
+            var h = Math.min(PM_GCOL, n - c);
+            bars += '<i class="pm-gbar" style="--n:' + h + '" data-n="' + h + '"></i>';
+          }
+          return (
+            '<div class="pm-gcol' +
+            (i === 13 ? " today" : "") +
+            '"><div class="pm-gstack">' +
+            bars +
+            '</div><span class="pm-gn">' +
+            (n || "") +
+            '</span><span class="pm-gl">' +
+            labs[i] +
+            "</span></div>"
+          );
+        })
+        .join("") +
+      "</div>";
   return (
     '<div class="tsec"><div class="tsec-h">Pomodoro</div><div class="tgrid">' +
     tile(
@@ -994,6 +1004,7 @@ export function pomoTrendsHtml(T) {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
+  PM_GCOL = 10;
   PM_DEF = { w: 25, b: 5, l: 15, every: 4, auto: false };
   /* The page redraws every second while a pomodoro runs, so Stop's "Stop? Not counted" arming lives outside the markup
      (pmArm = when it was armed, good for PM_ARM_MS), like the sprint's. */

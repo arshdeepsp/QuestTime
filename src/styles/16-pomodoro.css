@@ -277,21 +277,21 @@ body.au-open .pm-pill {
   justify-items: center;
   gap: 2px;
 }
-/* One tomato per pomodoro, drawn as a repeating background so a 20-pomodoro day is one element, not 20 SVGs. The tile
-   (--th, one tomato plus a blank row) shrinks so the tallest column (--mx) always fits 200px (160 on phones): 16px tiles
-   up to 12 a day, 10px at 20, never under 4px. The garden sets --mx, each bar --n. */
+/* One tomato per pomodoro, drawn as a repeating background so a column is one element, not ten SVGs. Columns are
+   PM_GCOL (10) high; a bigger day adds a column beside it. --th = tile height (a tomato plus a blank row), 16px, or less
+   when some day needs many columns (--cm) so they still fit the day's slot; --mxc = the tallest column. */
 .pm-gcard {
   margin-top: 14px;
 }
 .pm-garden {
-  --th: clamp(4px, calc(200px / var(--mx)), 16px);
+  --th: min(16px, calc(72px / var(--cm)));
 }
 .pm-gstack {
   display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  min-height: calc(var(--mx) * var(--th));
-  justify-content: flex-start;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  min-height: calc(var(--mxc) * var(--th));
   width: 100%;
   border-bottom: 4px solid #6b3c32;
   padding-bottom: 2px;
@@ -336,7 +336,7 @@ body.au-open .pm-pill {
     --k: 24px;
   }
   .pm-garden {
-    --th: clamp(3px, calc(160px / var(--mx)), 12px);
+    --th: min(12px, calc(26px / var(--cm)));
   }
 }
 @media (max-width: 420px) {

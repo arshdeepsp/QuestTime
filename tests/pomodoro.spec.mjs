@@ -189,15 +189,19 @@ test("Trends has a Pomodoro section: week count, days in a row, best day, chain,
   expect(errors).toEqual([]);
 });
 
-test("the tomato garden scales to its tallest day: 20 pomodoros fit the same height as 10, with smaller tomatoes", async ({ page }) => {
+test("the tomato garden stacks ten tomatoes a column and starts another column beside it for a bigger day", async ({ page }) => {
   const rec = (k, n) => Array.from({ length: n }, (_, i) => ({ q: "th", s: Date.parse(k + "T06:00:00-05:00") + i * 30 * 60000, e: Date.parse(k + "T06:00:00-05:00") + i * 30 * 60000 + 25 * 60000, m: 25, ok: true }));
   await openApp(page, { cfg: { quests: Q, addTrends: true }, days: { "2026-10-30": { q: Q, th: 500, pomo: rec("2026-10-30", 20) }, "2026-10-31": { q: Q, th: 75, pomo: rec("2026-10-31", 3) } }, now: `${T}T10:00:00-05:00` });
   await page.click("#trendsBtn");
-  const big = await page.locator(".pm-gbar[data-n='20']").boundingBox(), small = await page.locator(".pm-gbar[data-n='3']").boundingBox();
-  expect(Math.round(big.height)).toBe(200);
-  expect(Math.round(small.height)).toBe(30);
-  expect(Math.round(big.width)).toBeLessThanOrEqual(9);
-  await expect(page.locator(".pm-gcol", { has: page.locator("[data-n='20']") }).locator(".pm-gn")).toHaveText("20");
+  const big = page.locator(".pm-gcol", { has: page.locator(".pm-gn", { hasText: /^20$/ }) });
+  await expect(big.locator(".pm-gbar")).toHaveCount(2);
+  for (const b of await big.locator(".pm-gbar").all()) {
+    await expect(b).toHaveAttribute("data-n", "10");
+    expect(Math.round((await b.boundingBox()).height)).toBe(160);
+  }
+  const small = await page.locator(".pm-gbar[data-n='3']").boundingBox();
+  expect(Math.round(small.height)).toBe(48);
+  expect(Math.round(small.width)).toBe(13);
 });
 
 test("a day's a-posteriori pomodoro blocks don't count toward Plan kept", async ({ page }) => {
