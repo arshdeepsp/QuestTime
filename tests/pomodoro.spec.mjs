@@ -205,11 +205,11 @@ test("a new session continues today's set, so the long break follows the day's f
   await expect(page.locator(".pm-tally .tomato:not(.dim)")).toHaveCount(4);
 });
 
-test("start and finish play the tomato squish, and the done notification goes on the pc_squish channel", async ({ page }) => {
+test("start and finish play the recorded tomato squish, and the done notification goes on the pc_squish channel", async ({ page }) => {
   await page.addInitScript(() => {
-    window.__osc = [];
+    window.__sq = 0;
     const Real = window.AudioContext;
-    window.AudioContext = function () { const ac = new Real(); const mk = ac.createOscillator.bind(ac); ac.createOscillator = () => { const o = mk(); const set = o.frequency.setValueAtTime.bind(o.frequency); o.frequency.setValueAtTime = (f, t) => { window.__osc.push(f); return set(f, t); }; return o; }; return ac; };
+    window.AudioContext = function () { const ac = new Real(); const mk = ac.createBufferSource.bind(ac); ac.createBufferSource = () => { const o = mk(); const st = o.start.bind(o); o.start = (...a) => { if (o.buffer && o.buffer.duration > 0.3) window.__sq++; return st(...a); }; return o; }; return ac; };
     window.__ln = [];
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
       LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), createChannel: (c) => { (window.__ch = window.__ch || []).push(c.id); return Promise.resolve(); }, getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, channelId: n.channelId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
@@ -219,11 +219,10 @@ test("start and finish play the tomato squish, and the done notification goes on
   await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
-  expect(await page.evaluate(() => window.__osc)).toContain(95);
+  await expect.poll(() => page.evaluate(() => window.__sq)).toBe(1);
   await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1201).map((n) => n.channelId))).toEqual(["pc_squish"]);
   await expect.poll(() => page.evaluate(() => (window.__ch || []).includes("pc_squish"))).toBe(true);
-  await page.evaluate(() => { window.__osc = []; });
   await page.clock.fastForward(25 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
-  expect(await page.evaluate(() => window.__osc)).toContain(95);
+  await expect.poll(() => page.evaluate(() => window.__sq)).toBe(2);
 });
