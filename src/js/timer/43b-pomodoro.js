@@ -218,7 +218,7 @@ export function pmLocked() {
   var p = S.pomo,
     c = pmCfg();
   if (p && !(p.phase === "break" && p.long)) return true;
-  return !!(c.every && pomoDone(todayKey()) % c.every);
+  return !!(c.every && pomoOpen(todayKey()));
 }
 export function pmSet(k, v) {
   if (k !== "auto" && pmLocked()) return;
@@ -252,6 +252,24 @@ export function pomoOf(k) {
 }
 export function pomoDone(k) {
   return pomoOf(k).length;
+}
+/* Pomodoros in the day's open (unfinished) set: those after the last one that closed a set (`c: 1`, stamped by
+     pomoFinish when the long break follows). The boundary is remembered on the record, not recomputed from the current
+     cadence, so changing "every" right after a set closed doesn't reopen it (3 done, every 3 -> 5 used to read as "2 to
+     go" and End set wiped the finished set). Records from before the marker existed fall back to count % every. */
+export function pomoOpen(k) {
+  var L = pomoOf(k),
+    c = pmCfg(),
+    i = L.length;
+  while (i > 0 && !L[i - 1].c) i--;
+  if (
+    i === 0 &&
+    !L.some(function (r) {
+      return r.c;
+    })
+  )
+    return c.every ? L.length % c.every : 0;
+  return L.length - i;
 }
 export function pomoRecord(T, rec) {
   var e = Object.assign({}, S.days[T] || {});
@@ -326,7 +344,7 @@ export function pomoStart(q, at, quiet) {
     phase: "work",
     start: now,
     end: now + c.w * 60000,
-    n: c.every ? (prev ? prev.n : pomoDone(todayKey())) % c.every : prev ? prev.n : 0,
+    n: c.every ? (prev ? prev.n : pomoOpen(todayKey())) % c.every : prev ? prev.n : 0,
     paused: null,
     pausedTotal: 0,
     ints: 0,
@@ -355,10 +373,12 @@ export function pomoFinish(quiet) {
   var rec = { q: p.q, s: s, e: p.end, m: p.w, ok: true };
   if (p.topic) rec.t = p.topic;
   if (p.ints) rec.i = p.ints;
-  pomoRecord(T, rec);
-  pomoBlock(T, s, p.end, p.q);
   p.n++;
   p.long = !!(p.every && p.n % p.every === 0);
+  /* The pomodoro that closes a set is marked, so the set boundary survives a change of cadence (pomoOpen). */
+  if (p.long) rec.c = 1;
+  pomoRecord(T, rec);
+  pomoBlock(T, s, p.end, p.q);
   p.phase = "break";
   p.bstart = p.end;
   p.bend = p.end + (p.long ? p.l : p.b) * 60000;
@@ -387,8 +407,7 @@ export function pomoStop() {
      — its minutes off the quest, its session, its topic time and its schedule block — and its record removed, as if
      it had never run; a running pomodoro is voided with it. Nothing to take back at a set boundary. */
 export function pomoSetSize() {
-  var c = pmCfg();
-  return c.every ? pomoDone(todayKey()) % c.every : 0;
+  return pmCfg().every ? pomoOpen(todayKey()) : 0;
 }
 export function pomoEndSet() {
   var T = todayKey(),
@@ -835,7 +854,7 @@ export function pmDraw() {
     "</label></div>" +
     (lk
       ? '<p class="help pm-lock">Locked until this set ends' +
-        (c.every ? " \u00b7 " + (c.every - (pomoDone(T) % c.every)) + " of " + c.every + " to go" : "") +
+        (c.every ? " \u00b7 " + (c.every - (pomoOpen(T) % c.every)) + " of " + c.every + " to go" : "") +
         '</p><div class="pm-row"><span>End the set early? Everything in it is taken back: ' +
         wipeN +
         " pomodoro" +

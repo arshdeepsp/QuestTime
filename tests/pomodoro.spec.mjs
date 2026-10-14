@@ -529,3 +529,34 @@ test("without auto-start only the current pomodoro's reminders are planned", asy
   await page.click("[data-pm=start]");
   await expect.poll(() => page.evaluate(() => [...new Set(window.__ln.filter((i) => i >= 1201 && i <= 1209))].sort())).toEqual([1201, 1203]);
 });
+
+test("a finished set stays finished when the cadence changes: every 3 → 5 right after three doesn't lock, and End set has nothing to wipe", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 3 } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  for (let i = 0; i < 3; i++) {
+    await page.click("[data-pm=start]");
+    await page.clock.fastForward(10 * 60000 + 1500);
+    await expect(page.locator("#pomoPage .pm-k")).toHaveText(i < 2 ? "Short break" : "Long break");
+    await page.click("[data-pm=skip]");
+    await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  }
+  await page.click("[data-pm=end]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("3 today");
+  const recs = (await day(page)).pomo;
+  expect(recs.map((r) => !!r.c)).toEqual([false, false, true]);
+  await expect(page.locator(".pm-set")).toHaveAttribute("open", "");
+  await expect(page.locator("select[data-pk=every]")).toBeEnabled();
+  await page.selectOption("select[data-pk=every]", "5");
+  expect((await state(page)).cfg.pomo.every).toBe(5);
+  await expect(page.locator("select[data-pk=every]")).toBeEnabled();
+  await expect(page.locator(".pm-lock")).toHaveCount(0);
+  await expect(page.locator("[data-pm=endset]")).toHaveCount(0);
+  await page.click("[data-pm=start]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 5");
+  await page.click(".pm-set summary");
+  await expect(page.locator(".pm-lock")).toHaveText("Locked until this set ends · 5 of 5 to go");
+  await page.click("[data-pm=endset]");
+  await page.click("[data-pm=endset]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("3 today");
+  expect((await day(page)).th).toBe(30);
+});
