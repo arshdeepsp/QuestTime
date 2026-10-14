@@ -59,12 +59,12 @@ test("the daily wrap-up builds both pages of the PDF and downloads it", async ({
 
 test("the two quick actions above the list can be chosen in Settings › Add-ons; the ⋮ menu offers the rest", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q, sparkTools: true } });
-  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["▶ Just 5 minutes", "◷ Schedule"]);
+  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["▶ Just 5 minutes", "Schedule"]);
   await page.click("#setBtn");
   await page.click("[data-st='extras']");
   await page.selectOption("#setQk1", "pomo");
   await page.click("[data-go=today]");
-  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["▶ Just 5 minutes", "● Pomodoro"]);
+  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["▶ Just 5 minutes", "Pomodoro"]);
   await expect(page.locator("#schBtn")).toHaveCount(0);
   await page.click("#pmBtn");
   await expect(page.locator("#pomoPage")).toBeVisible();
@@ -79,13 +79,13 @@ test("the two quick actions above the list can be chosen in Settings › Add-ons
 
 test("picking the same action for both slots swaps them", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q, sparkTools: true, quick: ["sprint", "sch"] } });
-  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["▶▶ Sprint", "◷ Schedule"]);
+  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["▶▶ Sprint", "Schedule"]);
   await page.click("#setBtn");
   await page.click("[data-st='extras']");
   await page.selectOption("#setQk0", "sch");
   await expect(page.locator("#setQk1")).toHaveValue("sprint");
   await page.click("[data-go=today]");
-  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["◷ Schedule", "▶▶ Sprint"]);
+  await expect(page.locator("#sparkBar [data-qk]")).toHaveText(["Schedule", "▶▶ Sprint"]);
   await page.click("#sprBtn");
   await expect(page.locator("#gTitle")).toHaveText("Start a sprint");
 });

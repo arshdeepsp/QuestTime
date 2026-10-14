@@ -9,13 +9,31 @@ import { shareWeek } from "../progress/share-week.js";
 import { closeQMenu } from "../quests/11-row-menu.js";
 import { openSchedule } from "../schedule/page.js";
 import { openSprintSetup } from "../timer/43-sprint.js";
-import { openPomo } from "../timer/43b-pomodoro.js";
+import { openPomo, tomatoSvg } from "../timer/43b-pomodoro.js";
 import { openBatch, openPick, start5 } from "../tools/28-spark-tools.js";
 import { go } from "./44-navigation.js";
 import { toggleFocusView } from "./48-declutter.js";
 import { popMenu } from "./menus.js";
 
-export var QUICK, QUICK_DEF;
+export var QUICK, QUICK_DEF, CLOCK_PX, LIST_PX;
+
+/* Small pixel icons for the slot buttons (the ◷ ● ☰ glyphs aren't in Press Start 2P and the fallback font sat low). */
+export function px(rows) {
+  var r = "";
+  rows.forEach(function (row, y) {
+    for (var x = 0; x < row.length; x++)
+      if (row[x] !== ".") r += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>';
+  });
+  return (
+    '<svg viewBox="0 0 ' +
+    rows[0].length +
+    " " +
+    rows.length +
+    '" class="qk-i" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor">' +
+    r +
+    "</svg>"
+  );
+}
 
 export function quickSlots() {
   var q = cfg().quick;
@@ -65,6 +83,9 @@ export function quickMenu() {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
+  QUICK_DEF = ["j5", "sch"];
+  CLOCK_PX = ["..####..", ".#....#.", "#...#..#", "#...#..#", "#...##.#", "#......#", ".#....#.", "..####.."];
+  LIST_PX = ["#.#####.", "........", "#.#####.", "........", "#.#####."];
   QUICK = {
     j5: {
       name: "Just 5",
@@ -75,13 +96,12 @@ export function init() {
         start5();
       },
     },
-    sch: { name: "Schedule", el: "schBtn", html: "&#9719; Schedule", go: openSchedule },
-    pomo: { name: "Pomodoro", el: "pmBtn", html: "&#9679; Pomodoro", go: openPomo },
+    sch: { name: "Schedule", el: "schBtn", html: px(CLOCK_PX) + " Schedule", go: openSchedule },
+    pomo: { name: "Pomodoro", el: "pmBtn", html: tomatoSvg("qk-i") + " Pomodoro", go: openPomo },
     sprint: { name: "Sprint", el: "sprBtn", html: "&#9654;&#9654; Sprint", go: openSprintSetup },
     pick: { name: "Pick for me", el: "pickBtn", html: "? Pick for me", go: openPick, spark: true },
-    batch: { name: "Batch to-dos", el: "batchBtn", html: "&#9776; Batch to-dos", go: openBatch, spark: true },
+    batch: { name: "Batch to-dos", el: "batchBtn", html: px(LIST_PX) + " Batch to-dos", go: openBatch, spark: true },
   };
-  QUICK_DEF = ["j5", "sch"];
   renderQuick();
   document.getElementById("sparkBar").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-qk]");

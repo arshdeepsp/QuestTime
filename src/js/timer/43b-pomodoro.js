@@ -26,6 +26,7 @@ import { stopTimer } from "./13-focus-timer.js";
 import { spAdd, spFmt } from "./43-sprint.js";
 import { focusSync } from "./44b-live-notification.js";
 import { addSession } from "./sessions.js";
+import { tomatoRows } from "./tomato.js";
 import { sfx } from "../ui/01-sound.js";
 import { render } from "../ui/04-render.js";
 import { haptic } from "../ui/45-gestures.js";
@@ -33,13 +34,10 @@ import { setSync } from "../ui/feedback.js";
 
 export var PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache;
 
-/* Pixel tomato (10 × 11): R body, D shade, H highlight, G stem, L leaf light. */
-export var TOMATO;
-
 export function tomatoSvg(cls, pal) {
   var P = pal || { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
     r = "";
-  TOMATO.forEach(function (row, y) {
+  tomatoRows().forEach(function (row, y) {
     for (var x = 0; x < row.length; x++) {
       var ch = row[x];
       if (ch !== ".") r += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + P[ch] + '"/>';
@@ -78,7 +76,7 @@ export function tomatoField() {
       var P = dim
         ? { R: "#B9433B", D: "#8E2E27", H: "#CF6A61", G: "#4F7A32", L: "#6FA64E" }
         : { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" };
-      TOMATO.forEach(function (row, yy) {
+      tomatoRows().forEach(function (row, yy) {
         for (var xx = 0; xx < row.length; xx++) {
           var ch = row[xx];
           if (ch !== ".")
@@ -141,7 +139,7 @@ export function tomatoArt(n, full) {
         x0 = 2,
         y0 = 7,
         cut = full ? 0 : 11 - Math.round((s / n) * 11);
-      TOMATO.forEach(function (row, y) {
+      tomatoRows().forEach(function (row, y) {
         for (var x = 0; x < row.length; x++) {
           var ch = row[x];
           if (ch === ".") continue;
@@ -172,7 +170,7 @@ export function pomoBg() {
     c.fillStyle = "#7A4A3E";
     for (var i = 0; i < (W * H) / 90; i++) c.fillRect((i * 37) % W, (i * 53 + 7) % H, 3, 1);
     spots.forEach(function (sp) {
-      TOMATO.forEach(function (row, y) {
+      tomatoRows().forEach(function (row, y) {
         for (var x = 0; x < row.length; x++) {
           var ch = row[x];
           if (ch === ".") continue;
@@ -866,19 +864,6 @@ export function pomoTrendsHtml(T) {
 
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
-  TOMATO = [
-    "....GG....",
-    "...GGLG...",
-    "..RRGGRR..",
-    ".RRRRRRRR.",
-    "RRHRRRRRRR",
-    "RHRRRRRRRR",
-    "RRRRRRRRRR",
-    "RRRRRRRRRD",
-    ".RRRRRRRD.",
-    "..DRRRRD..",
-    "...DDDD...",
-  ];
   PM_DEF = { w: 25, b: 5, l: 15, every: 4, auto: false };
   /* The page redraws every second while a pomodoro runs, so Stop's "Stop? Not counted" arming lives outside the markup
      (pmArm = when it was armed, good for PM_ARM_MS), like the sprint's. */

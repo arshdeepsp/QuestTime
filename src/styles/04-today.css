@@ -442,6 +442,13 @@ body.focusview #quests .q .req {
   font-size: 9px;
   padding: 10px 12px;
 }
+.sparkbar .qk-i {
+  display: inline-block;
+  width: 10px;
+  height: 11px;
+  vertical-align: middle;
+  margin: -2px 2px 0 0;
+}
 /* ===== momentum ===== */
 .heatw {
   display: flex;
