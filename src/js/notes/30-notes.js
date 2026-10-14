@@ -15,7 +15,7 @@ import { G } from "../core/g.js";
 import { S, store } from "../core/00-state.js";
 import { cache } from "../core/storage.js";
 import { esc } from "../core/util.js";
-import { closeG, openG } from "../ui/18-modal.js";
+import { closeG, gEl, openG } from "../ui/18-modal.js";
 import { haptic } from "../ui/45-gestures.js";
 import { curView, go } from "../ui/44-navigation.js";
 import { setSync } from "../ui/feedback.js";
@@ -246,6 +246,9 @@ export function openNote(id) {
   }
   ntEd = { id: id || noteId(), t: 0, isNew: isNew };
   ntArm = 0;
+  /* The sheet fills the phone screen for a note (gModal.nt); an existing note opens to read, keyboard closed, and a
+     tap into the text starts editing — only a new note starts in the title. */
+  gEl.classList.add("nt");
   var col = n ? n.col | 0 : 0,
     pin = !!(n && n.pin);
   openG(
@@ -322,10 +325,9 @@ export function openNote(id) {
           setSync("Note deleted.");
         }
       });
-      var f = document.getElementById(isNew ? "ntT" : "ntB");
-      if (f) f.focus();
     },
     function () {
+      gEl.classList.remove("nt");
       if (!ntEd) {
         renderNotes();
         return;
@@ -337,6 +339,7 @@ export function openNote(id) {
       ntEd = null;
       renderNotes();
     },
+    !isNew,
   );
   /* Blur (switching apps, the keyboard going) saves too. */
   var ta = document.getElementById("ntB"),

@@ -5,7 +5,8 @@ import { metQ } from "../rules/day-rules.js";
 
 export var gEl, gBody, gTitle, gScrim, gLast, gOnClose;
 
-export function openG(title, build, onClose) {
+/* noFocus: leave the keyboard closed (a note opened to read, say). */
+export function openG(title, build, onClose, noFocus) {
   gLast = document.activeElement;
   gTitle.textContent = title;
   gBody.innerHTML = "";
@@ -13,6 +14,7 @@ export function openG(title, build, onClose) {
   gEl.hidden = false;
   gScrim.hidden = false;
   build(gBody);
+  if (noFocus) return;
   var f = gBody.querySelector("input,textarea,select,button");
   if (f) f.focus();
 }

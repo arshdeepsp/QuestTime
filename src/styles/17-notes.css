@@ -218,6 +218,29 @@
     min-height: 140px;
     max-height: 40vh;
   }
+  /* a note takes the whole screen on a phone (Keep's open-note view): the sheet is full height and the text fills it */
+  body .modal.nt .modal-card {
+    height: 100%;
+    max-height: 100%;
+    animation: none;
+  }
+  .modal.nt .modal-b {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .modal.nt .nt-ed {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+  .modal.nt .nt-ed #ntB {
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+    resize: none;
+  }
   /* beats 06-modals' phone "input 17px !important"; the title is Press Start, so 17px would be a headline */
   .modal-b .nt-ed #ntT {
     font-size: 10px !important;

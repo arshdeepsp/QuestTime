@@ -156,3 +156,21 @@ test("turning the add-on off while on the page goes back to Today", async ({ pag
   await page.goto("http://127.0.0.1:4173/index.html#notes");
   await expect(page.locator("[data-view=today]")).toBeVisible();
 });
+
+test.describe("phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  test("an existing note opens full screen to read, keyboard closed; a new note starts in the title", async ({ page }) => {
+    await openApp(page, { cfg: { quests: Q, addNotes: true }, now: NOW, hash: "#notes", notes: { a: note("Thesis", "ask about the baseline", 5 * 60000) } });
+    await page.locator(".nt-card").click();
+    await expect(page.locator("#gModal")).toBeVisible();
+    expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).not.toMatch(/^nt[TB]$/);
+    const card = await page.locator("#gModal .modal-card").boundingBox();
+    expect(Math.round(card.height)).toBeGreaterThanOrEqual(840);
+    const ta = await page.locator("#ntB").boundingBox();
+    expect(ta.height).toBeGreaterThan(300);
+    await page.click("#gClose");
+    await expect(page.locator("#gModal")).toHaveClass(/^((?!nt).)*$/);
+    await page.click("#ntNew");
+    await expect(page.locator("#ntT")).toBeFocused();
+  });
+});
