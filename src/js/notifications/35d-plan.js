@@ -138,12 +138,16 @@ export function nfPlan() {
       else
         push(
           id,
-          "Break over",
-          pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
+          ph.long && !ph.cont ? "Set done" : "Break over",
+          ph.cont
+            ? "The next pomodoro has started."
+            : ph.long
+              ? "Tap to start a new set."
+              : "Tap to start your next pomodoro.",
           ph.at,
           null,
           "pc_beep1",
-          pm.auto ? null : "pc_pomo_brk",
+          ph.cont ? null : "pc_pomo_brk",
         );
     });
   }

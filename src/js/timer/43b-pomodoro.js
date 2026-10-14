@@ -221,7 +221,7 @@ export function pmLocked() {
   return !!(c.every && pomoOpen(todayKey()));
 }
 export function pmSet(k, v) {
-  if (k !== "auto" && pmLocked()) return;
+  if (k !== "auto" && k !== "chain" && pmLocked()) return;
   var c = clone(cfg());
   c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
   c.pomo[k] = v;
@@ -353,6 +353,7 @@ export function pomoStart(q, at, quiet) {
     l: c.l,
     every: c.every,
     auto: !!c.auto,
+    chain: !!c.chain,
   };
   pmArm = 0;
   callCheck();
@@ -489,6 +490,11 @@ export function pomoAhead(p, max) {
     n = p.n,
     t,
     L;
+  /* Auto-start carries on after a short break; after a long break (the set is done) only with `chain` on. A "brk"
+     entry's `cont` says whether the next pomodoro starts by itself at that moment. */
+  function cont(long) {
+    return !!p.auto && (!long || !!p.chain);
+  }
   if (p.phase === "work") {
     if (p.paused) return out;
     t = p.end;
@@ -496,13 +502,14 @@ export function pomoAhead(p, max) {
     L = !!(p.every && n % p.every === 0);
     out.push({ kind: "done", at: t, n: n, long: L });
     t += (L ? p.l : p.b) * 60000;
-    out.push({ kind: "brk", at: t, n: n });
+    out.push({ kind: "brk", at: t, n: n, long: L, cont: cont(L) });
   } else {
     if (p.breakDone) return out;
     t = p.bend;
-    out.push({ kind: "brk", at: t, n: n });
+    L = !!p.long;
+    out.push({ kind: "brk", at: t, n: n, long: L, cont: cont(L) });
   }
-  if (!p.auto) return out;
+  if (!cont(L)) return out;
   for (var i = 0; i < (max || 0); i++) {
     var s = t;
     n++;
@@ -511,7 +518,8 @@ export function pomoAhead(p, max) {
     out.push({ kind: "start", at: s, n: n });
     out.push({ kind: "done", at: t, n: n, long: L });
     t += (L ? p.l : p.b) * 60000;
-    out.push({ kind: "brk", at: t, n: n });
+    out.push({ kind: "brk", at: t, n: n, long: L, cont: cont(L) });
+    if (!cont(L)) break;
   }
   return out;
 }
@@ -553,7 +561,7 @@ export function pomoTick() {
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
           } catch (x) {}
         }
-        if (p.auto) {
+        if (p.auto && (!p.long || p.chain)) {
           pomoNext(at, late);
           ch = false;
           p = S.pomo;
@@ -689,6 +697,7 @@ export function pmClick(ev) {
   } else if (a === "skip") pomoSkipBreak();
   else if (a === "end") pomoStop();
   else if (a === "auto") pmSet("auto", !pmCfg().auto);
+  else if (a === "chain") pmSet("chain", !pmCfg().chain);
   pmSig = "";
   pmDraw();
 }
@@ -754,11 +763,11 @@ export function pmDraw() {
     time = spFmt(left);
     sub = esc(p.label) + (p.topic && topicName(p.topic) ? " · " + esc(topicName(p.topic)) : "");
   } else if (p && p.phase === "break") {
-    kick = p.breakDone ? "Break over" : p.long ? "Long break" : "Short break";
+    kick = p.breakDone ? (p.long ? "Set done" : "Break over") : p.long ? "Long break" : "Short break";
     big = tomatoFill(100);
     time = p.breakDone ? "Ready" : spFmt(p.bend - now);
     sub = p.breakDone
-      ? "Next: " + esc(pmLabel(cur))
+      ? (p.long ? "Another set? Next: " : "Next: ") + esc(pmLabel(cur))
       : p.long
         ? "Stand up, walk, drink water."
         : "Eyes off the screen for a bit.";
@@ -865,7 +874,13 @@ export function pmDraw() {
       : "") +
     '<div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
     !!c.auto +
-    '" aria-label="Auto-start next pomodoro" data-pm="auto"><span></span></button></div><p class="help">Lengths are set for a whole set of pomodoros. All or nothing: stop early and nothing is logged.</p></details>' +
+    '" aria-label="Auto-start next pomodoro" data-pm="auto"><span></span></button></div>' +
+    (c.auto
+      ? '<div class="pm-row"><span>After a long break, start the next set too</span><button type="button" class="sw" role="switch" aria-checked="' +
+        !!c.chain +
+        '" aria-label="Start the next set after a long break" data-pm="chain"><span></span></button></div>'
+      : "") +
+    '<p class="help">Lengths are set for a whole set of pomodoros. All or nothing: stop early and nothing is logged.</p></details>' +
     '<div class="pm-log"><div class="sh2">Today</div>' +
     (log
       ? '<ul class="pm-list">' + log + "</ul>"
@@ -885,8 +900,8 @@ export function pmDraw() {
     ft =
       '<div class="pm-acts"><button type="button" class="stone save" data-pm="start"' +
       (p.breakDone ? "" : " hidden") +
-      ">Start pomodoro " +
-      ((p.every ? p.n % p.every : p.n) + 1) +
+      ">" +
+      (p.long ? "Start a new set" : "Start pomodoro " + ((p.every ? p.n % p.every : p.n) + 1)) +
       '</button><button type="button" class="stone" data-pm="skip"' +
       (p.breakDone ? " hidden" : "") +
       '>Skip break</button><button type="button" class="stone del" data-pm="end">End session</button></div>';

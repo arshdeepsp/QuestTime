@@ -251,7 +251,7 @@ export function focusSync(force) {
         down = true;
         when = S.pomo.bend;
         grow = pomoGrow(S.pomo.bstart, (S.pomo.bend - S.pomo.bstart) / 60000, true);
-        next = pomoChain(S.pomo, pomoAhead(S.pomo, 2), 0) || pomoOverCard(S.pomo);
+        next = pomoChain(S.pomo, pomoAhead(S.pomo, 2), 0);
       }
     } else if (S.sprint && S.sprint.phase === "break") {
       t = S.sprint.long ? "Long break" : "Decision break";
@@ -323,8 +323,14 @@ export function focusSync(force) {
   legacy();
 }
 
-export function pomoOverCard(pm) {
-  return { title: "Break over", body: pm.auto ? "Next pomodoro running" : "Start your next pomodoro", chrono: false };
+export function pomoOverCard(pm, x) {
+  /* x = the "brk" phase this card follows (pomoAhead): a set's end without chain waits for a new set. */
+  var setDone = x && x.long && !x.cont;
+  return {
+    title: setDone ? "Set done" : "Break over",
+    body: x && x.cont ? "Next pomodoro running" : setDone ? "Start a new set when ready" : "Start your next pomodoro",
+    chrono: false,
+  };
 }
 /* The handoff chain after the state being posted, from pomoAhead's phases from index i: a break counting down (whole
      tomato), then with auto-start the next pomodoro counting down (tomato filling), its break, and so on; the native
@@ -343,10 +349,10 @@ export function pomoChain(pm, ph, i) {
       countdown: true,
       chrono: true,
       grow: pomoGrow(x.at, mins, true),
-      next: pomoChain(pm, ph, i + 2) || pomoOverCard(pm),
+      next: pomoChain(pm, ph, i + 2) || pomoOverCard(pm, brk),
     };
   }
-  if (x.kind === "brk") return pomoChain(pm, ph, i + 1);
+  if (x.kind === "brk") return pomoChain(pm, ph, i + 1) || pomoOverCard(pm, x);
   /* start: the next pomodoro, counting down to its end */
   var done = ph[i + 1];
   return {

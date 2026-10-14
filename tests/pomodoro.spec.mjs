@@ -79,7 +79,7 @@ test("the break ends with Start pomodoro 2, Skip break skips it, and the fourth 
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
   await expect(page.locator("#pomoPage .pm-time")).toHaveText(/^(10:00|9:5\d)$/);
   await page.clock.fastForward(10 * 60000 + 1500);
-  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Set done");
   expect((await day(page)).th).toBe(30);
   expect((await day(page)).pomo.length).toBe(2);
   await page.click("[data-pm=end]");
@@ -281,7 +281,7 @@ test("the set's last pomodoro beeps three times and its notification goes on pc_
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
   await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(4);
   await page.click("[data-pm=skip]");
-  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Set done");
   await page.click("[data-pm=start]:visible");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
   await expect.poll(() => page.evaluate(() => window.__sq)).toBe(1);
@@ -538,7 +538,7 @@ test("a finished set stays finished when the cadence changes: every 3 → 5 righ
     await page.clock.fastForward(10 * 60000 + 1500);
     await expect(page.locator("#pomoPage .pm-k")).toHaveText(i < 2 ? "Short break" : "Long break");
     await page.click("[data-pm=skip]");
-    await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+    await expect(page.locator("#pomoPage .pm-k")).toHaveText(i < 2 ? "Break over" : "Set done");
   }
   await page.click("[data-pm=end]");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("3 today");
@@ -559,4 +559,54 @@ test("a finished set stays finished when the cadence changes: every 3 → 5 righ
   await page.click("[data-pm=endset]");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("3 today");
   expect((await day(page)).th).toBe(30);
+});
+
+test("auto-start stops at the end of a set: after the long break the card waits for a new set; with the next-set switch on it carries on", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 2, auto: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click(".pm-set summary");
+  await expect(page.locator("[data-pm=chain]")).toHaveAttribute("aria-checked", "false");
+  await page.click("[data-pm=start]");
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  await page.clock.fastForward(3 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 2 of 2");
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Set done");
+  await expect(page.locator("[data-pm=start]:visible")).toHaveText("Start a new set");
+  expect((await state(page)).pomo.phase).toBe("break");
+  await page.click(".pm-set summary");
+  await page.click("[data-pm=chain]");
+  expect((await state(page)).cfg.pomo.chain).toBe(true);
+  await page.click("[data-pm=start]:visible");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 2");
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(3 * 60000 + 1500);
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 2");
+  expect((await day(page)).pomo.length).toBe(4);
+});
+
+test("without the next-set switch the reminders ahead stop at the set's end, and the last one says the set is done", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__ln = [];
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: () => Promise.resolve(), createChannel: () => Promise.resolve(), getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, title: n.title, body: n.body, act: n.actionTypeId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
+      App: { addListener: () => Promise.resolve({}) }
+    } };
+  });
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true }, pomo: { w: 25, b: 5, l: 15, every: 2, auto: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  const ids = async () => page.evaluate(() => { const m = {}; window.__ln.forEach((n) => { if (n.id >= 1201 && n.id <= 1209) m[n.id] = n; }); return m; });
+  await expect.poll(async () => Object.keys(await ids()).map(Number).sort()).toEqual([1201, 1203, 1204, 1205]);
+  const m = await ids();
+  expect(m[1203].body).toBe("The next pomodoro has started.");
+  expect(m[1205].title).toBe("Set done");
+  expect(m[1205].body).toBe("Tap to start a new set.");
+  expect(m[1205].act).toBe("pc_pomo_brk");
 });
