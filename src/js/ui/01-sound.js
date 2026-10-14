@@ -18,11 +18,26 @@ export function tone(f, t0, dur, type, vol) {
   o.start(AC.currentTime + t0);
   o.stop(AC.currentTime + t0 + dur + 0.02);
 }
+export function glide(f0, f1, t0, dur, type, vol) {
+  var o = AC.createOscillator(),
+    g = AC.createGain(),
+    at = AC.currentTime + t0;
+  o.type = type || "triangle";
+  o.frequency.setValueAtTime(f0, at);
+  o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+  g.gain.setValueAtTime(vol || 0.08, at);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  o.connect(g);
+  g.connect(AC.destination);
+  o.start(at);
+  o.stop(at + dur + 0.02);
+}
 export function sfx(kind) {
   try {
     if (kind === "base") haptic("medium", true);
     else if (kind === "clear" || kind === "level" || kind === "chime") haptic("success", true);
     else if (kind === "stop") haptic("heavy", true);
+    else if (kind === "squish") haptic("medium", true);
     else if (kind === "fail") haptic("error", true);
   } catch (x) {}
   if (!G.sfxOn) return;
@@ -55,6 +70,11 @@ export function sfx(kind) {
       tone(f, i * 0.13, 0.26, "square", 0.07);
     });
     tone(392, 0.55, 0.4, "square", 0.06);
+  } else if (kind === "squish") {
+    /* Tomato squish (pomodoro start and finish): a wet pitch drop with a short splat, like native pc_squish.wav. */
+    glide(640, 95, 0, 0.32, "triangle", 0.11);
+    glide(1280, 190, 0, 0.2, "sine", 0.03);
+    tone(70, 0, 0.06, "sawtooth", 0.05);
   } else if (kind === "level") {
     [392, 523, 659, 784, 659, 1047].forEach(function (f, i) {
       tone(f, i * 0.1, 0.18, "triangle", 0.09);

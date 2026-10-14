@@ -110,6 +110,8 @@ export function nfPlan() {
         "Pomodoro done \u2014 take your break",
         pm.label + " logged. " + pmBrk + "-minute " + (pmLong ? "long " : "") + "break starts now.",
         pm.end,
+        null,
+        "pc_squish",
       );
     if (pm.phase === "break" && !pm.breakDone)
       push(
@@ -390,6 +392,16 @@ export function ensureChannels() {
       vibration: true,
       lights: true,
       sound: "pc_stop.wav",
+    }),
+    ln.createChannel({
+      id: "pc_squish",
+      name: "Pomodoro done",
+      description: "A pomodoro ran to the end",
+      importance: 5,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+      sound: "pc_squish.wav",
     }),
     ln.createChannel({
       id: "pc_focus",

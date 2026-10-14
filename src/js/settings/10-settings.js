@@ -24,6 +24,7 @@ import { focusSync } from "../timer/44b-live-notification.js";
 import { elapsed, render } from "../ui/04-render.js";
 import { applyTheme } from "../ui/08-themes.js";
 import { closeG, openG } from "../ui/18-modal.js";
+import { QUICK, quickSlots } from "../ui/23-quick-actions.js";
 import { openHelp } from "../ui/24-help.js";
 import { go } from "../ui/44-navigation.js";
 import { haptic } from "../ui/45-gestures.js";
@@ -140,6 +141,11 @@ export function sgroup(title, rows, help) {
     rows +
     "</div></section>"
   );
+}
+export function quickOpts() {
+  return Object.keys(QUICK).map(function (id) {
+    return [id, QUICK[id].name];
+  });
 }
 export function opt(list, cur) {
   return list
@@ -568,7 +574,16 @@ export function renderSettings() {
         swc("setSpark", c.sparkTools, "Quick-start tools"),
       ) +
         srow("Share week", "A summary card to send", swc("setShare", c.addShare, "Share week")) +
-        srow("Trends page", "Weekly charts in the nav", swc("setTrends", c.addTrends, "Trends page")),
+        srow("Trends page", "Weekly charts in the nav", swc("setTrends", c.addTrends, "Trends page")) +
+        srow(
+          "Quick actions",
+          "The two buttons above the quest list; the rest sit in \u22ee",
+          '<span class="qkpick"><select id="setQk0" aria-label="First quick action">' +
+            opt(quickOpts(), quickSlots()[0]) +
+            '</select><select id="setQk1" aria-label="Second quick action">' +
+            opt(quickOpts(), quickSlots()[1]) +
+            "</select></span>",
+        ),
     );
   } else if (G.setTab === "account") {
     var ac = cl().account(),
@@ -921,6 +936,19 @@ export function renderSettings() {
   el.querySelectorAll("[data-sty]").forEach(function (x) {
     x.addEventListener("click", function () {
       applyStyle(x.getAttribute("data-sty"));
+      renderSettings();
+    });
+  });
+  [0, 1].forEach(function (i) {
+    bind("setQk" + i, "change", function () {
+      var q = quickSlots().slice(),
+        v = this.value;
+      if (q[1 - i] === v) q[1 - i] = q[i];
+      q[i] = v;
+      var c2 = clone(cfg());
+      c2.quick = q;
+      saveCfg(c2);
+      render();
       renderSettings();
     });
   });

@@ -24,6 +24,7 @@ const rawDir = path.join("android", "app", "src", "main", "res", "raw");
 fs.mkdirSync(rawDir, { recursive: true });
 fs.copyFileSync(path.join("native", "android", "pc_chime.wav"), path.join(rawDir, "pc_chime.wav"));
 fs.copyFileSync(path.join("native", "android", "pc_stop.wav"), path.join(rawDir, "pc_stop.wav"));
+fs.copyFileSync(path.join("native", "android", "pc_squish.wav"), path.join(rawDir, "pc_squish.wav"));
 
 fs.writeFileSync(path.join(javaDir, "MainActivity.java"), `package ${pkg};
 

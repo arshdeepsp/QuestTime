@@ -316,6 +316,13 @@ details.rules > summary .sdrag {
   align-items: center;
   gap: 6px;
 }
+.qkpick {
+  display: grid;
+  gap: 4px;
+}
+.qkpick select {
+  max-width: 150px;
+}
 .scard input,
 .scard select {
   box-sizing: border-box;

@@ -35,6 +35,7 @@ import { openSprintSetup } from "../timer/43-sprint.js";
 import { renderHudExtras } from "../tools/deadlines-hud.js";
 import { renderPark } from "../tools/park-it.js";
 import { sfx } from "./01-sound.js";
+import { renderQuick } from "./23-quick-actions.js";
 import { curView, go } from "./44-navigation.js";
 import { applyHide } from "./48-declutter.js";
 import { lockIn } from "./feedback.js";
@@ -281,6 +282,7 @@ export function renderBody(fromClick) {
     }
   });
   var cf = cfg();
+  renderQuick();
   document.getElementById("sparkBar").hidden = !cf.sparkTools || past;
   document.getElementById("shareBtn").hidden = !cf.addShare;
   document.getElementById("trendsBtn").hidden = !cf.addTrends;

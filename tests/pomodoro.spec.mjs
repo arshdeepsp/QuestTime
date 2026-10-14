@@ -85,23 +85,26 @@ test("the break ends with Start pomodoro 2, Skip break skips it, and the fourth 
   expect(errors).toEqual([]);
 });
 
-test("Stop arms first; a stopped pomodoro logs its minutes but isn't counted", async ({ page }) => {
+test("Stop arms first; a stopped pomodoro logs nothing to the quest and isn't counted", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
   await page.clock.runFor(7 * 60000);
   await page.click("[data-pm=stop]");
-  await expect(page.locator("[data-pm=stop]")).toHaveText("Stop? Not counted");
+  await expect(page.locator("[data-pm=stop]")).toHaveText("Stop? Nothing logged");
   await page.clock.runFor(5000);
   await expect(page.locator("[data-pm=stop]")).toHaveText("Stop");
   await page.click("[data-pm=stop]");
   await page.click("[data-pm=stop]");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Ready");
   const e = await day(page);
-  expect(e.th).toBe(7);
+  expect(e.th).toBeUndefined();
+  expect(e.sess).toBeUndefined();
+  expect(e.tt).toBeUndefined();
   expect(e.pomo.length).toBe(1);
-  expect(e.pomo[0].ok).toBe(false);
+  expect(e.pomo[0]).toMatchObject({ q: "th", m: 7, ok: false });
   expect(e.sched).toBeUndefined();
+  await expect(page.locator("#sync")).toContainText("Nothing logged");
   await expect(page.locator(".pm-list li.no")).toContainText("stopped at 7m");
   await expect(page.locator("#pmSum")).toHaveText("None today · 0 this week");
 });
@@ -200,4 +203,27 @@ test("a new session continues today's set, so the long break follows the day's f
   await page.clock.fastForward(25 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
   await expect(page.locator(".pm-tally .tomato:not(.dim)")).toHaveCount(4);
+});
+
+test("start and finish play the tomato squish, and the done notification goes on the pc_squish channel", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__osc = [];
+    const Real = window.AudioContext;
+    window.AudioContext = function () { const ac = new Real(); const mk = ac.createOscillator.bind(ac); ac.createOscillator = () => { const o = mk(); const set = o.frequency.setValueAtTime.bind(o.frequency); o.frequency.setValueAtTime = (f, t) => { window.__osc.push(f); return set(f, t); }; return o; }; return ac; };
+    window.__ln = [];
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), createChannel: (c) => { (window.__ch = window.__ch || []).push(c.id); return Promise.resolve(); }, getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, channelId: n.channelId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
+      App: { addListener: () => Promise.resolve({}) }
+    } };
+  });
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  expect(await page.evaluate(() => window.__osc)).toContain(640);
+  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1201).map((n) => n.channelId))).toEqual(["pc_squish"]);
+  await expect.poll(() => page.evaluate(() => (window.__ch || []).includes("pc_squish"))).toBe(true);
+  await page.evaluate(() => { window.__osc = []; });
+  await page.clock.fastForward(25 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  expect(await page.evaluate(() => window.__osc)).toContain(640);
 });

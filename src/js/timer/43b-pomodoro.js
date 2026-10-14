@@ -6,7 +6,8 @@
      pausedTotal, long, breakDone, w, b, l, every, auto}; n counts finished pomodoros toward the long break. Time progresses by wall clock, so phases finish while the app
      is closed and the tick catches up on return.
      A finished focus interval is logged like a timer stop (session, topic time, quest minutes via spAdd), recorded on the
-     day as e.pomo = [{q, s, e, m, ok}] (ok = ran to the end; a stopped one logs its whole minutes but doesn't count), and
+     day as e.pomo = [{q, s, e, m, ok}] (ok = ran to the end; a stopped one logs nothing and only counts against the
+     finish rate), and
      written onto today's schedule after the fact (pomoBlock: an ended block {pm: true} in the free parts of its span), so
      the plan shows what happened without ever planning it. Nothing here grants XP or levels of its own; the rewards are
      the quest minutes and the Trends section (progress/trends.js, pomoStats). hasEntry ignores e.pomo. */
@@ -277,7 +278,7 @@ export function pomoStart(q) {
   pmArm = 0;
   callCheck();
   pmSave();
-  sfx("base");
+  sfx("squish");
   return true;
 }
 /* The focus interval ran to its end: log it, record it, put it on the schedule and start the break. */
@@ -297,13 +298,13 @@ export function pomoFinish() {
   p.bstart = p.end;
   p.bend = p.end + (p.long ? p.l : p.b) * 60000;
   p.breakDone = false;
-  sfx("chime");
+  sfx("squish");
   try {
     if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
   } catch (x) {}
 }
-/* Stop early. During a focus interval the minutes so far are logged to the quest (they were real work) but the pomodoro
-     doesn't count; during a break it just ends the session. */
+/* Stop early. A pomodoro is all or nothing: a stopped focus interval logs nothing to the quest (that is the point of cutting
+     work into pomodoros) and is only recorded as not finished, for the finish rate; during a break it just ends the session. */
 export function pomoStop() {
   var p = S.pomo,
     T = todayKey();
@@ -311,13 +312,8 @@ export function pomoStop() {
   if (p.phase === "work") {
     var at = p.paused || Date.now(),
       m = Math.floor((at - p.start - (p.pausedTotal || 0)) / 60000);
-    if (m >= 1) {
-      addSession(T, p.q, p.start, at);
-      if (p.topic) addTopicTime(T, p.topic, m);
-      spAdd(p.q, m);
-    }
     pomoRecord(T, { q: p.q, s: p.start, e: at, m: Math.max(0, m), ok: false });
-    setSync(m >= 1 ? "+" + hm(m) + " added to " + p.label + ". Pomodoro not counted." : "Pomodoro stopped.");
+    setSync("Pomodoro stopped at " + hm(m) + ". Nothing logged: only a finished pomodoro counts.");
   }
   S.pomo = null;
   pmArm = 0;
@@ -637,7 +633,7 @@ export function pmDraw() {
     pmSel("every", [0, 2, 3, 4, 5], c.every, "n") +
     '</label></div><div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
     !!c.auto +
-    '" aria-label="Auto-start next pomodoro" data-pm="auto"><i></i></button></div><p class="help">Changes apply from the next pomodoro. A stopped pomodoro still logs its minutes to the quest, but only a finished one counts.</p></details>' +
+    '" aria-label="Auto-start next pomodoro" data-pm="auto"><i></i></button></div><p class="help">Changes apply from the next pomodoro. A pomodoro is all or nothing: stop early and nothing is logged.</p></details>' +
     '<div class="pm-log"><div class="sh2">Today</div>' +
     (log
       ? '<ul class="pm-list">' + log + "</ul>"
@@ -649,7 +645,7 @@ export function pmDraw() {
       '<div class="pm-acts"><button type="button" class="stone" data-pm="pause">' +
       (p.paused ? "Resume" : "Pause") +
       '</button><button type="button" class="stone del" data-pm="stop">' +
-      (pmArmed() ? "Stop? Not counted" : "Stop") +
+      (pmArmed() ? "Stop? Nothing logged" : "Stop") +
       "</button></div>";
   else if (p && p.phase === "break")
     ft =
