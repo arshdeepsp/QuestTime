@@ -18,8 +18,8 @@ export function tone(f, t0, dur, type, vol) {
   o.start(AC.currentTime + t0);
   o.stop(AC.currentTime + t0 + dur + 0.02);
 }
-/* Recorded samples (public/sounds/<name>.wav, the same files the native channels play): the tomato squish (pomodoro start
-     and finish) and the knuckle crack (break over). Each is fetched and decoded once into sampleBuf[name]; nothing plays
+/* Recorded samples (public/sounds/<name>.wav, the same files the native channels play): the tomato squish (a new
+     pomodoro set starting). Each is fetched and decoded once into sampleBuf[name]; nothing plays
      until it has loaded, and a failed load stays silent. */
 export function sample(name) {
   var b = sampleBuf[name];
@@ -56,7 +56,7 @@ export function sfx(kind) {
     else if (kind === "clear" || kind === "level" || kind === "chime") haptic("success", true);
     else if (kind === "stop") haptic("heavy", true);
     else if (kind === "squish") haptic("medium", true);
-    else if (kind === "crack") haptic("heavy", true);
+    else if (kind === "beep1" || kind === "beep2" || kind === "beep3") haptic("success", true);
     else if (kind === "fail") haptic("error", true);
   } catch (x) {}
   if (!G.sfxOn) return;
@@ -91,8 +91,9 @@ export function sfx(kind) {
     tone(392, 0.55, 0.4, "square", 0.06);
   } else if (kind === "squish") {
     sample("squish");
-  } else if (kind === "crack") {
-    sample("crack");
+  } else if (kind === "beep1" || kind === "beep2" || kind === "beep3") {
+    /* Pomodoro cues: one beep = back to work, two = short break, three = long break (the native pc_beepN.wav twins). */
+    for (var bi = 0; bi < +kind.slice(4); bi++) tone(880, bi * 0.22, 0.12, "square", 0.07);
   } else if (kind === "level") {
     [392, 523, 659, 784, 659, 1047].forEach(function (f, i) {
       tone(f, i * 0.1, 0.18, "triangle", 0.09);

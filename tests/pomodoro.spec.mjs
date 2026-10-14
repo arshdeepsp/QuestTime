@@ -207,26 +207,66 @@ test("a new session continues today's set, so the long break follows the day's f
   await expect(page.locator(".pm-tally .tomato:not(.dim)")).toHaveCount(4);
 });
 
-test("start and finish play the recorded tomato squish, and the done notification goes on the pc_squish channel", async ({ page }) => {
-  await page.addInitScript(() => {
-    window.__sq = 0;
-    const Real = window.AudioContext;
-    window.AudioContext = function () { const ac = new Real(); const mk = ac.createBufferSource.bind(ac); ac.createBufferSource = () => { const o = mk(); const st = o.start.bind(o); o.start = (...a) => { if (o.buffer && o.buffer.duration > 0.3) window.__sq++; return st(...a); }; return o; }; return ac; };
-    window.__ln = [];
-    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
-      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), createChannel: (c) => { (window.__ch = window.__ch || []).push(c.id); return Promise.resolve(); }, getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, channelId: n.channelId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
-      App: { addListener: () => Promise.resolve({}) }
-    } };
-  });
+const SOUND_SPY = () => {
+  /* __sq counts recorded-sample plays (the squish, > 0.3 s); __bp collects 880 Hz oscillator tones (the beeps). */
+  window.__sq = 0;
+  window.__bp = [];
+  const Real = window.AudioContext;
+  window.AudioContext = function () {
+    const ac = new Real();
+    const mk = ac.createBufferSource.bind(ac), mo = ac.createOscillator.bind(ac);
+    ac.createBufferSource = () => { const o = mk(); const st = o.start.bind(o); o.start = (...a) => { if (o.buffer && o.buffer.duration > 0.3) window.__sq++; return st(...a); }; return o; };
+    ac.createOscillator = () => { const o = mo(); const sv = o.frequency.setValueAtTime.bind(o.frequency); o.frequency.setValueAtTime = (f, t) => { if (f === 880) window.__bp.push(f); return sv(f, t); }; return o; };
+    return ac;
+  };
+  window.__ln = [];
+  window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
+    LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: () => Promise.resolve(), createChannel: (c) => { (window.__ch = window.__ch || []).push(c.id); return Promise.resolve(); }, getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, channelId: n.channelId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
+    App: { addListener: () => Promise.resolve({}) }
+  } };
+};
+const chan = (page, id) => page.evaluate((id) => window.__ln.filter((n) => n.id === id).map((n) => n.channelId), id);
+
+test("a new set starts with the squish; a finished pomodoro beeps twice, the break ending once, and the next start once", async ({ page }) => {
+  await page.addInitScript(SOUND_SPY);
   await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
   await expect.poll(() => page.evaluate(() => window.__sq)).toBe(1);
-  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1201).map((n) => n.channelId))).toEqual(["pc_squish"]);
-  await expect.poll(() => page.evaluate(() => (window.__ch || []).includes("pc_squish"))).toBe(true);
+  await expect.poll(() => chan(page, 1201)).toEqual(["pc_beep2"]);
+  await expect.poll(() => chan(page, 1203)).toEqual(["pc_beep1"]);
+  await expect.poll(() => page.evaluate(() => ["pc_beep1", "pc_beep2", "pc_beep3"].every((c) => (window.__ch || []).includes(c)))).toBe(true);
   await page.clock.fastForward(25 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
-  await expect.poll(() => page.evaluate(() => window.__sq)).toBe(2);
+  await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(2);
+  await expect.poll(() => chan(page, 1202)).toEqual(["pc_beep1"]);
+  await page.clock.fastForward(5 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(3);
+  await page.click("[data-pm=start]:visible");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 2 of 4");
+  await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(4);
+  expect(await page.evaluate(() => window.__sq)).toBe(1);
+});
+
+test("the set's last pomodoro beeps three times and its notification goes on pc_beep3; the next session is a new set and squishes", async ({ page }) => {
+  await page.addInitScript(SOUND_SPY);
+  const done = Array.from({ length: 3 }, (_, i) => ({ q: "th", s: at(8, i * 30), e: at(8, i * 30 + 25), m: 25, ok: true }));
+  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, days: { [T]: { q: Q, th: 75, pomo: done } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await page.click("[data-pm=start]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 4 of 4");
+  await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(1);
+  expect(await page.evaluate(() => window.__sq)).toBe(0);
+  await expect.poll(() => chan(page, 1201)).toEqual(["pc_beep3"]);
+  await page.clock.fastForward(25 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
+  await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(4);
+  await page.click("[data-pm=skip]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  await page.click("[data-pm=start]:visible");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
+  await expect.poll(() => page.evaluate(() => window.__sq)).toBe(1);
 });
 
 test("a quest row's menu starts a pomodoro on that quest and opens the page", async ({ page }) => {
@@ -407,26 +447,3 @@ test("a pomodoro whose interval ended while the app was closed is finished on la
   expect(errors).toEqual([]);
 });
 
-test("a break ending plays the knuckle crack, and the break-over notifications go on the pc_crack channel", async ({ page }) => {
-  await page.addInitScript(() => {
-    window.__sq = [];
-    const Real = window.AudioContext;
-    window.AudioContext = function () { const ac = new Real(); const mk = ac.createBufferSource.bind(ac); ac.createBufferSource = () => { const o = mk(); const st = o.start.bind(o); o.start = (...a) => { if (o.buffer) window.__sq.push(Math.round(o.buffer.duration * 100) / 100); return st(...a); }; return o; }; return ac; };
-    window.__ln = [];
-    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
-      LocalNotifications: { requestPermissions: () => Promise.resolve({ display: "granted" }), registerActionTypes: () => Promise.resolve(), createChannel: (c) => { (window.__ch = window.__ch || []).push(c.id); return Promise.resolve(); }, getPending: () => Promise.resolve({ notifications: [] }), cancel: () => Promise.resolve(), schedule: (o) => { o.notifications.forEach((n) => window.__ln.push({ id: n.id, channelId: n.channelId })); return Promise.resolve(); }, addListener: () => Promise.resolve({}), removeDeliveredNotifications: () => Promise.resolve() },
-      App: { addListener: () => Promise.resolve({}) }
-    } };
-  });
-  await openApp(page, { cfg: { quests: Q, nf: { on: true, timer: true } }, now: `${T}T10:00:00-05:00` });
-  await openPm(page);
-  await page.click("[data-pm=start]");
-  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1203).map((n) => n.channelId))).toEqual(["pc_crack"]);
-  await expect.poll(() => page.evaluate(() => (window.__ch || []).includes("pc_crack"))).toBe(true);
-  await page.clock.fastForward(25 * 60000 + 1500);
-  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
-  await expect.poll(() => page.evaluate(() => window.__ln.filter((n) => n.id === 1202).map((n) => n.channelId))).toEqual(["pc_crack"]);
-  await page.clock.fastForward(5 * 60000 + 1500);
-  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
-  await expect.poll(() => page.evaluate(() => window.__sq.filter((d) => d > 0.6 && d < 0.9).length)).toBe(1);
-});

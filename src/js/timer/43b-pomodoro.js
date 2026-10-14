@@ -324,7 +324,7 @@ export function pomoStart(q) {
     phase: "work",
     start: now,
     end: now + c.w * 60000,
-    n: prev ? prev.n : c.every ? pomoDone(todayKey()) % c.every : 0,
+    n: c.every ? (prev ? prev.n : pomoDone(todayKey())) % c.every : prev ? prev.n : 0,
     paused: null,
     pausedTotal: 0,
     ints: 0,
@@ -337,7 +337,8 @@ export function pomoStart(q) {
   pmArm = 0;
   callCheck();
   pmSave();
-  sfx("squish");
+  /* A new set starting gets the squish; every later start in the set is one beep (back to work). */
+  sfx(S.pomo.n === 0 && (c.every || !prev) ? "squish" : "beep1");
   return true;
 }
 /* The focus interval ran to its end: log it, record it, put it on the schedule and start the break. */
@@ -360,7 +361,7 @@ export function pomoFinish() {
   p.bstart = p.end;
   p.bend = p.end + (p.long ? p.l : p.b) * 60000;
   p.breakDone = false;
-  sfx("squish");
+  sfx(p.long ? "beep3" : "beep2");
   try {
     if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
   } catch (x) {}
@@ -480,7 +481,7 @@ export function pomoTick() {
     if (p.phase === "break" && !p.breakDone && now >= p.bend) {
       p.breakDone = true;
       ch = true;
-      sfx("crack");
+      sfx("beep1");
       try {
         if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
       } catch (x) {}
@@ -813,7 +814,7 @@ export function pmDraw() {
       '<div class="pm-acts"><button type="button" class="stone save" data-pm="start"' +
       (p.breakDone ? "" : " hidden") +
       ">Start pomodoro " +
-      (p.n + 1) +
+      ((p.every ? p.n % p.every : p.n) + 1) +
       '</button><button type="button" class="stone" data-pm="skip"' +
       (p.breakDone ? " hidden" : "") +
       '>Skip break</button><button type="button" class="stone del" data-pm="end">End session</button></div>';

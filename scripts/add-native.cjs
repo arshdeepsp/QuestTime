@@ -24,8 +24,7 @@ const rawDir = path.join("android", "app", "src", "main", "res", "raw");
 fs.mkdirSync(rawDir, { recursive: true });
 fs.copyFileSync(path.join("native", "android", "pc_chime.wav"), path.join(rawDir, "pc_chime.wav"));
 fs.copyFileSync(path.join("native", "android", "pc_stop.wav"), path.join(rawDir, "pc_stop.wav"));
-fs.copyFileSync(path.join("native", "android", "pc_squish.wav"), path.join(rawDir, "pc_squish.wav"));
-fs.copyFileSync(path.join("native", "android", "pc_crack.wav"), path.join(rawDir, "pc_crack.wav"));
+for (const n of [1, 2, 3]) fs.copyFileSync(path.join("native", "android", `pc_beep${n}.wav`), path.join(rawDir, `pc_beep${n}.wav`));
 
 fs.writeFileSync(path.join(javaDir, "MainActivity.java"), `package ${pkg};
 

@@ -114,7 +114,7 @@ export function nfPlan() {
         pm.label + " logged. " + pmBrk + "-minute " + (pmLong ? "long " : "") + "break starts now.",
         pm.end,
         null,
-        "pc_squish",
+        pmLong ? "pc_beep3" : "pc_beep2",
         pm.auto ? "pc_pomo_auto" : "pc_pomo_done",
       );
     if (pm.phase === "break" && !pm.breakDone)
@@ -124,7 +124,7 @@ export function nfPlan() {
         pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
         pm.bend,
         null,
-        "pc_crack",
+        "pc_beep1",
         pm.auto ? null : "pc_pomo_brk",
       );
     if (pm.phase === "work" && !pm.paused)
@@ -134,7 +134,7 @@ export function nfPlan() {
         pm.auto ? "The next pomodoro has started." : "Tap to start your next pomodoro.",
         pm.end + pmBrk * 60000,
         null,
-        "pc_crack",
+        "pc_beep1",
         pm.auto ? null : "pc_pomo_brk",
       );
   }
@@ -430,24 +430,34 @@ export function ensureChannels() {
       sound: "pc_stop.wav",
     }),
     ln.createChannel({
-      id: "pc_squish",
-      name: "Pomodoro done",
-      description: "A pomodoro ran to the end",
+      id: "pc_beep1",
+      name: "Back to work",
+      description: "A pomodoro break ended \u2014 one beep",
       importance: 5,
       visibility: 1,
       vibration: true,
       lights: true,
-      sound: "pc_squish.wav",
+      sound: "pc_beep1.wav",
     }),
     ln.createChannel({
-      id: "pc_crack",
-      name: "Break over",
-      description: "A pomodoro break ended",
+      id: "pc_beep2",
+      name: "Short break",
+      description: "A pomodoro ran to the end \u2014 two beeps",
       importance: 5,
       visibility: 1,
       vibration: true,
       lights: true,
-      sound: "pc_crack.wav",
+      sound: "pc_beep2.wav",
+    }),
+    ln.createChannel({
+      id: "pc_beep3",
+      name: "Long break",
+      description: "A set of pomodoros ran to the end \u2014 three beeps",
+      importance: 5,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+      sound: "pc_beep3.wav",
     }),
     ln.createChannel({
       id: "pc_focus",
