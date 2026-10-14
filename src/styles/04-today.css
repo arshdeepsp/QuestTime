@@ -256,7 +256,10 @@ html body.focusview #sparkBar {
   margin: -4px 4px 0 0;
   transition: transform 0.15s;
 }
-#quests.done-open .donesep .chev {
+/* each group's chevron flips with its own state: the Off today and Ignored separators share .donesep */
+#quests.done-open .donesep:not(.offsep):not(.ignsep) .chev,
+#quests.off-open .offsep .chev,
+#quests.ign-open .ignsep .chev {
   transform: rotate(-135deg);
   margin: 4px 4px 0 0;
 }
@@ -1088,7 +1091,9 @@ details.rules > summary.sw-l {
     margin: -4px 4px 0 0;
     transition: transform 0.15s;
   }
-  #quests.done-open .donesep .chev {
+  #quests.done-open .donesep:not(.offsep):not(.ignsep) .chev,
+  #quests.off-open .offsep .chev,
+  #quests.ign-open .ignsep .chev {
     transform: rotate(-135deg);
     margin: 4px 4px 0 0;
   }

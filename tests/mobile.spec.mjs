@@ -103,3 +103,20 @@ for (const width of [320, 360]) {
     });
   });
 }
+
+test("opening Done today flips only its own chevron, not the Ignored group's", async ({ page }) => {
+  const GQ = [{ id: "j", type: "check", label: "Journal" }, { id: "r", type: "check", label: "Read" }];
+  await openApp(page, { cfg: { quests: GQ, noStreak: [{ from: "2026-11-01" }], ignore: ["r"] } });
+  await page.tap("#quests .q:has-text('Journal') .sw");
+  const rot = (sel) => page.locator(sel + " .chev").evaluate((el) => getComputedStyle(el).transform);
+  await expect(page.locator("#doneSep")).toBeVisible();
+  await expect(page.locator("#ignSep")).toBeVisible();
+  const closed = await rot("#ignSep");
+  await page.click("#doneSep");
+  await page.waitForTimeout(300);
+  expect(await rot("#doneSep")).not.toBe(closed);
+  expect(await rot("#ignSep")).toBe(closed);
+  await page.click("#ignSep");
+  await page.waitForTimeout(300);
+  expect(await rot("#ignSep")).not.toBe(closed);
+});
