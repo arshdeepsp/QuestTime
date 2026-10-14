@@ -3,13 +3,14 @@ import { S, dirty } from "../core/00-state.js";
 import { todayKey } from "../core/days.js";
 import { cache } from "../core/storage.js";
 
-export function addSession(T, id, start, end) {
+/* apart: keep it a session of its own (a pomodoro, so ending its set early can take it back exactly). */
+export function addSession(T, id, start, end, apart) {
   var e = Object.assign({}, S.days[T] || {}),
     ss = (e.sess || []).slice(),
     m = Math.round((end - start) / 60000);
   if (m < 1) return;
   var last = ss[ss.length - 1];
-  if (last && last.id === id && start - last.e < 120000) {
+  if (!apart && last && last.id === id && start - last.e < 120000) {
     last = Object.assign({}, last, { e: end, m: last.m + m });
     ss[ss.length - 1] = last;
   } else ss.push({ id: id, s: start, e: end, m: m });

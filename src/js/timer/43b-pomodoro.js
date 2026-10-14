@@ -345,10 +345,11 @@ export function pomoFinish() {
     T = todayKey();
   if (!p || p.phase !== "work") return;
   var s = p.end - p.w * 60000;
-  addSession(T, p.q, s, p.end);
+  addSession(T, p.q, s, p.end, true);
   if (p.topic) addTopicTime(T, p.topic, p.w);
   spAdd(p.q, p.w);
   var rec = { q: p.q, s: s, e: p.end, m: p.w, ok: true };
+  if (p.topic) rec.t = p.topic;
   if (p.ints) rec.i = p.ints;
   pomoRecord(T, rec);
   pomoBlock(T, s, p.end, p.q);
@@ -376,6 +377,63 @@ export function pomoStop() {
   pmArm = 0;
   pmSave();
   render();
+}
+/* End the set early: a set is all or nothing too. Every pomodoro finished in the current (unfinished) set is taken back
+     — its minutes off the quest, its session, its topic time and its schedule block — and its record removed, as if
+     it had never run; a running pomodoro is voided with it. Nothing to take back at a set boundary. */
+export function pomoSetSize() {
+  var c = pmCfg();
+  return c.every ? pomoDone(todayKey()) % c.every : 0;
+}
+export function pomoEndSet() {
+  var T = todayKey(),
+    n = pomoSetSize(),
+    e = Object.assign({}, S.days[T] || {}),
+    all = (e.pomo || []).slice(),
+    keep = all.filter(function (r) {
+      return !r.ok;
+    }),
+    done = all.filter(function (r) {
+      return r.ok;
+    }),
+    gone = done.slice(done.length - n),
+    sess = (e.sess || []).slice(),
+    tt = Object.assign({}, e.tt || {}),
+    sched = schNorm(e.sched).slice(),
+    m0 = atMin(T, 0);
+  gone.forEach(function (r) {
+    e[r.q] = Math.max(0, (e[r.q] | 0) - r.m);
+    sess = sess.filter(function (z) {
+      return !(z.id === r.q && z.s === r.s && z.e === r.e);
+    });
+    if (r.t && tt[r.t]) {
+      tt[r.t] = Math.max(0, tt[r.t] - r.m);
+      if (!tt[r.t]) delete tt[r.t];
+    }
+    var f = Math.round((r.s - m0) / 60000),
+      t = Math.round((r.e - m0) / 60000);
+    sched = sched.filter(function (b) {
+      return !(b.pm && b.q === r.q && b.f >= f - 1 && b.t <= t + 1);
+    });
+  });
+  if (n) {
+    e.pomo = keep.concat(done.slice(0, done.length - n));
+    if (!e.pomo.length) delete e.pomo;
+    if (sess.length) e.sess = sess;
+    else delete e.sess;
+    if (Object.keys(tt).length) e.tt = tt;
+    else delete e.tt;
+    if (sched.length) e.sched = sched;
+    else delete e.sched;
+    S.days[T] = e;
+    dirty[T] = true;
+    cache();
+  }
+  S.pomo = null;
+  pmArm = 0;
+  pmSave();
+  render();
+  setSync(n ? "Set ended early: " + n + " pomodoro" + (n === 1 ? "" : "s") + " taken back." : "Set ended.");
 }
 export function pomoSkipBreak() {
   var p = S.pomo;
@@ -547,6 +605,11 @@ export function pmClick(ev) {
       pmArm = Date.now();
       haptic("light");
     } else pomoStop();
+  } else if (a === "endset") {
+    if (!pmArmed()) {
+      pmArm = Date.now();
+      haptic("light");
+    } else pomoEndSet();
   } else if (a === "skip") pomoSkipBreak();
   else if (a === "end") pomoStop();
   else if (a === "auto") pmSet("auto", !pmCfg().auto);
@@ -630,6 +693,7 @@ export function pmDraw() {
     sub = defs.length ? "Pick a quest and start" : "No Time quest on today’s list";
   }
   var lk = pmLocked(),
+    wipeN = pomoSetSize() + (p && p.phase === "work" ? 1 : 0),
     tally = "";
   for (var i = 0; i < Math.max(c.every || 4, today); i++) tally += i < today ? tomatoSvg("tomato") : tomatoDim();
   var log = pomoOf(T)
@@ -715,7 +779,13 @@ export function pmDraw() {
     (lk
       ? '<p class="help pm-lock">Locked until this set ends' +
         (c.every ? " \u00b7 " + (c.every - (pomoDone(T) % c.every)) + " of " + c.every + " to go" : "") +
-        "</p>"
+        '</p><div class="pm-row"><span>End the set early? Everything in it is taken back: ' +
+        wipeN +
+        " pomodoro" +
+        (wipeN === 1 ? "" : "s") +
+        '.</span><button type="button" class="stone del mini" data-pm="endset">' +
+        (pmArmed() ? "Wipe set?" : "End set") +
+        "</button></div>"
       : "") +
     '<div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
     !!c.auto +
