@@ -390,3 +390,19 @@ test("tapping the live notification while a pomodoro runs opens the Pomodoro pag
   await expect(page.locator("#pomoPage .pm-k")).toContainText("Focus");
   await expect(page.locator("#gModal")).toBeHidden();
 });
+
+test("a pomodoro whose interval ended while the app was closed is finished on launch without breaking startup", async ({ page }) => {
+  await page.addInitScript((s) => { if (!localStorage.getItem("pc-cache-v1")) localStorage.setItem("pc-cache-v1", s); }, JSON.stringify({ days: {}, cfg: { quests: Q, rules: [], idleGrove: 0, start: "2026-10-01T04:00:00.000Z", updated: "2026-10-01T10:00:00Z" }, pomo: { q: "th", label: "Thesis", topic: null, phase: "work", start: at(9, 20), end: at(9, 45), n: 0, paused: null, pausedTotal: 0, ints: 0, w: 25, b: 5, l: 15, every: 4, auto: false } }));
+  const errors = await openApp(page, { cfg: { quests: Q }, now: `${T}T10:00:00-05:00`, hash: "#pomodoro" });
+  await expect(page.locator("#splash")).toBeHidden();
+  await expect(page.locator("#pomoPage")).toBeVisible();
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
+  const e = await day(page);
+  expect(e.th).toBe(25);
+  expect(e.pomo.length).toBe(1);
+  expect(e.sched.filter((b) => b.pm).length).toBe(1);
+  await page.click("#pmOk");
+  await expect(page.locator("#quests .q").first()).toBeVisible();
+  await expect(page.locator("#mainnav")).toBeVisible();
+  expect(errors).toEqual([]);
+});

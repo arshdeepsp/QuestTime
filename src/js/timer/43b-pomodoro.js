@@ -1010,5 +1010,10 @@ export function init() {
   pmPill = document.getElementById("pmPill");
   pmPill.addEventListener("click", openPomo);
   setInterval(pomoTick, 1000);
-  if (S.pomo) pomoTick();
+  /* A pomodoro that ended while the app was dead is finished by the first tick, which logs, renders and writes the
+     schedule — all of which need modules that init after this one, so the catch-up waits for every init to run. */
+  if (S.pomo) {
+    pmPillSync();
+    setTimeout(pomoTick, 0);
+  }
 }

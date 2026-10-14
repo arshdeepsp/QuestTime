@@ -602,7 +602,8 @@ export function init() {
   setInterval(spTick, 1000);
   if (S.sprint) {
     spMin = true;
-    spTick();
     spPill.hidden = false;
+    /* A block that ended while the app was dead is logged by the first tick (spAdd renders), so it waits for every init. */
+    setTimeout(spTick, 0);
   }
 }
