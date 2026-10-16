@@ -31,7 +31,7 @@ import { allTimeDone } from "../tools/28-spark-tools.js";
 import { closeG, openG } from "../ui/18-modal.js";
 import { haptic } from "../ui/45-gestures.js";
 
-export var COLQ, qOpen, FIT_MIN, fitCv;
+export var COLQ, qOpen, FIT_MIN, fitCv, LESS_N;
 
 /* Phone row summary (HTML). A total shows what to do today from the pace figure (rollNeed) as a value over a caption: "1h 29m / to go today", "\u2714 / on pace" or "+40m / ahead of pace"; the period total lives in Details. Off days and tracking-only mode show "10h / of 15h this week". */
 export function qSummary(q, e) {
@@ -368,7 +368,88 @@ export function mobileList(defs, e, past) {
       dc.addEventListener("click", openCountInfo);
     }
   }
+  lessSync();
   fitLabels();
+}
+/* Show less: a group (the main list, Done today, Off today, Ignored) with more than LESS_N visible rows gets a toggle
+   after its rows; folded, it shows the first LESS_N and "Show n more". The choice per group is kept in cfg.ui.less
+   ({q, d, o, i}). A running row is never folded away, and while a timer runs the toggles hide. All reads come before
+   the writes, so it costs one layout. */
+export function lessSync() {
+  if (!qWrap) return;
+  var rows = Array.prototype.slice.call(qWrap.querySelectorAll(":scope > .q"));
+  rows.forEach(function (r) {
+    r.classList.remove("qless");
+  });
+  var LN = LESS_N || 3,
+    less = uiGet("less", {}) || {},
+    timing = qWrap.classList.contains("timing"),
+    G4 = [
+      [
+        "q",
+        function (r) {
+          return !r.classList.contains("indone") && !r.classList.contains("offq") && !r.classList.contains("ignq");
+        },
+      ],
+      [
+        "d",
+        function (r) {
+          return r.classList.contains("indone");
+        },
+      ],
+      [
+        "o",
+        function (r) {
+          return r.classList.contains("offq");
+        },
+      ],
+      [
+        "i",
+        function (r) {
+          return r.classList.contains("ignq");
+        },
+      ],
+    ],
+    vis = rows.filter(function (r) {
+      return r.getClientRects().length > 0;
+    }),
+    plan = G4.map(function (g) {
+      return [g[0], vis.filter(g[1])];
+    });
+  plan.forEach(function (p) {
+    var k = p[0],
+      L = p[1],
+      b = document.getElementById("qMore-" + k);
+    if (!b) {
+      b = document.createElement("button");
+      b.type = "button";
+      b.id = "qMore-" + k;
+      b.className = "qmoreb qm-" + k;
+      b.addEventListener("click", function () {
+        var cur = uiGet("less", {}) || {},
+          nx = Object.assign({}, cur);
+        if (cur[k]) delete nx[k];
+        else nx[k] = 1;
+        uiSet("less", nx);
+        lessSync();
+        fitLabels();
+      });
+    }
+    var many = !timing && L.length > LN,
+      on = many && !!less[k];
+    b.hidden = !many;
+    if (many) {
+      var n = L.length - LN;
+      b.innerHTML = (on ? "Show " + n + " more" : "Show less") + '<i class="chev"></i>';
+      b.setAttribute("aria-expanded", String(!on));
+      b.classList.toggle("on", on);
+      if (on)
+        L.slice(LN).forEach(function (r) {
+          if (!r.classList.contains("running")) r.classList.add("qless");
+        });
+    }
+    qWrap.appendChild(b);
+  });
 }
 /* Quest names wrap only between words. When a name's longest word is wider than its column (the pixel font fits ~10
    letters in a phone row), that label's font shrinks just enough for the word to fit, down to FIT_MIN px; only past
@@ -537,6 +618,7 @@ export function runBox(id) {
 export function init() {
   COLQ = { time: 1, target: 1, limit: 1, wake: 1, scale: 1 };
   FIT_MIN = 7;
+  LESS_N = 3;
   fitCv = null;
   var fitRaf = 0;
   window.addEventListener("resize", function () {
