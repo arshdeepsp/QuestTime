@@ -24,6 +24,32 @@ test.describe("compact phone rows", () => {
     await expect(page.locator("#quests .q.running .qplay")).toBeHidden();
   });
 
+  test("a long quest name wraps between words, never inside one", async ({ page }) => {
+    const L = [{ id: "lg", type: "time", label: "Coursework assignments for computational mathematics", min: 30 }, { id: "g", type: "check", label: "Gym" }];
+    await openApp(page, { cfg: { quests: L } });
+    await expect(page.locator("#quests .q:has-text('Gym') .lbl")).toHaveCSS("font-size", "10px");
+    const split = await page.locator("#quests .q:has-text('Coursework') .lbl").evaluate((el) => {
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const bad = [];
+      let lines = new Set();
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        const re = /\S+/g;
+        let m;
+        while ((m = re.exec(n.data))) {
+          const r = document.createRange();
+          r.setStart(n, m.index);
+          r.setEnd(n, m.index + m[0].length);
+          const rs = [...r.getClientRects()].filter((x) => x.width > 0);
+          if (new Set(rs.map((x) => Math.round(x.top))).size > 1) bad.push(m[0]);
+          rs.forEach((x) => lines.add(Math.round(x.top)));
+        }
+      }
+      return { bad, lines: lines.size };
+    });
+    expect(split.lines).toBeGreaterThan(1);
+    expect(split.bad).toEqual([]);
+  });
+
   test("rows are slim: the subjects box sits inline after the label", async ({ page }) => {
     await openApp(page, { cfg: { quests: Q, subjects: SUBJ } });
     const row = page.locator("#quests .q:has-text('Thesis')");

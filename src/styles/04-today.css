@@ -771,14 +771,13 @@ body.focusview #quests .q .req {
   flex: none;
   min-width: 74px;
 }
-/* ===== long quest names wrap instead of hiding under the time chip ===== */
+/* ===== long quest names wrap between words instead of hiding under the time chip; a word only breaks when it's
+   wider than the whole line on its own ===== */
 #quests .q > div:nth-child(4) {
   min-width: 0;
 }
 #quests .q .lbl {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  hyphens: auto;
+  overflow-wrap: break-word;
 }
 /* ===== quests waiting for their start date ===== */
 .waitlist {

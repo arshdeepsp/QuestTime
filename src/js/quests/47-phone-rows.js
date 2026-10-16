@@ -31,7 +31,7 @@ import { allTimeDone } from "../tools/28-spark-tools.js";
 import { closeG, openG } from "../ui/18-modal.js";
 import { haptic } from "../ui/45-gestures.js";
 
-export var COLQ, qOpen;
+export var COLQ, qOpen, FIT_MIN, fitCv;
 
 /* Phone row summary (HTML). A total shows what to do today from the pace figure (rollNeed) as a value over a caption: "1h 29m / to go today", "\u2714 / on pace" or "+40m / ahead of pace"; the period total lives in Details. Off days and tracking-only mode show "10h / of 15h this week". */
 export function qSummary(q, e) {
@@ -368,6 +368,35 @@ export function mobileList(defs, e, past) {
       dc.addEventListener("click", openCountInfo);
     }
   }
+  fitLabels();
+}
+/* Quest names wrap only between words. When a name's longest word is wider than its column (the pixel font fits ~10
+   letters in a phone row), that label's font shrinks just enough for the word to fit, down to FIT_MIN px; only past
+   that does overflow-wrap break the word. Reads all widths, then writes, so it costs one layout. */
+export function fitLabels() {
+  var els = Array.prototype.slice.call(document.querySelectorAll("#quests .q .lbl"));
+  if (!els.length) return;
+  els.forEach(function (el) {
+    if (el.style.fontSize) el.style.fontSize = "";
+  });
+  var ctx = fitCv || (fitCv = document.createElement("canvas").getContext("2d"));
+  if (!ctx) return;
+  var out = els.map(function (el) {
+    var w = el.clientWidth;
+    if (!w) return 0;
+    var cs = getComputedStyle(el),
+      fs = parseFloat(cs.fontSize) || 10,
+      ls = parseFloat(cs.letterSpacing) || 0,
+      mx = 0;
+    ctx.font = cs.fontStyle + " " + cs.fontWeight + " " + fs + "px " + cs.fontFamily;
+    (el.textContent || "").split(/\s+/).forEach(function (word) {
+      if (word) mx = Math.max(mx, ctx.measureText(word).width + ls * word.length);
+    });
+    return mx > w ? Math.max(FIT_MIN || 7, Math.floor(((fs * w) / mx) * 10) / 10) : 0;
+  });
+  els.forEach(function (el, i) {
+    if (out[i]) el.style.fontSize = out[i] + "px";
+  });
 }
 export function openCountInfo() {
   var T = G.viewKey || todayKey(),
@@ -507,6 +536,17 @@ export function runBox(id) {
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
   COLQ = { time: 1, target: 1, limit: 1, wake: 1, scale: 1 };
+  FIT_MIN = 7;
+  fitCv = null;
+  var fitRaf = 0;
+  window.addEventListener("resize", function () {
+    if (fitRaf) return;
+    fitRaf = requestAnimationFrame(function () {
+      fitRaf = 0;
+      fitLabels();
+    });
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLabels);
   /* Rows opened from their summary box stay open when the list is rebuilt (a quest changed here, a sync from another device). */
   qOpen = {};
   G.offOpen = !!uiGet("off");
