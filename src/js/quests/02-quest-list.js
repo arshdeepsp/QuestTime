@@ -9,7 +9,7 @@ import { applyPack, packsHidden } from "./07c-starter-packs.js";
 import { openQMenu } from "./11-row-menu.js";
 import { toggleTodo } from "./14-todos.js";
 import { openNum } from "./tap-to-type.js";
-import { perWord } from "../rules/26-periods.js";
+import { logOnly, perWord } from "../rules/26-periods.js";
 import { limOf } from "../rules/day-rules.js";
 import { qStreakable } from "../rules/quest-streaks.js";
 import { reqOf } from "../rules/quests-on-day.js";
@@ -38,7 +38,7 @@ export function reqText(q) {
   if (q.type === "weekly") t = q.min + "x per week, any days";
   else if (q.type === "time")
     t =
-      (q.roll ? hmL(q.roll) + " per " + perWord(q) : "min " + hmL(q.min)) +
+      (q.roll ? hmL(q.roll) + " per " + perWord(q) : logOnly(q) ? "no minimum" : "min " + hmL(q.min)) +
       (limOf(q) ? " \u00b7 up to " + hmL(q.lim) + "/day" : "");
   else if (q.type === "limit") t = "max " + (q.unit === "min" ? hmL(q.max) : q.max + (q.ul ? " " + q.ul : ""));
   else if (q.type === "wake") t = "between " + q.from + "-" + q.to;
@@ -208,7 +208,9 @@ export function buildQuests(defs) {
       var tq = q.type === "time";
       ctl.innerHTML =
         (tq
-          ? '<div class="ctr plan"><span class="tag">Plan</span><button type="button" class="stone" aria-label="Less planned ' +
+          ? '<div class="ctr plan"' +
+            (logOnly(q) ? " hidden" : "") +
+            '><span class="tag">Plan</span><button type="button" class="stone" aria-label="Less planned ' +
             lab +
             '">-</button><output></output><button type="button" class="stone" aria-label="More planned ' +
             lab +

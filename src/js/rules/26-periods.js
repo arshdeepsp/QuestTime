@@ -153,7 +153,13 @@ export function rollNeed(q, k) {
   if (left < 1) return lin;
   return Math.min(lin, Math.round(before + Math.max(0, weekTarget(q, k) - before) / left));
 }
+/* A daily time quest with no minimum (min 0): it only logs time. Never required, never met, no plan or streak; the row
+   shows the time logged and nothing to reach. A deadline's daily share (q.dl) going to 0 is not this. */
+export function logOnly(q) {
+  return !!q && q.type === "time" && !q.roll && !q.dl && !(q.min > 0);
+}
 export function timeMet(q, e) {
+  if (logOnly(q)) return false;
   var v = e[q.id] | 0;
   if (q.roll) {
     var k = eKey.get(e);

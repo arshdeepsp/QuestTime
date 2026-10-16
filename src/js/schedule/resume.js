@@ -1,4 +1,5 @@
 /* ---- resume a block under way, its notification, and block reminders ---- */
+import { logOnly } from "../rules/26-periods.js";
 import { G } from "../core/g.js";
 import { S } from "../core/00-state.js";
 import { add, atMin, nowMinInDay, todayKey } from "../core/days.js";
@@ -23,7 +24,11 @@ export function schLeftIn(T, b, strict) {
   })[0];
   if (!q) return 0;
   var d = schDoneIn(T, b);
-  if (strict && (d < 1 || ((S.days[T] || {})[q.id] | 0) >= timerMin(q) || (b.ed && schLastIn(T, b) <= b.ed))) return 0;
+  if (
+    strict &&
+    (d < 1 || (!logOnly(q) && ((S.days[T] || {})[q.id] | 0) >= timerMin(q)) || (b.ed && schLastIn(T, b) <= b.ed))
+  )
+    return 0;
   var l = Math.min(b.t - b.f - d, b.t - nw);
   return l >= 1 ? l : 0;
 }

@@ -1,4 +1,5 @@
 /* ---- XP, levels and weekly counts ---- */
+import { logOnly } from "./26-periods.js";
 import { CALL_CAP, CALL_XP, S, START_KEY } from "../core/00-state.js";
 import { add, todayKey, weekStart } from "../core/days.js";
 import { completionXP } from "../quests/35c-finish-lines.js";
@@ -15,7 +16,7 @@ export function dayXP(e) {
     }
     var d = Math.min(240, e[q.id] | 0);
     x += d;
-    if (d > 0 && d >= planOf(q, e)) x += 30;
+    if (d > 0 && !logOnly(q) && d >= planOf(q, e)) x += 30;
   });
   x +=
     (e.sess || []).filter(function (z) {

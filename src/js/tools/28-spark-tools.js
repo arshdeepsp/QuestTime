@@ -1,4 +1,5 @@
 /* ---- spark tools ---- */
+import { logOnly } from "../rules/26-periods.js";
 import { S } from "../core/00-state.js";
 import { todayKey } from "../core/days.js";
 import { commit, entry, locked } from "../core/entries.js";
@@ -23,7 +24,7 @@ export function pickPool() {
     e = S.days[T] || {},
     out = [];
   activeDefs(T).forEach(function (q) {
-    if (q.off || q.ign) return;
+    if (q.off || q.ign || logOnly(q)) return;
     if (q.type === "time" && !metQ(q, e)) out.push(q);
     else if ((q.type === "check" || q.type === "todo" || q.type === "weekly") && !e[q.id]) out.push(q);
     else if (q.type === "target" && !metQ(q, e)) out.push(q);
@@ -34,7 +35,7 @@ export function behindTime() {
   var T = todayKey(),
     e = S.days[T] || {},
     L = activeDefs(T).filter(function (q) {
-      return q.type === "time" && !q.off && !q.ign;
+      return q.type === "time" && !q.off && !q.ign && !logOnly(q);
     });
   if (!L.length) return null;
   var open = L.filter(function (q) {
@@ -46,7 +47,7 @@ export function allTimeDone() {
   var T = todayKey(),
     e = S.days[T] || {},
     L = activeDefs(T).filter(function (q) {
-      return q.type === "time" && !q.off && !q.ign;
+      return q.type === "time" && !q.off && !q.ign && !logOnly(q);
     });
   return (
     L.length > 0 &&

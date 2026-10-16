@@ -228,6 +228,7 @@ export function init() {
           [
             "Time, target, limit, check, clock time, rating, weekly and to-do.",
             "Most are required. Optional quests, weekly goals and to-dos never fail a day.",
+            "A time quest with a minimum of 0 just logs time: it shows what you’ve done today and is never required.",
             "Tap ⋯ on a quest for details, pausing or Just 5.",
           ],
         ],

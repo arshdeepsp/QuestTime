@@ -1,6 +1,6 @@
 /* ---- generic modal ---- */
 import { esc, hm, hmL, num } from "../core/util.js";
-import { eKey, perOf, perWord, rollSum, weekTarget } from "../rules/26-periods.js";
+import { eKey, logOnly, perOf, perWord, rollSum, weekTarget } from "../rules/26-periods.js";
 import { metQ } from "../rules/day-rules.js";
 
 export var gEl, gBody, gTitle, gScrim, gLast, gOnClose;
@@ -36,7 +36,7 @@ export function fmtVal(q, e) {
       ? hm(v) + " \u00b7 " + hm(rollSum(q.id, k, q)) + " of " + hm(weekTarget(q, k)) + " this " + perWord(q)
       : hm(v);
   }
-  if (q.type === "time") return hm(v) + " of " + hmL(q.min);
+  if (q.type === "time") return logOnly(q) ? hm(v) : hm(v) + " of " + hmL(q.min);
   if (q.type === "target") return num(v) + " / " + num(q.min) + (q.ul ? " " + q.ul : "");
   if (q.type === "limit")
     return (q.unit === "min" ? hm(v) : v | 0) + " (max " + (q.unit === "min" ? hmL(q.max) : q.max) + ")";

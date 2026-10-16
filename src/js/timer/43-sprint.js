@@ -1,4 +1,5 @@
 /* ---- sprint / marathon mode ---- */
+import { logOnly } from "../rules/26-periods.js";
 import { G } from "../core/g.js";
 import { MAXM, S, dirty } from "../core/00-state.js";
 import { cfg } from "../core/config.js";
@@ -129,8 +130,7 @@ export function openSprintSetup() {
               esc(q.label) +
               " <small>" +
               hm(e[q.id] | 0) +
-              "/" +
-              hm(spTarget(q, e)) +
+              (logOnly(q) ? "" : "/" + hm(spTarget(q, e))) +
               "</small></button>"
             );
           })

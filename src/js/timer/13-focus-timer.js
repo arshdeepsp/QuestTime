@@ -278,7 +278,7 @@ export function timerGoals() {
   }
   var el = qEls[t.id];
   if (el && el.tmr) {
-    el.tmr.classList.toggle("hit", !!t.minHit && tot >= mn);
+    el.tmr.classList.toggle("hit", !!t.minHit && mn > 0 && tot >= mn);
     el.tmr.classList.toggle("gold", !!t.planHit && pl > q.min && tot >= pl);
   }
 }

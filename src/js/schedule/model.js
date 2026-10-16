@@ -6,7 +6,7 @@ import { add, dayWin, nowMinInDay, todayKey, winErr } from "../core/days.js";
 import { commit, entry, locked } from "../core/entries.js";
 import { clone, hm } from "../core/util.js";
 import { WDN } from "../quests/35b-daily-limit.js";
-import { perWorkDays } from "../rules/26-periods.js";
+import { logOnly, perWorkDays } from "../rules/26-periods.js";
 import { limOf, metQ } from "../rules/day-rules.js";
 import { activeDefs } from "../rules/quests-on-day.js";
 import { SCH_AHEAD, SCH_ENDED, SCH_STEP } from "./51-schedule.js";
@@ -487,6 +487,7 @@ export function schAhead(L, qid, from) {
   }, 0);
 }
 export function schLeft(T, q, L) {
+  if (logOnly(q)) return 0;
   var td = T === todayKey(),
     from = td ? Math.floor(nowMinInDay() / SCH_STEP) * SCH_STEP : -1e9;
   var run =

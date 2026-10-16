@@ -152,6 +152,10 @@ html body .qtools:not(:has(#shareBtn:not([hidden]))) {
   background: #3c8527;
   border-color: #2a5e1b #5db33f #5db33f #2a5e1b;
 }
+.gcard:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 body.focusview #shareBtn {
   display: none;
 }

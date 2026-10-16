@@ -9,7 +9,7 @@ import { clone, esc, fmtD, hm, hmL, num } from "../core/util.js";
 import { DN, reqText } from "./02-quest-list.js";
 import { WDN, capOf, overDays } from "./35b-daily-limit.js";
 import { renderRules } from "../rulebook/07b-rulebook.js";
-import { perOf, perWord } from "../rules/26-periods.js";
+import { logOnly, perOf, perWord } from "../rules/26-periods.js";
 import { easeNote, easedIds, guardEasing } from "../rules/easing.js";
 import { isPaused } from "../rules/modes.js";
 import { activeDefs } from "../rules/quests-on-day.js";
@@ -124,7 +124,9 @@ export function drawMgr(msg) {
       par =
         '<label>Goal type<select data-p="rollmode" data-i="' +
         i +
-        '"><option value=""' +
+        '"' +
+        (logOnly(q) ? " disabled" : "") +
+        '><option value=""' +
         (q.roll ? "" : " selected") +
         '>Daily minimum</option><option value="roll"' +
         (q.roll && !perOf(q) ? " selected" : "") +
@@ -137,7 +139,12 @@ export function drawMgr(msg) {
         ">Monthly total</option></select></label>" +
         (q.roll
           ? numIn("Total per " + perWord(q) + " (hours)", "rollh", i, num(q.roll / 60), "any", 0.5)
-          : numIn("Min (minutes)", "min", i, q.min, 10, 10, 960));
+          : numIn("Min (minutes)", "min", i, q.min, 10, 0, 960) +
+            '<p class="help" data-lo="' +
+            i +
+            '"' +
+            (logOnly(q) ? "" : " hidden") +
+            ">No minimum: it just logs time and is never required. Set a minimum to pick another goal type.</p>");
       parMore =
         numIn("Project total, hours (optional)", "totalh", i, q.total ? num(q.total / 60) : "", "any", 0) +
         numIn("Daily limit, minutes (optional)", "lim", i, q.lim || "", 5, 0, MAXM) +
@@ -437,6 +444,12 @@ export function drawMgr(msg) {
         v = q.type === "target" || f === "step" ? num(v) : Math.max(0, Math.round(+v || 0));
       }
       q[f] = v;
+      if (f === "min" && q.type === "time" && !q.roll) {
+        var rs = qmgr.querySelector('select[data-p="rollmode"][data-i="' + x.getAttribute("data-i") + '"]'),
+          lh = qmgr.querySelector('[data-lo="' + x.getAttribute("data-i") + '"]');
+        if (rs) rs.disabled = logOnly(q);
+        if (lh) lh.hidden = !logOnly(q);
+      }
     });
   });
   qmgr.querySelectorAll("[data-day]").forEach(function (x) {
@@ -617,7 +630,8 @@ export function saveMgr() {
     var bad = qDraft.filter(function (q) {
       return (
         !(q.label || "").trim() ||
-        ((q.type === "time" || q.type === "weekly") && !(q.min > 0)) ||
+        (q.type === "weekly" && !(q.min > 0)) ||
+        (q.type === "time" && !(q.min >= 0)) ||
         (q.type === "target" && !(q.min > 0 && (+q.step || 1) > 0)) ||
         (q.type === "limit" && !(q.max >= 0)) ||
         (q.type === "time" && q.lim && q.lim < (q.roll ? 5 : q.min)) ||

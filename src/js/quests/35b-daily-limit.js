@@ -1,4 +1,5 @@
 /* ---- daily quest limit (cfg.cap): required quests per weekday ---- */
+import { logOnly } from "../rules/26-periods.js";
 import { cfg } from "../core/config.js";
 
 export var WDN, WDS;
@@ -7,7 +8,7 @@ export function capOf() {
   return cfg().cap || 10;
 }
 export function countsOnDay(q) {
-  return q && q.type !== "todo" && q.type !== "weekly" && !q.completed && !q.opt;
+  return q && q.type !== "todo" && q.type !== "weekly" && !q.completed && !q.opt && !logOnly(q);
 }
 export function dayLoad(L) {
   var c = [0, 0, 0, 0, 0, 0, 0];

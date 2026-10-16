@@ -1,14 +1,14 @@
 /* ---- per-quest streaks (display only) ---- */
 import { S, START_KEY, STREAK_TYPES } from "../core/00-state.js";
 import { add } from "../core/days.js";
-import { cfgQ } from "./26-periods.js";
+import { cfgQ, logOnly } from "./26-periods.js";
 import { metQ } from "./day-rules.js";
 import { isPaused } from "./modes.js";
 import { dayDefMap, firstSeen } from "./past-days.js";
 import { scheduled } from "./quests-on-day.js";
 
 export function qStreakable(q) {
-  return !!q && STREAK_TYPES[q.type] && !q.roll;
+  return !!q && STREAK_TYPES[q.type] && !q.roll && !logOnly(q);
 }
 export function qDayState(id, d) {
   var cq = cfgQ(id),

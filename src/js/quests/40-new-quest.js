@@ -9,7 +9,7 @@ import { clone, esc, fmtD, num } from "../core/util.js";
 import { DN } from "./02-quest-list.js";
 import { countsOnDay, overMsg, wouldExceed } from "./35b-daily-limit.js";
 import { LIB, TN, moreSum } from "./38-quest-editor.js";
-import { perOf, perWord } from "../rules/26-periods.js";
+import { logOnly, perOf, perWord } from "../rules/26-periods.js";
 import { activeDefs, stampAdded } from "../rules/quests-on-day.js";
 import { subjList } from "../subjects/32-subjects.js";
 import { topicPick, wireTopicPick } from "../subjects/35-links.js";
@@ -123,7 +123,9 @@ export function drawNQ(msg) {
       !q.roll +
       '"><b>Daily minimum</b><span>Same amount every day</span></button><button type="button" class="gcard' +
       (q.roll ? " on" : "") +
-      '" data-goal="1" role="radio" aria-checked="' +
+      '" data-goal="1" role="radio"' +
+      (logOnly(q) ? " disabled" : "") +
+      ' aria-checked="' +
       !!q.roll +
       '"><b>Total over a period</b><span>Busy days cover empty ones later in the period</span></button></div>' +
       (q.roll
@@ -154,9 +156,11 @@ export function drawNQ(msg) {
           ' (hours)<input type="number" id="nqRollH" min="0.5" step="0.5" value="' +
           num(q.roll / 60) +
           '"></label>'
-        : '<label>Daily minimum (minutes)<input type="number" data-n="min" min="10" step="10" value="' +
+        : '<label>Daily minimum (minutes)<input type="number" data-n="min" min="0" step="10" value="' +
           q.min +
-          '"></label>');
+          '"></label><p class="help" id="nqLo"' +
+          (logOnly(q) ? "" : " hidden") +
+          ">No minimum: it just logs time and is never required.</p>");
   else if (q.type === "target")
     p =
       '<label>Goal<input type="number" data-n="min" min="0" step="any" value="' +
@@ -358,6 +362,12 @@ export function drawNQ(msg) {
     x.addEventListener(x.tagName === "SELECT" ? "change" : "input", function () {
       var f = x.getAttribute("data-n");
       NQ[f] = num(x.value);
+      if (f === "min" && NQ.type === "time" && !NQ.roll) {
+        var gc = nqB.querySelector('[data-goal="1"]'),
+          lo = nqB.querySelector("#nqLo");
+        if (gc) gc.disabled = logOnly(NQ);
+        if (lo) lo.hidden = !logOnly(NQ);
+      }
       if (f === "scale") {
         if (NQ.min > NQ.scale) NQ.min = NQ.scale;
         drawNQ();
@@ -410,7 +420,8 @@ export function drawNQ(msg) {
     }
     if (!(q.lim > 0)) delete q.lim;
     if (
-      ((q.type === "time" || q.type === "weekly" || q.type === "target") && !(q.min > 0)) ||
+      ((q.type === "weekly" || q.type === "target") && !(q.min > 0)) ||
+      (q.type === "time" && !(q.min >= 0)) ||
       (q.type === "time" && q.lim && q.lim < (q.roll ? 5 : q.min)) ||
       (q.type === "scale" && !(q.min >= 1 && q.min <= (q.scale || 5))) ||
       (q.type === "wake" && !(q.from && q.to && q.from < q.to)) ||

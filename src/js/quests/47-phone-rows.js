@@ -13,6 +13,7 @@ import {
   perStart,
   perWord,
   perWorkDays,
+  logOnly,
   rollNeed,
   rollSum,
   weekFrom,
@@ -37,6 +38,7 @@ export function qSummary(q, e) {
   var v = e[q.id];
   if (q.type === "time") {
     var d = +v || 0;
+    if (logOnly(q)) return hm(d);
     if (!q.roll) return hm(d) + " / " + hm(q.min);
     var T = todayKey(),
       rs = rollSum(q.id, T),

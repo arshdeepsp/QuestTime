@@ -1,4 +1,5 @@
 /* ---- which quests are on a day, and which are required ---- */
+import { logOnly } from "./26-periods.js";
 import { LEGACY, S } from "../core/00-state.js";
 import { cfg } from "../core/config.js";
 import { dayMidMin, nowMinInDay, parse, todayKey } from "../core/days.js";
@@ -107,7 +108,7 @@ export function lateStart(q, k) {
      once, at the end of their period (see periodCheck in compute). */
 export function reqOf(d) {
   return d.filter(function (q) {
-    return !q.opt && q.type !== "weekly" && q.type !== "todo" && !(q.type === "time" && q.roll);
+    return !q.opt && q.type !== "weekly" && q.type !== "todo" && !(q.type === "time" && q.roll) && !logOnly(q);
   });
 }
 export function reqDefsFor(k) {

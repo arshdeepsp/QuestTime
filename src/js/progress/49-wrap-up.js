@@ -1,4 +1,5 @@
 /* ---- daily wrap-up (share card / PDF of the day) ---- */
+import { logOnly } from "../rules/26-periods.js";
 import { G } from "../core/g.js";
 import { D, RANKS, S, START_KEY } from "../core/00-state.js";
 import { cfg } from "../core/config.js";
@@ -867,7 +868,7 @@ export function wrapCanvas2(k) {
   );
   var TQ2 = activeDefs(add(k, 1))
       .filter(function (q) {
-        return q.type === "time";
+        return q.type === "time" && !logOnly(q);
       })
       .slice(0, 6),
     nc = Math.max(1, TQ2.length),

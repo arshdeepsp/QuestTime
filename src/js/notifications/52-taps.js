@@ -11,7 +11,17 @@ import { cache } from "../core/storage.js";
 import { esc, hm, num, svg } from "../core/util.js";
 import { toast } from "../progress/03-badges.js";
 import { reviewTodos } from "../quests/50b-todo-review.js";
-import { cfgQ, midDay, midNeed, perEnd, periodList, rollNeed, rollSum, weekTarget } from "../rules/26-periods.js";
+import {
+  cfgQ,
+  logOnly,
+  midDay,
+  midNeed,
+  perEnd,
+  periodList,
+  rollNeed,
+  rollSum,
+  weekTarget,
+} from "../rules/26-periods.js";
 import { compute } from "../rules/compute.js";
 import { metQ } from "../rules/day-rules.js";
 import { rewardsOff } from "../rules/modes.js";
@@ -172,7 +182,7 @@ export function nfBehind() {
     best = null,
     gap = 0;
   activeDefs(T).forEach(function (q) {
-    if (q.type !== "time" || q.off || q.ign || metQ(q, e)) return;
+    if (q.type !== "time" || q.off || q.ign || logOnly(q) || metQ(q, e)) return;
     var g = q.roll ? rollNeed(q, T) - rollSum(q.id, T) : q.min - (e[q.id] | 0);
     if (!best || g > gap) {
       best = q;
@@ -315,7 +325,7 @@ export function notifAction(id, x, act) {
     var T2 = todayKey(),
       e2 = S.days[T2] || {},
       D2 = activeDefs(T2).filter(function (q) {
-        return q.type === "time" && !q.roll && !q.opt;
+        return q.type === "time" && !q.roll && !q.opt && !logOnly(q);
       });
     return nfCall(
       "Midday check",
