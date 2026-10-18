@@ -22,7 +22,7 @@ npm run android:apk
 ```
 - `build` → `dist/` (single `index.html` + assets + `sw.js` with versioned cache; the version hashes `index.html` and `vendor/firebase.js`). It also bundles `src/firebase/fb.js` + the Firebase SDK with esbuild into `dist/vendor/firebase.js` (ESM, loaded lazily on sign-in; listed in the service worker's assets).
 - `format` → Prettier 3 (`.prettierrc.json`: print width 120) over `src/js`, `src/styles`, `src/firebase` and `build.mjs`; run it before committing (`format:check` reports without writing). Source is formatted for reading; the build bundles the JS (esbuild, from `src/js/main.js`) and whitespace-minifies it and the CSS (comments dropped), so formatting doesn't grow the app. `tests/` isn't formatted.
-- `test` → build + Playwright (headless Chromium, fake clock, seeded localStorage), served over http by `tests/serve.mjs` on :4173 (file:// lost localStorage across reloads and made reload tests flaky). ~350 tests, ~4 min (`--workers=2` in the container).
+- `test` → build + Playwright (headless Chromium, fake clock, seeded localStorage), served over http by `tests/serve.mjs` on :4173 (file:// lost localStorage across reloads and made reload tests flaky). ~490 tests, ~4 min (`--workers=2` in the container).
 - `android:apk` → build, `npx cap sync android`, `node scripts/add-native.cjs`, `./gradlew assembleDebug`. Never run `assembleDebug` alone after source changes.
 - First Android setup: `npx cap add android`, `node scripts/add-permissions.cjs`, `npx @capacitor/assets generate --android`, then `npm run android:apk`.
 - Push to `main` → GitHub Actions runs tests, deploys `dist/` to Pages only if green.
