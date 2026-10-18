@@ -344,7 +344,8 @@ export function init() {
           [
             "Pomodoro (in the ⋮ menu) is its own page: pick a time quest, start, and the tomato fills as the 25 minutes run. Then a 5-minute break, and a 15-minute one after every fourth.",
             "A finished pomodoro logs its minutes to the quest like a timer, and is drawn onto today’s schedule afterwards, so the plan shows what really happened.",
-            "All or nothing: stop early and nothing is logged to the quest — finishing is the point. Set up (lengths, long break, auto-start) is on the page.",
+            "All or nothing: stop early and nothing is logged to the quest — finishing is the point. Set up is on the page: any focus length from 15 to 90 minutes, short breaks 5 to 30, long breaks 10 to 60, how often the long break comes, and auto-start, which starts the next pomodoro when a short break ends (a new set always starts by hand).",
+            "Save up to four presets of lengths and long break (Set up › Save as preset) and switch between them with one tap. Like the lengths, a preset waits until the set under way is done.",
             "Trends › Pomodoro counts the week, days in a row, your best day, the longest chain and the harvest. No XP: the quest minutes are the reward.",
             "Signed in, a pomodoro moves between your devices: open the app on the other one and tap Continue here on the “Pomodoro running on your phone” card. The countdown carries on where it was, and the device you left stops it (a phone you left in your pocket stops when you next open it). Each pomodoro is logged once, by the device running it when it finishes. Only one runs at a time: starting one while another device runs one asks whether to continue that one here or end it and start new.",
           ],

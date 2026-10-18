@@ -36,7 +36,20 @@ import { haptic } from "../ui/45-gestures.js";
 import { setSync } from "../ui/feedback.js";
 import { pageBack, pageNav, viewHash } from "../ui/routes.js";
 
-export var PM_LATE_MS, PM_GCOL, PM_DEF, PM_ARM_MS, pmPg, pmPill, pmArm, pmSig, pmArtCache, pmBgCache, pmTitle0;
+export var PM_LATE_MS,
+  PM_GCOL,
+  PM_DEF,
+  PM_RANGE,
+  PM_PRESETS,
+  pmDelArm,
+  PM_ARM_MS,
+  pmPg,
+  pmPill,
+  pmArm,
+  pmSig,
+  pmArtCache,
+  pmBgCache,
+  pmTitle0;
 
 export function tomatoSvg(cls, pal) {
   var P = pal || { R: "#D7322A", D: "#9E1F18", H: "#F26B5E", G: "#3E8A2C", L: "#7BD35A" },
@@ -212,8 +225,23 @@ export function pomoGrow(from, mins, full) {
   var n = Math.max(2, Math.min(30, Math.round(mins)));
   return mins > 0 ? { from: Math.round(from), dur: Math.round(mins * 60000), art: tomatoArt(n, !!full) } : null;
 }
+/* Lengths are the user's own, any whole minutes within PM_RANGE: focus 15–90, short break 5–30, long break 10–60 (3 : 1 :
+     2 at both ends). A value from an older build or another device that's out of range is clamped on read. */
+export function pmClamp(k, v) {
+  var r = PM_RANGE[k];
+  v = Math.round(+v);
+  if (!r) return v;
+  if (!isFinite(v)) return PM_DEF[k];
+  return Math.max(r[0], Math.min(r[1], v));
+}
 export function pmCfg() {
-  return Object.assign({}, PM_DEF, cfg().pomo || {});
+  var c = Object.assign({}, PM_DEF, cfg().pomo || {});
+  c.w = pmClamp("w", c.w);
+  c.b = pmClamp("b", c.b);
+  c.l = pmClamp("l", c.l);
+  c.presets = (Array.isArray(c.presets) ? c.presets : []).slice(0, PM_PRESETS);
+  delete c.chain;
+  return c;
 }
 /* The lengths and the long-break cadence are locked while a set is under way: a pomodoro running (except the long break
      that closes a set), or today's count not at a set boundary (pomoDone % every), since a new session continues the set. */
@@ -224,12 +252,62 @@ export function pmLocked() {
   return !!(c.every && pomoOpen(todayKey()));
 }
 export function pmSet(k, v) {
-  if (k !== "auto" && k !== "chain" && pmLocked()) return;
+  var o = {};
+  o[k] = v;
+  return pmApply(o);
+}
+/* Change several settings at once (a preset: w, b, l, every). Lengths and cadence wait while a set is under way. */
+export function pmApply(o) {
+  var lenKeys = Object.keys(o).some(function (k) {
+    return k !== "auto";
+  });
+  if (lenKeys && pmLocked()) return false;
   var c = clone(cfg());
   c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
+  delete c.pomo.chain;
   /* Long break turned on after pomodoros ran without sets: those are settled, the first set starts from here. */
-  if (k === "every" && !c.pomo.every && v) pomoSettle(todayKey());
-  c.pomo[k] = v;
+  if ("every" in o && !c.pomo.every && o.every) pomoSettle(todayKey());
+  Object.keys(o).forEach(function (k) {
+    c.pomo[k] = k === "auto" ? !!o[k] : pmClamp(k, o[k]);
+  });
+  saveCfg(c);
+  return true;
+}
+/* Presets: up to PM_PRESETS saved sets of lengths and cadence ({id, name?, w, b, l, every}), in cfg.pomo.presets so they
+     sync. Applying one is a pmApply, so it waits while a set is under way like any other change. */
+export function pmPresetLabel(x) {
+  return x.name || x.w + "/" + x.b + (x.every ? " · " + x.l + " ×" + x.every : "");
+}
+export function pmPresetIs(x, c) {
+  return x.w === c.w && x.b === c.b && x.l === c.l && x.every === c.every;
+}
+export function pmPresetSave(name) {
+  var c0 = pmCfg();
+  if (c0.presets.length >= PM_PRESETS) return false;
+  if (
+    c0.presets.some(function (x) {
+      return pmPresetIs(x, c0);
+    })
+  )
+    return false;
+  var c = clone(cfg());
+  c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
+  delete c.pomo.chain;
+  var x = { id: "pp" + Date.now().toString(36), w: c0.w, b: c0.b, l: c0.l, every: c0.every };
+  name = String(name || "")
+    .trim()
+    .slice(0, 20);
+  if (name) x.name = name;
+  c.pomo.presets = c0.presets.concat([x]);
+  saveCfg(c);
+  return true;
+}
+export function pmPresetDel(id) {
+  var c = clone(cfg());
+  c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
+  c.pomo.presets = (c.pomo.presets || []).filter(function (x) {
+    return x.id !== id;
+  });
   saveCfg(c);
 }
 export function pmOpen() {
@@ -376,7 +454,6 @@ export function pomoStart(q, at, quiet) {
     l: c.l,
     every: c.every,
     auto: !!c.auto,
-    chain: !!c.chain,
     /* The session's identity for moving it between devices (sync/54-account.js, "live"): sid names the session and
        stays through its pomodoros, gen counts hand-overs, dev is the device running it. A new session starts at gen 1. */
     sid: prev && prev.sid ? prev.sid : "s" + now.toString(36) + Math.random().toString(36).slice(2, 7),
@@ -593,10 +670,10 @@ export function pomoAhead(p, max) {
     n = p.n,
     t,
     L;
-  /* Auto-start carries on after a short break; after a long break (the set is done) only with `chain` on. A "brk"
-     entry's `cont` says whether the next pomodoro starts by itself at that moment. */
+  /* Auto-start carries on after a short break, never after a long one: the set is done and a new one starts by hand. A
+     "brk" entry's `cont` says whether the next pomodoro starts by itself at that moment. */
   function cont(long) {
-    return !!p.auto && (!long || !!p.chain);
+    return !!p.auto && !long;
   }
   if (p.phase === "work") {
     if (p.paused) return out;
@@ -667,7 +744,7 @@ export function pomoTick() {
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
           } catch (x) {}
         }
-        if (p.auto && (!p.long || p.chain)) {
+        if (p.auto && !p.long) {
           pomoNext(at, late);
           ch = false;
           p = S.pomo;
@@ -803,16 +880,94 @@ export function pmClick(ev) {
   } else if (a === "skip") pomoSkipBreak();
   else if (a === "end") pomoStop();
   else if (a === "auto") pmSet("auto", !pmCfg().auto);
-  else if (a === "chain") pmSet("chain", !pmCfg().chain);
+  else if (a === "preset") {
+    var px = pmCfg().presets.filter(function (x) {
+      return x.id === b.getAttribute("data-id");
+    })[0];
+    if (px && !pmApply({ w: px.w, b: px.b, l: px.l, every: px.every })) setSync("Presets apply once this set ends.");
+    haptic("light");
+  } else if (a === "pdel") {
+    var pid = b.getAttribute("data-id");
+    if (pmDelArm && pmDelArm.id === pid && Date.now() - pmDelArm.t < PM_ARM_MS) {
+      pmDelArm = null;
+      pmPresetDel(pid);
+    } else pmDelArm = { id: pid, t: Date.now() };
+    haptic("light");
+  } else if (a === "psave") {
+    var nm = pmPg.querySelector("#pmPName");
+    pmPresetSave(nm ? nm.value : "");
+    haptic("light");
+  }
   pmSig = "";
   pmDraw();
 }
 export function pmChange(ev) {
-  var s = ev.target.closest("select[data-pk]");
+  var s = ev.target.closest("select[data-pk], input[data-pk]");
   if (!s) return;
-  pmSet(s.getAttribute("data-pk"), +s.value);
+  if (s.value !== "" && isFinite(+s.value)) pmSet(s.getAttribute("data-pk"), +s.value);
   pmSig = "";
   pmDraw();
+}
+/* The presets row in Set up: a chip per preset (tap = apply; the one matching the current settings is lit), its ✕
+     (armed: Delete?), and Save while there is room and the current settings aren't saved yet. */
+export function pmPresetsHtml(c, lk) {
+  var L = c.presets,
+    dup = L.some(function (x) {
+      return pmPresetIs(x, c);
+    }),
+    h = '<div class="pm-pre" aria-label="Presets">';
+  L.forEach(function (x) {
+    var on = pmPresetIs(x, c),
+      armed = pmDelArm && pmDelArm.id === x.id && Date.now() - pmDelArm.t < PM_ARM_MS;
+    h +=
+      '<span class="pm-pchip' +
+      (on ? " on" : "") +
+      '"><button type="button" class="stone mini" data-pm="preset" data-id="' +
+      x.id +
+      '" aria-pressed="' +
+      on +
+      '"' +
+      (lk && !on ? " disabled" : "") +
+      ">" +
+      esc(pmPresetLabel(x)) +
+      '</button><button type="button" class="stone mini del" data-pm="pdel" data-id="' +
+      x.id +
+      '" aria-label="Delete preset ' +
+      esc(pmPresetLabel(x)) +
+      '">' +
+      (armed ? "Delete?" : "✕") +
+      "</button></span>";
+  });
+  if (L.length < PM_PRESETS && !dup)
+    h +=
+      '<span class="pm-psave"><input type="text" id="pmPName" maxlength="20" placeholder="Name (optional)" aria-label="Preset name">' +
+      '<button type="button" class="stone mini" data-pm="psave">Save as preset</button></span>';
+  return (
+    h +
+    "</div>" +
+    (L.length
+      ? ""
+      : '<p class="help">Save up to ' + PM_PRESETS + " presets of lengths and long break, and switch with one tap.</p>")
+  );
+}
+/* A length in minutes, any whole number in its range (PM_RANGE), typed or stepped. */
+export function pmNum(k, cur, dis) {
+  var r = PM_RANGE[k];
+  return (
+    '<input type="number" inputmode="numeric" data-pk="' +
+    k +
+    '" min="' +
+    r[0] +
+    '" max="' +
+    r[1] +
+    '" step="1" value="' +
+    cur +
+    '" aria-label="' +
+    k +
+    '"' +
+    (dis ? " disabled" : "") +
+    ">"
+  );
 }
 export function pmSel(k, vals, cur, unit, dis) {
   return (
@@ -966,14 +1121,16 @@ export function pmDraw() {
     c.b +
     (c.every ? " · long " + c.l + " every " + c.every : "") +
     (c.auto ? " · auto" : "") +
-    '</summary><div class="pm-rows"><label>Focus' +
-    pmSel("w", [15, 20, 25, 30, 45, 50], c.w, null, lk) +
-    "</label><label>Short break" +
-    pmSel("b", [3, 5, 10, 15], c.b, null, lk) +
-    "</label><label>Long break" +
-    pmSel("l", [10, 15, 20, 30, 45, 60], c.l, null, lk) +
-    "</label><label>Long break" +
-    pmSel("every", [0, 2, 3, 4, 5], c.every, "n", lk) +
+    "</summary>" +
+    pmPresetsHtml(c, lk) +
+    '<div class="pm-rows"><label>Focus <small>15–90 min</small>' +
+    pmNum("w", c.w, lk) +
+    "</label><label>Short break <small>5–30 min</small>" +
+    pmNum("b", c.b, lk) +
+    "</label><label>Long break <small>10–60 min</small>" +
+    pmNum("l", c.l, lk) +
+    "</label><label>Long break comes" +
+    pmSel("every", [0, 2, 3, 4, 5, 6], c.every, "n", lk) +
     "</label></div>" +
     (lk
       ? '<p class="help pm-lock">Locked until this set ends' +
@@ -986,15 +1143,10 @@ export function pmDraw() {
         (pmArmed() ? "Wipe set?" : "End set") +
         "</button></div>"
       : "") +
-    '<div class="pm-row"><span>Start the next pomodoro when the break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
+    '<div class="pm-row"><span>Start the next pomodoro when a short break ends</span><button type="button" class="sw" role="switch" aria-checked="' +
     !!c.auto +
     '" aria-label="Auto-start next pomodoro" data-pm="auto"><span></span></button></div>' +
-    (c.auto
-      ? '<div class="pm-row"><span>After a long break, start the next set too</span><button type="button" class="sw" role="switch" aria-checked="' +
-        !!c.chain +
-        '" aria-label="Start the next set after a long break" data-pm="chain"><span></span></button></div>'
-      : "") +
-    '<p class="help">Lengths are set for a whole set of pomodoros. All or nothing: stop early and nothing is logged.</p></details>' +
+    '<p class="help">Lengths are set for a whole set of pomodoros. A new set always starts by hand. All or nothing: stop early and nothing is logged.</p></details>' +
     '<div class="pm-log"><div class="sh2">Today</div>' +
     (log
       ? '<ul class="pm-list">' + log + "</ul>"
@@ -1215,6 +1367,9 @@ export function init() {
   PM_LATE_MS = 5000;
   PM_GCOL = 10;
   PM_DEF = { w: 25, b: 5, l: 15, every: 4, auto: false };
+  PM_RANGE = { w: [15, 90], b: [5, 30], l: [10, 60] };
+  PM_PRESETS = 4;
+  pmDelArm = null;
   /* The page redraws every second while a pomodoro runs, so Stop's "Stop? Not counted" arming lives outside the markup
      (pmArm = when it was armed, good for PM_ARM_MS), like the sprint's. */
   pmArm = 0;

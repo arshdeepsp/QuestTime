@@ -203,6 +203,23 @@ export function migrate(c) {
     });
     v = 24;
   }
+  /* 25: pomodoro lengths are any whole minutes in a range (focus 15–90, short break 5–30, long break 10–60) and up to 4
+     presets live in cfg.pomo.presets; "start the next set too" (cfg.pomo.chain) is gone, so auto-start stops at a set's
+     end. Old lengths outside the ranges (a 3-minute short break) are clamped. */
+  if (v < 25) {
+    var pm = c.cfg && c.cfg.pomo;
+    if (pm) {
+      delete pm.chain;
+      [
+        ["w", 15, 90],
+        ["b", 5, 30],
+        ["l", 10, 60],
+      ].forEach(function (r) {
+        if (typeof pm[r[0]] === "number") pm[r[0]] = Math.max(r[1], Math.min(r[2], Math.round(pm[r[0]])));
+      });
+    }
+    v = 25;
+  }
   c.schema = v;
   return c;
 }

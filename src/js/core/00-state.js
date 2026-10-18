@@ -74,7 +74,7 @@ export function init() {
   dirty = {};
   G.timer = null;
   /* Data schema. Bump SCHEMA and add a step to migrate() whenever the stored shape changes. */
-  SCHEMA = 24;
+  SCHEMA = 25;
   RERATE_MIN = 60;
   MID_FRAC = 1 / 3;
   /* If saved data can't be read, or comes from a newer app version, a copy goes to pc-cache-rescue and nothing is saved

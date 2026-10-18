@@ -214,8 +214,39 @@ body.pm-open {
   gap: 4px;
   font: 18px/1.2 var(--vt);
 }
-.pm-rows select {
+.pm-rows select,
+.pm-rows input {
   width: 100%;
+}
+.pm-rows small {
+  font: 14px var(--vt);
+  color: #60554a;
+}
+/* Presets: a chip per preset with its ✕, and Save with an optional name. */
+.pm-pre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.pm-pchip {
+  display: inline-flex;
+}
+.pm-pchip .stone + .stone {
+  margin-left: -3px;
+}
+.pm-pchip.on [data-pm="preset"] {
+  background: #3e8a2c;
+  color: #fff;
+}
+.pm-psave {
+  display: flex;
+  gap: 6px;
+  flex: 1 1 220px;
+}
+.pm-psave input {
+  flex: 1;
+  min-width: 0;
 }
 .pm-row {
   display: flex;

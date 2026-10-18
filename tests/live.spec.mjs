@@ -29,7 +29,7 @@ async function signIn(page) {
 /* The other device's session: a 25-minute focus interval that started `ago` minutes ago. */
 const remotePomo = (now, ago, extra = {}) => ({
   q: "cs", label: "Coursework", topic: null, phase: "work", start: now - ago * 60000, end: now + (25 - ago) * 60000,
-  n: 0, paused: null, pausedTotal: 0, ints: 0, w: 25, b: 5, l: 15, every: 4, auto: false, chain: false,
+  n: 0, paused: null, pausedTotal: 0, ints: 0, w: 25, b: 5, l: 15, every: 4, auto: false,
   sid: "sOther", gen: 1, dev: "dPhone", ...extra,
 });
 const remoteDoc = (pomo, extra = {}) => ({ pomo, dev: "dPhone", name: "phone", sid: pomo ? pomo.sid : "sOther", gen: pomo ? pomo.gen : 1, u: 1, ...extra });

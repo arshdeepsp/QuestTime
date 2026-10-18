@@ -329,7 +329,7 @@ export function pomoNth(pm, n) {
   return pm.every ? ((n - 1) % pm.every) + 1 : n;
 }
 export function pomoOverCard(pm, x) {
-  /* x = the "brk" phase this card follows (pomoAhead): a set's end without chain waits for a new set. */
+  /* x = the "brk" phase this card follows (pomoAhead): a set's end always waits for a new set started by hand. */
   var setDone = x && x.long && !x.cont;
   return {
     title: setDone ? "Set done" : "Break over",

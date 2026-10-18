@@ -96,7 +96,7 @@ test("timers start at once in both modes; old strict-mode fields are dropped on 
   await expect(page.locator("#quests .q.running")).toHaveCount(1);
   await expect(page.locator("#gModal")).toBeHidden();
   const s = await store(page);
-  expect(s.schema).toBe(24);
+  expect(s.schema).toBe(25);
   expect(s.cfg.strict).toBeUndefined();
   expect(s.cfg.easeLog).toBeUndefined();
   expect(s.cfg.capSet).toBeUndefined();

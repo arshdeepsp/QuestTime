@@ -5,6 +5,8 @@ const Q = [{ id: "th", type: "time", label: "Thesis", min: 90, addedOn: "2026-10
 const T = "2026-11-02";
 const state = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
 const day = async (page) => (await state(page)).days[T] || {};
+/* Type a length into Set up and commit it (a number input saves on change: Enter or leaving the field). */
+const setNum = async (page, k, v) => { const i = page.locator(`input[data-pk=${k}]`); await i.fill(String(v)); await i.blur(); };
 /* Jump to just past the running pomodoro's end ("end") or its break's end ("bend"), measured from the page's clock now.
    A fixed jump drifts: the fake clock also runs in real time, and a transition caught more than PM_LATE_MS (5 s) late is
    applied silently, so on a loaded machine the beep a sound test waits for never played. */
@@ -27,8 +29,10 @@ test("Pomodoro is its own full-screen page, opened from the tools menu and close
   await expect(page.locator("#pomoPage .pm-time")).toHaveText("25:00");
   await expect(page.locator(".pm-q")).toHaveText(["Thesis 0m", "CS 0m"]);
   await expect(page.locator(".pm-set summary")).toContainText("25/5 · long 15 every 4");
-  await expect(page.locator("select[data-pk=b] option")).toHaveText(["3 min", "5 min", "10 min", "15 min"]);
-  await expect(page.locator("select[data-pk=l] option")).toHaveText(["10 min", "15 min", "20 min", "30 min", "45 min", "60 min"]);
+  for (const [k, lo, hi] of [["w", "15", "90"], ["b", "5", "30"], ["l", "10", "60"]]) {
+    await expect(page.locator(`input[data-pk=${k}]`)).toHaveAttribute("min", lo);
+    await expect(page.locator(`input[data-pk=${k}]`)).toHaveAttribute("max", hi);
+  }
   await expect(page.locator("[data-pm=auto] span")).toBeVisible();
   expect(await page.evaluate(() => document.body.classList.contains("pm-open"))).toBe(true);
   await page.click("#pmOk");
@@ -70,9 +74,9 @@ test("a finished pomodoro logs its minutes, counts, lands on the schedule after 
 });
 
 test("the break ends with Start pomodoro 2, Skip break skips it, and the fourth break is the long one", async ({ page }) => {
-  const errors = await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 3, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
+  const errors = await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
-  await expect(page.locator(".pm-set summary")).toContainText("15/3 · long 10 every 2");
+  await expect(page.locator(".pm-set summary")).toContainText("15/5 · long 10 every 2");
   await page.click("[data-pm=start]");
   await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
@@ -153,7 +157,7 @@ test("a pomodoro keeps the planned blocks around it and only fills the free part
 test("Settings on the page change the next pomodoro and are kept in cfg", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q } });
   await openPm(page);
-  await page.selectOption("select[data-pk=w]", "50");
+  await setNum(page, "w", 50);
   await page.selectOption("select[data-pk=every]", "0");
   await page.click("[data-pm=auto]");
   await expect(page.locator(".pm-set summary")).toContainText("50/5 · auto");
@@ -360,14 +364,14 @@ test("the done notification carries action buttons: Skip break starts the next p
 });
 
 test("the lengths are locked while a set is under way, and open again at a set boundary or in the long break", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 3, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
-  await expect(page.locator("select[data-pk=w]")).toBeEnabled();
+  await expect(page.locator("input[data-pk=w]")).toBeEnabled();
   await page.click("[data-pm=start]");
   await page.click(".pm-set summary");
-  await expect(page.locator("select[data-pk=w]")).toBeDisabled();
+  await expect(page.locator("input[data-pk=w]")).toBeDisabled();
   await expect(page.locator(".pm-lock")).toHaveText("Locked until this set ends · 2 of 2 to go");
-  await page.evaluate(() => { const s = document.querySelector("select[data-pk=w]"); s.value = "50"; s.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.evaluate(() => { const s = document.querySelector("input[data-pk=w]"); s.value = "50"; s.dispatchEvent(new Event("change", { bubbles: true })); });
   expect((await state(page)).cfg.pomo.w).toBe(15);
   await page.click("[data-pm=auto]");
   expect((await state(page)).cfg.pomo.auto).toBe(true);
@@ -377,14 +381,14 @@ test("the lengths are locked while a set is under way, and open again at a set b
   await page.click("[data-pm=end]");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("1 today");
   await expect(page.locator(".pm-set")).toHaveAttribute("open", "");
-  await expect(page.locator("select[data-pk=w]")).toBeDisabled();
+  await expect(page.locator("input[data-pk=w]")).toBeDisabled();
   await expect(page.locator(".pm-lock")).toContainText("1 of 2 to go");
   await page.click("[data-pm=start]");
   await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
   await page.click(".pm-set summary");
-  await expect(page.locator("select[data-pk=w]")).toBeEnabled();
-  await page.selectOption("select[data-pk=w]", "25");
+  await expect(page.locator("input[data-pk=w]")).toBeEnabled();
+  await setNum(page, "w", 25);
   expect((await state(page)).cfg.pomo.w).toBe(25);
 });
 
@@ -409,7 +413,7 @@ test("End set early takes back every pomodoro of the unfinished set: minutes, se
   const SJ = [{ id: "s1", name: "Maths", topics: [{ id: "a", name: "Algebra", p: 2, hist: [] }] }];
   const QT = [{ id: "th", type: "time", label: "Thesis", min: 90, addedOn: "2026-10-01", topics: ["a"], subjs: ["s1"], subj: "s1" }];
   const days = { [T]: { q: QT, th: 40, tt: { a: 40 }, sess: [{ id: "th", s: at(8, 0), e: at(8, 40), m: 40 }], sched: [{ id: "x", q: "th", f: 780, t: 840 }] } };
-  await openApp(page, { cfg: { quests: QT, subjects: SJ, pomo: { w: 15, b: 3, l: 10, every: 4 } }, days, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: QT, subjects: SJ, pomo: { w: 15, b: 5, l: 10, every: 4 } }, days, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
   await page.clock.fastForward(15 * 60000 + 1500);
@@ -425,7 +429,7 @@ test("End set early takes back every pomodoro of the unfinished set: minutes, se
   expect(e.pomo.length).toBe(2);
   await page.click("[data-pm=skip]");
   await page.click("[data-pm=start]");
-  await page.clock.runFor(3 * 60000);
+  await page.clock.runFor(5 * 60000);
   await page.click(".pm-set summary");
   await expect(page.locator(".pm-row", { hasText: "End the set early" })).toContainText("3 pomodoros");
   await page.click("[data-pm=endset]");
@@ -440,7 +444,7 @@ test("End set early takes back every pomodoro of the unfinished set: minutes, se
   expect(e.sched.map((b) => b.id)).toEqual(["x"]);
   expect(e.pomo).toBeUndefined();
   expect((await state(page)).pomo).toBeNull();
-  await expect(page.locator("select[data-pk=w]")).toBeEnabled();
+  await expect(page.locator("input[data-pk=w]")).toBeEnabled();
   await expect(page.locator("#pmSum")).toHaveText("None today · 0 this week");
 });
 
@@ -538,11 +542,11 @@ test("without auto-start only the current pomodoro's reminders are planned", asy
 });
 
 test("a finished set stays finished when the cadence changes: every 3 → 5 right after three doesn't lock, and End set has nothing to wipe", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 3 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 3 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   for (let i = 0; i < 3; i++) {
     await page.click("[data-pm=start]");
-    await page.clock.fastForward(10 * 60000 + 1500);
+    await page.clock.fastForward(15 * 60000 + 1500);
     await expect(page.locator("#pomoPage .pm-k")).toHaveText(i < 2 ? "Short break" : "Long break");
     await page.click("[data-pm=skip]");
     await expect(page.locator("#pomoPage .pm-k")).toHaveText(i < 2 ? "Break over" : "Set done");
@@ -565,40 +569,36 @@ test("a finished set stays finished when the cadence changes: every 3 → 5 righ
   await page.click("[data-pm=endset]");
   await page.click("[data-pm=endset]");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("3 today");
-  expect((await day(page)).th).toBe(30);
+  expect((await day(page)).th).toBe(45);
 });
 
-test("auto-start stops at the end of a set: after the long break the card waits for a new set; with the next-set switch on it carries on", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 2, auto: true } }, now: `${T}T10:00:00-05:00` });
+test("auto-start stops at the end of a set: after the long break the card waits, and a new set starts only by hand", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 2, auto: true, chain: true } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click(".pm-set summary");
-  await expect(page.locator("[data-pm=chain]")).toHaveAttribute("aria-checked", "false");
+  /* the old "start the next set too" switch is gone, and a leftover chain: true from an older build does nothing */
+  await expect(page.locator("[data-pm=chain]")).toHaveCount(0);
+  await expect(page.locator(".pm-set")).toContainText("Start the next pomodoro when a short break ends");
   await page.click("[data-pm=start]");
-  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
-  await page.clock.fastForward(3 * 60000 + 1500);
+  await page.clock.fastForward(5 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 2 of 2");
-  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
-  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(15 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Set done");
+  await page.clock.fastForward(30 * 60000);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Set done");
   await expect(page.locator("[data-pm=start]:visible")).toHaveText("Start a new set");
   expect((await state(page)).pomo.phase).toBe("break");
-  await page.click(".pm-set summary");
-  await page.click("[data-pm=chain]");
-  expect((await state(page)).cfg.pomo.chain).toBe(true);
+  expect((await state(page)).cfg.pomo.chain).toBeUndefined();
   await page.click("[data-pm=start]:visible");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 2");
-  await page.clock.fastForward(10 * 60000 + 1500);
-  await page.clock.fastForward(3 * 60000 + 1500);
-  await page.clock.fastForward(10 * 60000 + 1500);
-  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
-  await page.clock.fastForward(10 * 60000 + 1500);
-  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 2");
-  expect((await day(page)).pomo.length).toBe(4);
+  expect((await day(page)).pomo.length).toBe(2);
 });
 
-test("without the next-set switch the reminders ahead stop at the set's end, and the last one says the set is done", async ({ page }) => {
+test("with auto-start the reminders ahead stop at the set's end, and the last one says the set is done", async ({ page }) => {
   await page.addInitScript(() => {
     window.__ln = [];
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => "android", Plugins: {
@@ -619,12 +619,12 @@ test("without the next-set switch the reminders ahead stop at the set's end, and
 });
 
 test("the tally shows the current set: a finished set shows full, and a new set with more pomodoros starts empty", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 3 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 3 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   const lit = page.locator(".pm-tally .tomato:not(.dim)"), all = page.locator(".pm-tally .tomato");
   for (let i = 0; i < 3; i++) {
     await page.click("[data-pm=start]");
-    await page.clock.fastForward(10 * 60000 + 1500);
+    await page.clock.fastForward(15 * 60000 + 1500);
     if (i < 2) await page.click("[data-pm=skip]");
   }
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
@@ -641,7 +641,7 @@ test("the tally shows the current set: a finished set shows full, and a new set 
   await expect(lit).toHaveCount(0);
   await expect(all).toHaveCount(5);
   await expect(page.locator(".pm-tally")).toHaveAttribute("aria-label", "0 of 5 in this set · 3 today");
-  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
   await expect(lit).toHaveCount(1);
   await expect(all).toHaveCount(5);
@@ -659,11 +659,11 @@ test("after a finished set and End session, a bigger cadence shows an empty set,
 });
 
 test("in the set-done state a changed cadence takes effect on the new set: every 2 → 4 then Start a new set is pomodoro 1 of 4", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 2 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   for (let i = 0; i < 2; i++) {
     await page.click("[data-pm=start]");
-    await page.clock.fastForward(10 * 60000 + 1500);
+    await page.clock.fastForward(15 * 60000 + 1500);
     if (i === 0) { await page.click("[data-pm=skip]"); }
   }
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
@@ -679,18 +679,18 @@ test("in the set-done state a changed cadence takes effect on the new set: every
 });
 
 test("the Set up selects survive the once-a-second redraw during the long break (only the countdown is rewritten)", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 1 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 1 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
-  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
   await page.click(".pm-set summary");
-  await expect(page.locator("select[data-pk=w]")).toBeEnabled();
-  await page.evaluate(() => { window.__sel = document.querySelector("select[data-pk=w]"); });
+  await expect(page.locator("input[data-pk=w]")).toBeEnabled();
+  await page.evaluate(() => { window.__sel = document.querySelector("input[data-pk=w]"); });
   const t0 = await page.locator("#pomoPage .pm-time").textContent();
   await page.clock.runFor(2500);
   expect(await page.locator("#pomoPage .pm-time").textContent()).not.toBe(t0);
-  expect(await page.evaluate(() => window.__sel === document.querySelector("select[data-pk=w]"))).toBe(true);
+  expect(await page.evaluate(() => window.__sel === document.querySelector("input[data-pk=w]"))).toBe(true);
   await expect(page.locator(".pm-set")).toHaveAttribute("open", "");
 });
 
@@ -711,36 +711,36 @@ test("a reminder tap that lands before the catch-up tick still sees the finished
 });
 
 test("a timer started right after a pomodoro on the same quest keeps its own session, so End set can still take the pomodoro back exactly", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 4 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 4 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   await page.click("[data-pm=start]");
-  await page.clock.fastForward(10 * 60000 + 1500);
+  await page.clock.fastForward(15 * 60000 + 1500);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
   await page.click("[data-pm=end]");
   await page.click("#pmOk");
   await page.locator("#quests .q", { hasText: "Thesis" }).locator(".tmr, .qplay").first().click();
-  await page.clock.fastForward(3 * 60000 + 500);
+  await page.clock.fastForward(5 * 60000 + 500);
   await page.click("#quests .q.running .tmr, #quests .q.running .qplay");
   await expect(page.locator("#quests .q.running")).toHaveCount(0);
   const e = await day(page);
   expect(e.sess.length).toBe(2);
   expect(e.sess[0].a).toBe(1);
-  expect(e.th).toBe(13);
+  expect(e.th).toBe(20);
   await openPm(page);
   await expect(page.locator(".pm-set")).toHaveAttribute("open", "");
   await page.click("[data-pm=endset]");
   await page.click("[data-pm=endset]");
   const e2 = await day(page);
-  expect(e2.th).toBe(3);
+  expect(e2.th).toBe(5);
   expect((e2.sess || []).length).toBe(1);
 });
 
 test("turning the long break on after pomodoros ran without sets settles them: every 0 → 4 with two done starts a fresh set", async ({ page }) => {
-  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 0 } }, now: `${T}T10:00:00-05:00` });
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 15, b: 5, l: 15, every: 0 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
   for (let i = 0; i < 2; i++) {
     await page.click("[data-pm=start]");
-    await page.clock.fastForward(10 * 60000 + 1500);
+    await page.clock.fastForward(15 * 60000 + 1500);
     await page.click("[data-pm=skip]");
   }
   await page.click("[data-pm=end]");
@@ -751,4 +751,80 @@ test("turning the long break on after pomodoros ran without sets settles them: e
   expect((await day(page)).pomo.map((r) => !!r.c)).toEqual([false, true]);
   await page.click("[data-pm=start]");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
+});
+
+test("lengths are any whole minutes in their range: typed values outside it are pulled back in", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q } });
+  await openPm(page);
+  await setNum(page, "w", 37);
+  await setNum(page, "b", 3);
+  await setNum(page, "l", 75);
+  expect((await state(page)).cfg.pomo).toMatchObject({ w: 37, b: 5, l: 60 });
+  await expect(page.locator("input[data-pk=b]")).toHaveValue("5");
+  await expect(page.locator("input[data-pk=l]")).toHaveValue("60");
+  await setNum(page, "w", 120);
+  expect((await state(page)).cfg.pomo.w).toBe(90);
+  await setNum(page, "w", 9);
+  expect((await state(page)).cfg.pomo.w).toBe(15);
+  /* an empty field changes nothing */
+  await setNum(page, "w", "");
+  expect((await state(page)).cfg.pomo.w).toBe(15);
+  await expect(page.locator(".pm-set summary")).toContainText("15/5 · long 60 every 4");
+  await expect(page.locator("[data-pm=start]")).toHaveText("Start 15-min pomodoro");
+});
+
+test("a setting from an older build or another device outside the ranges is clamped when used", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q } });
+  await page.evaluate(() => { const S = JSON.parse(localStorage.getItem("pc-cache-v1")); S.cfg.pomo = { w: 10, b: 3, l: 90, every: 2 }; localStorage.setItem("pc-cache-v1", JSON.stringify(S)); });
+  await page.reload();
+  await openPm(page);
+  await expect(page.locator(".pm-set summary")).toContainText("15/5 · long 60 every 2");
+  await page.click("[data-pm=start]");
+  const p = (await state(page)).pomo;
+  expect([p.w, p.b, p.l]).toEqual([15, 5, 60]);
+  expect(p.end - p.start).toBe(15 * 60000);
+});
+
+test("presets: save up to four (named or not), apply with a tap, delete with an armed ✕; they wait while a set is under way", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 25, b: 5, l: 15, every: 4 } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  const chips = page.locator(".pm-pchip [data-pm=preset]");
+  await expect(chips).toHaveCount(0);
+  await page.fill("#pmPName", "Classic");
+  await page.click("[data-pm=psave]");
+  await expect(chips).toHaveText(["Classic"]);
+  await expect(page.locator(".pm-pchip.on")).toHaveCount(1);
+  /* the current settings are saved already: no Save until something changes */
+  await expect(page.locator("[data-pm=psave]")).toHaveCount(0);
+  await setNum(page, "w", 50);
+  await setNum(page, "b", 10);
+  await page.selectOption("select[data-pk=every]", "2");
+  await page.click("[data-pm=psave]");
+  await setNum(page, "w", 90);
+  await setNum(page, "b", 30);
+  await page.click("[data-pm=psave]");
+  await setNum(page, "w", 15);
+  await page.click("[data-pm=psave]");
+  await expect(chips).toHaveText(["Classic", "50/10 · 15 ×2", "90/30 · 15 ×2", "15/30 · 15 ×2"]);
+  /* four is the most: no Save */
+  await setNum(page, "w", 20);
+  await expect(page.locator("[data-pm=psave]")).toHaveCount(0);
+  expect((await state(page)).cfg.pomo.presets.length).toBe(4);
+  /* tap one: all four settings at once */
+  await chips.filter({ hasText: "50/10" }).click();
+  expect((await state(page)).cfg.pomo).toMatchObject({ w: 50, b: 10, l: 15, every: 2 });
+  await expect(page.locator(".pm-pchip.on [data-pm=preset]")).toHaveText("50/10 · 15 ×2");
+  await expect(page.locator("[data-pm=start]")).toHaveText("Start 50-min pomodoro");
+  /* delete is armed: first tap asks, second removes */
+  const del = page.locator(".pm-pchip", { hasText: "90/30" }).locator("[data-pm=pdel]");
+  await del.click();
+  await expect(del).toHaveText("Delete?");
+  await del.click();
+  await expect(chips).toHaveText(["Classic", "50/10 · 15 ×2", "15/30 · 15 ×2"]);
+  /* while a set is under way the others can't be applied (the lit one stays as it is) */
+  await page.click("[data-pm=start]");
+  await page.click(".pm-set summary");
+  await expect(chips.filter({ hasText: "Classic" })).toBeDisabled();
+  await page.evaluate(() => document.querySelector(".pm-pchip [data-pm=preset]").click());
+  expect((await state(page)).cfg.pomo.w).toBe(50);
 });
