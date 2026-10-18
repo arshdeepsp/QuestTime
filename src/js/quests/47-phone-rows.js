@@ -453,30 +453,60 @@ export function lessSync() {
 }
 /* Quest names wrap only between words. When a name's longest word is wider than its column (the pixel font fits ~10
    letters in a phone row), that label's font shrinks just enough for the word to fit, down to FIT_MIN px; only past
-   that does overflow-wrap break the word. Reads all widths, then writes, so it costs one layout. */
+   that does overflow-wrap break the word. Words are measured in the DOM (a hidden span with the label's font), not a
+   canvas: glyph advances at a fractional size are rounded differently by some font renderers (CI's Chromium broke
+   "computational" at a size the canvas said fitted), so each guess is re-measured and stepped down until it fits. */
 export function fitLabels() {
   var els = Array.prototype.slice.call(document.querySelectorAll("#quests .q .lbl"));
   if (!els.length) return;
   els.forEach(function (el) {
     if (el.style.fontSize) el.style.fontSize = "";
   });
-  var ctx = fitCv || (fitCv = document.createElement("canvas").getContext("2d"));
-  if (!ctx) return;
-  var out = els.map(function (el) {
-    var w = el.clientWidth;
-    if (!w) return 0;
+  var sp = fitCv;
+  if (!sp || !sp.isConnected) {
+    sp = fitCv = document.createElement("span");
+    sp.setAttribute("aria-hidden", "true");
+    sp.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;padding:0;border:0";
+    document.body.appendChild(sp);
+  }
+  var jobs = els.map(function (el) {
     var cs = getComputedStyle(el),
-      fs = parseFloat(cs.fontSize) || 10,
-      ls = parseFloat(cs.letterSpacing) || 0,
-      mx = 0;
-    ctx.font = cs.fontStyle + " " + cs.fontWeight + " " + fs + "px " + cs.fontFamily;
-    (el.textContent || "").split(/\s+/).forEach(function (word) {
-      if (word) mx = Math.max(mx, ctx.measureText(word).width + ls * word.length);
-    });
-    return mx > w ? Math.max(FIT_MIN || 7, Math.floor(((fs * w) / mx) * 10) / 10) : 0;
+      w =
+        el.getBoundingClientRect().width -
+        (parseFloat(cs.paddingLeft) || 0) -
+        (parseFloat(cs.paddingRight) || 0) -
+        (parseFloat(cs.borderLeftWidth) || 0) -
+        (parseFloat(cs.borderRightWidth) || 0),
+      words = (el.textContent || "").split(/\s+/).filter(Boolean);
+    return { el: el, w: w, words: words, cs: cs, fs: parseFloat(cs.fontSize) || 10 };
   });
-  els.forEach(function (el, i) {
-    if (out[i]) el.style.fontSize = out[i] + "px";
+  var out = jobs.map(function (j) {
+    if (!(j.w > 0) || !j.words.length) return 0;
+    var cs = j.cs;
+    sp.style.fontFamily = cs.fontFamily;
+    sp.style.fontWeight = cs.fontWeight;
+    sp.style.fontStyle = cs.fontStyle;
+    sp.style.letterSpacing = cs.letterSpacing;
+    sp.style.textTransform = cs.textTransform;
+    function widest(fs) {
+      sp.style.fontSize = fs + "px";
+      var mx = 0;
+      j.words.forEach(function (word) {
+        sp.textContent = word;
+        mx = Math.max(mx, sp.getBoundingClientRect().width);
+      });
+      return mx;
+    }
+    var min = FIT_MIN || 7,
+      mx = widest(j.fs);
+    if (mx <= j.w) return 0;
+    var fs = Math.max(min, Math.floor(((j.fs * j.w) / mx) * 10) / 10);
+    while (fs > min && widest(fs) > j.w) fs = Math.max(min, Math.round((fs - 0.25) * 100) / 100);
+    return fs;
+  });
+  sp.textContent = "";
+  jobs.forEach(function (j, i) {
+    if (out[i]) j.el.style.fontSize = out[i] + "px";
   });
 }
 export function openCountInfo() {
@@ -629,6 +659,8 @@ export function init() {
     });
   });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLabels);
+  /* fonts.ready can settle before the pixel font is even requested; refit whenever a font finishes loading. */
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", fitLabels);
   /* Rows opened from their summary box stay open when the list is rebuilt (a quest changed here, a sync from another device). */
   qOpen = {};
   G.offOpen = !!uiGet("off");

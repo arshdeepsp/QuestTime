@@ -28,26 +28,64 @@ test.describe("compact phone rows", () => {
     const L = [{ id: "lg", type: "time", label: "Coursework assignments for computational mathematics", min: 30 }, { id: "g", type: "check", label: "Gym" }];
     await openApp(page, { cfg: { quests: L } });
     await expect(page.locator("#quests .q:has-text('Gym') .lbl")).toHaveCSS("font-size", "10px");
-    const split = await page.locator("#quests .q:has-text('Coursework') .lbl").evaluate((el) => {
-      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-      const bad = [];
-      let lines = new Set();
-      for (let n = w.nextNode(); n; n = w.nextNode()) {
-        const re = /\S+/g;
-        let m;
-        while ((m = re.exec(n.data))) {
-          const r = document.createRange();
-          r.setStart(n, m.index);
-          r.setEnd(n, m.index + m[0].length);
-          const rs = [...r.getClientRects()].filter((x) => x.width > 0);
-          if (new Set(rs.map((x) => Math.round(x.top))).size > 1) bad.push(m[0]);
-          rs.forEach((x) => lines.add(Math.round(x.top)));
+    const lbl = page.locator("#quests .q:has-text('Coursework') .lbl");
+    const measure = () =>
+      lbl.evaluate((el) => {
+        const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        const bad = [];
+        const lines = new Set();
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          const re = /\S+/g;
+          let m;
+          while ((m = re.exec(n.data))) {
+            const r = document.createRange();
+            r.setStart(n, m.index);
+            r.setEnd(n, m.index + m[0].length);
+            const rs = [...r.getClientRects()].filter((x) => x.width > 0);
+            if (new Set(rs.map((x) => Math.round(x.top))).size > 1) bad.push(m[0]);
+            rs.forEach((x) => lines.add(Math.round(x.top)));
+          }
         }
-      }
-      return { bad, lines: lines.size };
+        return { bad, lines: lines.size };
+      });
+    /* fitLabels may run again once the pixel font has loaded, so poll rather than read once. */
+    await expect.poll(async () => (await measure()).bad, { timeout: 5000 }).toEqual([]);
+    expect((await measure()).lines).toBeGreaterThan(1);
+  });
+
+  test("a long word still fits when the renderer rounds the font size up", async ({ page }) => {
+    /* CI's Chromium laid out "computational" wider than a canvas measured it. Fake that: a label's real font size is
+       rounded up to the next whole pixel, as a hinting renderer would; the fit must measure what is drawn. */
+    await page.addInitScript(() => {
+      const d = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, "fontSize") || {};
+      const st = new WeakMap();
+      Object.defineProperty(CSSStyleDeclaration.prototype, "fontSize", {
+        configurable: true,
+        get() {
+          return st.has(this) ? st.get(this) : d.get ? d.get.call(this) : this.getPropertyValue("font-size");
+        },
+        set(v) {
+          st.set(this, v);
+          const n = parseFloat(v);
+          this.setProperty("font-size", v && n ? Math.ceil(n) + "px" : v);
+        },
+      });
     });
-    expect(split.lines).toBeGreaterThan(1);
-    expect(split.bad).toEqual([]);
+    const L = [{ id: "lg", type: "time", label: "Coursework assignments for computational mathematics", min: 30 }, { id: "g", type: "check", label: "Gym" }];
+    await openApp(page, { cfg: { quests: L } });
+    const lbl = page.locator("#quests .q:has-text('Coursework') .lbl");
+    await expect
+      .poll(() =>
+        lbl.evaluate((el) => {
+          const n = el.firstChild && el.firstChild.nodeType === 3 ? el.firstChild : document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
+          const i = n.data.indexOf("computational");
+          const r = document.createRange();
+          r.setStart(n, i);
+          r.setEnd(n, i + 13);
+          return new Set([...r.getClientRects()].filter((x) => x.width > 0).map((x) => Math.round(x.top))).size;
+        })
+      )
+      .toBe(1);
   });
 
   test("rows are slim: the subjects box sits inline after the label", async ({ page }) => {
