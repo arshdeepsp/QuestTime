@@ -9,6 +9,7 @@ import { esc, fmtD, hm, num, svg } from "../core/util.js";
 import { notifSync } from "../notifications/35d-plan.js";
 import { renderBadges, toast } from "../progress/03-badges.js";
 import { renderResetCard } from "../progress/21-reset-card.js";
+import { renderLiveCard } from "../timer/pomo-live.js";
 import { closeGrove, openGrove } from "../progress/42-grove-sky.js";
 import { wrapBtn, wrapLabel } from "../progress/49-wrap-up.js";
 import { openDayModal } from "../progress/past-day.js";
@@ -410,6 +411,7 @@ export function renderBody(fromClick) {
   });
   schRows(defs, k);
   renderResetCard(st);
+  renderLiveCard();
   document.getElementById("tdRow").hidden = past;
   var pn = document.getElementById("pausedNote"),
     pq =

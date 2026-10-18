@@ -206,12 +206,13 @@ test("a full account's worth of data pushes as documents Firestore accepts, and 
   await page.reload();
   await signIn(page);
   await expect(page.locator(".srow", { has: page.locator("b", { hasText: /^Sync$/ }) })).toContainText("Up to date");
-  const d = await docs(page);
-  expect(await page.evaluate(() => window.__cloud.bad || [])).toEqual([]);
   const local = await store(page);
   const dayKeys = Object.keys(local.days).sort();
   expect(dayKeys.length).toBeGreaterThanOrEqual(Object.keys(D).length);
-  expect(Object.keys(d).sort()).toEqual(["users/u1/data/cfg", "users/u1/data/refl", "users/u1/data/notes"].concat(dayKeys.map((k) => "users/u1/days/" + k)).sort());
+  /* "Up to date" can show between two pushes of the first sync (refl and notes went up a moment later under load), so wait for every doc. */
+  await expect.poll(async () => Object.keys(await docs(page)).sort()).toEqual(["users/u1/data/cfg", "users/u1/data/refl", "users/u1/data/notes"].concat(dayKeys.map((k) => "users/u1/days/" + k)).sort());
+  const d = await docs(page);
+  expect(await page.evaluate(() => window.__cloud.bad || [])).toEqual([]);
   const clean = (o) => { const x = JSON.parse(JSON.stringify(o)); delete x.u; delete x.at; return x; };
   expect(clean(d["users/u1/data/cfg"])).toEqual(local.cfg);
   expect(clean(d["users/u1/data/refl"]).map).toEqual(local.refl);

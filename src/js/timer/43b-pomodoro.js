@@ -27,6 +27,8 @@ import { spAdd, spFmt } from "./43-sprint.js";
 import { focusSync } from "./44b-live-notification.js";
 import { addSession } from "./sessions.js";
 import { tomatoRows } from "./tomato.js";
+import { liveCardHtml, liveKey, renderLiveCard } from "./pomo-live.js";
+import { devId } from "../core/device.js";
 import { sfx } from "../ui/01-sound.js";
 import { render } from "../ui/04-render.js";
 import { haptic } from "../ui/45-gestures.js";
@@ -369,6 +371,11 @@ export function pomoStart(q, at, quiet) {
     every: c.every,
     auto: !!c.auto,
     chain: !!c.chain,
+    /* The session's identity for moving it between devices (sync/54-account.js, "live"): sid names the session and
+       stays through its pomodoros, gen counts hand-overs, dev is the device running it. A new session starts at gen 1. */
+    sid: prev && prev.sid ? prev.sid : "s" + now.toString(36) + Math.random().toString(36).slice(2, 7),
+    gen: prev && prev.gen ? prev.gen : 1,
+    dev: devId(),
   };
   pmArm = 0;
   callCheck();
@@ -418,6 +425,41 @@ export function pomoStop() {
   pmArm = 0;
   pmSave();
   render();
+}
+/* The session was taken over (or ended) on another device: drop it here without logging anything; the other device
+     logs what finishes from now on. msg says where it went. */
+export function pomoLost(msg) {
+  if (!S.pomo) return;
+  S.pomo = null;
+  pmArm = 0;
+  pmSave();
+  render();
+  if (pmOpen()) {
+    pmSig = "";
+    pmDraw();
+  }
+  if (msg) setSync(msg);
+}
+/* Continue here: take over another device's session (d = its live doc). The session keeps its wall-clock times, so the
+     countdown carries on exactly; gen goes up so the other device knows it lost it. Its quest must be on today's list. */
+export function pomoAdopt(d) {
+  var p = d && d.pomo;
+  if (!p) return false;
+  var q = pmDefs().filter(function (x) {
+    return x.id === p.q;
+  })[0];
+  if (!q) {
+    setSync(p.label + " isn’t on today’s list here, so the pomodoro can’t continue on this device.");
+    return false;
+  }
+  if (S.timer) stopTimer();
+  S.pomo = Object.assign(JSON.parse(JSON.stringify(p)), { sid: d.sid || p.sid, gen: (+d.gen || 1) + 1, dev: devId() });
+  G.liveRemote = null;
+  pmArm = 0;
+  pmSave();
+  pomoTick();
+  render();
+  return true;
 }
 /* End the set early: a set is all or nothing too. Every pomodoro finished in the current (unfinished) set is taken back
      — its minutes off the quest, its session, its topic time and its schedule block — and its record removed, as if
@@ -561,6 +603,9 @@ export function pomoTick() {
       steps = 0;
     while (p && steps++ < 40) {
       if (p.phase === "work" && !p.paused && now >= p.end) {
+        /* Signed in, a finished interval is logged only after checking this device still runs the session (another one
+           may have taken it over): G.liveGuard reads the live doc and calls pomoTick again, or drops the session. */
+        if (G.liveGuard && !G.liveGuard(p)) break;
         pomoFinish(now - p.end > PM_LATE_MS);
         ch = true;
         continue;
@@ -828,6 +873,7 @@ export function pmDraw() {
     })
     .join("");
   var h =
+    (p ? "" : liveCardHtml()) +
     '<div class="pm-card' +
     (p ? " live " + p.phase : "") +
     '"><div class="pm-k">' +
@@ -1135,6 +1181,31 @@ export function init() {
   pmTitle0 = document.title;
   pmPill = document.getElementById("pmPill");
   pmPill.addEventListener("click", openPomo);
+  G.pmRedraw = function () {
+    if (pmOpen()) {
+      pmSig = "";
+      pmDraw();
+    }
+  };
+  /* The "running on your phone" card (Today and the Pomodoro page). */
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest("[data-live]");
+    if (!b) return;
+    var a = b.getAttribute("data-live");
+    if (a === "take" && G.liveTake) {
+      haptic("medium", true);
+      G.liveTake().then(function (ok) {
+        if (ok && !pmOpen()) openPomo();
+      });
+    } else if (a === "hide" && G.liveRemote) {
+      G.liveHide = liveKey(G.liveRemote);
+      renderLiveCard();
+      if (pmOpen()) {
+        pmSig = "";
+        pmDraw();
+      }
+    }
+  });
   setInterval(pomoTick, 1000);
   /* A pomodoro that ended while the app was dead is finished by the first tick, which logs, renders and writes the
      schedule — all of which need modules that init after this one, so the catch-up waits for every init to run. */

@@ -69,6 +69,45 @@ body.pm-open {
   display: grid;
   gap: 14px;
 }
+/* A pomodoro running on another device of this account: "Continue here" (timer/pomo-live.js), on Today above the
+   quest list and on the Pomodoro page above the card. */
+.livecard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: #ccc6c0;
+  border: 3px solid;
+  border-color: #fff #60554a #60554a #fff;
+  box-shadow: 0 0 0 3px #000;
+  color: #201e1c;
+  text-shadow: none;
+}
+.livecard > svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+.lc-t {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.lc-t b {
+  font: 9px/1.4 var(--px);
+}
+.lc-t span {
+  font: 16px/1.1 var(--vt);
+  color: #463f38;
+}
+.livecard .stone {
+  flex: none;
+}
+#liveCard[hidden] {
+  display: none;
+}
 .pm-card {
   background: #24211e;
   color: #fff;

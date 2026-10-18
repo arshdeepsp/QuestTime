@@ -18,6 +18,9 @@ import { render } from "../ui/04-render.js";
 import { hashOf, merge3, mergeNotes } from "./merge.js";
 import { welcomeCheck } from "../ui/24-help.js";
 import { applyLook } from "../ui/look.js";
+import { devId, devName } from "../core/device.js";
+import { pomoAdopt, pomoLost, pomoTick } from "../timer/43b-pomodoro.js";
+import { liveAlive, renderLiveCard } from "../timer/pomo-live.js";
 
 export var FIREBASE_CONFIG, ACCOUNT_KEY, cloud;
 /* The map docs: one document each, a map by key on S (S.refl by day, S.notes by note id); users/<uid>/data/<id>. */
@@ -86,7 +89,7 @@ export function init() {
     }
     /* Firestore document paths need an even number of segments: cfg, refl and notes live in users/<uid>/data/, days in users/<uid>/days/. */
     function docPath(id) {
-      return id === "cfg" || MAPS[id] ? base() + "/data/" + id : base() + "/" + id;
+      return id === "cfg" || id === "live" || MAPS[id] ? base() + "/data/" + id : base() + "/" + id;
     }
     function localDoc(id) {
       if (id === "cfg") return S.cfg;
@@ -180,6 +183,7 @@ export function init() {
         return localAdapter.load();
       },
       save: function (state0, changed) {
+        livePublish();
         localAdapter.save(state0);
         changed.forEach(function (id) {
           if (id === "session") return;
@@ -259,8 +263,9 @@ export function init() {
                 }),
               )
               .forEach(function (x) {
-                got[x.id] = 1;
                 seen(x.data);
+                if (x.id === "live") return liveSeen(x.data);
+                got[x.id] = 1;
                 if (takeRemote(x.id, x.data)) ch = true;
               });
             Object.keys(m.u || {}).forEach(function (id) {
@@ -393,6 +398,130 @@ export function init() {
       queue[id] = true;
       return true;
     }
+    /* ---- a running pomodoro, shared between this account's devices ----
+       users/<uid>/data/live = {pomo, dev, name, sid, gen, u}: the session (S.pomo, otherwise device-local) as the device
+       running it last wrote it. It is not a store doc (no merge, no agreed hash): the device running a session writes it
+       straight away whenever the session changes (livePublish, from every save; the day docs go up with it, so a
+       pomodoro that just finished reaches the cloud before anyone can take the session over). Other devices see it on
+       pull (launch, return to the app, Sync now), when the window gets focus, and every LIVE_CHECK while a session runs
+       here, and offer "Continue here" (G.liveRemote, timer/pomo-live.js). Taking over (G.liveTake) pulls first, then
+       installs the session with gen + 1; the device that ran it drops it (pomoLost) once it sees a higher gen of the
+       same session (sid). Before logging a finished interval the running device reads the doc once (G.liveGuard), so a
+       pomodoro is logged by whichever device runs the session at that moment, never twice. A different sid is another
+       session: it never ends ours (two devices may each run one). */
+    var LIVE_CHECK = 60000,
+      liveH = null,
+      liveOwn = null,
+      guardEnd = 0,
+      guardOk = 0;
+    function livePath() {
+      return docPath("live");
+    }
+    function livePublish() {
+      if (!user || !fb) return;
+      var p = S.pomo,
+        me = devId();
+      if (p && !p.sid) {
+        /* A session started before this build (or before signing in) gets its identity now. */
+        p.sid = "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        p.gen = 1;
+        p.dev = me;
+      }
+      if (p && p.dev !== me) return;
+      var h = hashOf(p || null);
+      if (h === liveH) return;
+      /* Nothing runs here and nothing we ran ended: nothing to say. */
+      if (!p && !liveOwn) {
+        liveH = h;
+        return;
+      }
+      liveH = h;
+      var own = p ? { sid: p.sid, gen: p.gen } : liveOwn;
+      liveOwn = p ? own : null;
+      var data = { pomo: p ? strip(p) : null, dev: me, name: devName(), sid: own.sid, gen: own.gen, u: Date.now() };
+      clearTimeout(pushT);
+      fb.db.batch([{ id: "live", path: livePath(), data: data }]).then(
+        function () {},
+        function () {
+          liveH = null;
+        },
+      );
+      setTimeout(flushQueue, 0);
+    }
+    /* The live doc as another device wrote it. Ours (dev = this device) says nothing new. */
+    function liveSeen(d) {
+      var was = G.liveRemote || null,
+        me = devId(),
+        p = S.pomo;
+      if (!d || d.dev === me) {
+        G.liveRemote = null;
+      } else if (p && p.sid && d.sid === p.sid) {
+        if (+d.gen > +p.gen || (+d.gen === +p.gen && d.dev > me)) {
+          /* Our session went on elsewhere (or ended there): drop it here, logging nothing. */
+          liveOwn = null;
+          liveH = hashOf(null);
+          G.liveRemote = d.pomo && liveAlive(d.pomo) ? d : null;
+          pomoLost(
+            d.pomo
+              ? "Your pomodoro moved to your " + (d.name || "other device") + "."
+              : "The pomodoro session was ended on your " + (d.name || "other device") + ".",
+          );
+          return;
+        }
+        /* An older write of our own session from before we took it over: say it again. */
+        G.liveRemote = null;
+        liveH = null;
+        livePublish();
+      } else G.liveRemote = !p && d.pomo && liveAlive(d.pomo) ? d : null;
+      if (JSON.stringify(was) !== JSON.stringify(G.liveRemote || null)) {
+        renderLiveCard();
+        if (typeof G.pmRedraw === "function") G.pmRedraw();
+      }
+    }
+    function liveCheck() {
+      if (!user || !fb) return Promise.resolve();
+      return Promise.race([
+        fb.db.get(livePath()).then(function (r) {
+          liveSeen(r && r.data);
+        }),
+        new Promise(function (res) {
+          setTimeout(res, 4000);
+        }),
+      ]).catch(function () {});
+    }
+    /* Before a finished interval is logged: does this device still run the session? One read, at most once per
+       interval; offline or slow (4 s) counts as yes, so a pomodoro is never lost to a bad connection. */
+    G.liveGuard = function (p) {
+      if (!user || !fb || !p.sid) return true;
+      if (guardOk === p.end) return true;
+      if (guardEnd === p.end) return false;
+      guardEnd = p.end;
+      liveCheck().then(function () {
+        guardEnd = 0;
+        if (S.pomo === p) {
+          guardOk = p.end;
+          pomoTick();
+        }
+      });
+      return false;
+    };
+    G.liveTake = function () {
+      var d0 = G.liveRemote;
+      if (!d0) return Promise.resolve(false);
+      return Promise.resolve(pull())
+        .then(liveCheck)
+        .then(function () {
+          var d = G.liveRemote;
+          if (!d || d.sid !== d0.sid) return false;
+          return pomoAdopt(d);
+        });
+    };
+    window.addEventListener("focus", function () {
+      liveCheck();
+    });
+    setInterval(function () {
+      if (S.pomo && S.pomo.dev === devId() && document.visibilityState === "visible") liveCheck();
+    }, LIVE_CHECK);
     /* First merge after sign-in: everything remote vs everything local, then push what's newer here. */
     function merge() {
       var t0 = Date.now();
@@ -402,7 +531,10 @@ export function init() {
         fb.db.get(docPath("refl")),
         fb.db.get(docPath("notes")),
         fb.db.list(base() + "/days"),
+        fb.db.get(livePath()),
       ]).then(function (rr) {
+        seen(rr[4].data);
+        liveSeen(rr[4].data);
         var r = [rr[0], rr[1], rr[3]],
           got = { cfg: 1, refl: 1, notes: 1 },
           ch = false;
@@ -480,6 +612,9 @@ export function init() {
       user = null;
       startP = null;
       queue = {};
+      liveH = null;
+      liveOwn = null;
+      G.liveRemote = null;
       store.use(localAdapter);
       setStatus("off");
     }
@@ -746,6 +881,7 @@ export function init() {
                 "users/" + u.uid + "/data/cfg",
                 "users/" + u.uid + "/data/refl",
                 "users/" + u.uid + "/data/notes",
+                "users/" + u.uid + "/data/live",
               ]),
             );
           })

@@ -346,6 +346,7 @@ export function init() {
             "A finished pomodoro logs its minutes to the quest like a timer, and is drawn onto today’s schedule afterwards, so the plan shows what really happened.",
             "All or nothing: stop early and nothing is logged to the quest — finishing is the point. Set up (lengths, long break, auto-start) is on the page.",
             "Trends › Pomodoro counts the week, days in a row, your best day, the longest chain and the harvest. No XP: the quest minutes are the reward.",
+            "Signed in, a pomodoro moves between your devices: open the app on the other one and tap Continue here on the “Pomodoro running on your phone” card. The countdown carries on where it was, and the device you left stops it (a phone you left in your pocket stops when you next open it). Each pomodoro is logged once, by the device running it when it finishes.",
           ],
         ],
         [
