@@ -170,6 +170,68 @@ test("a session ended on the other device ends here too; a stale or ended one is
   await expect(page.locator(".livecard")).toHaveCount(0);
 });
 
+test("starting while the phone runs one asks first: Continue it here takes that session over", async ({ page }) => {
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
+  await signIn(page);
+  await page.goto("http://127.0.0.1:4173/index.html#pomodoro");
+  const now = await page.evaluate(() => Date.now());
+  await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(remotePomo(now, 3))]);
+  await expect(page.locator("#pomoPage .livecard")).toBeVisible();
+  /* hiding the card doesn't make the other session go away */
+  await page.click("#pomoPage .livecard [data-live=hide]");
+  await page.click("[data-pm=start]");
+  await expect(page.locator("#gModal")).toBeVisible();
+  await expect(page.locator("#gTitle")).toHaveText("Pomodoro running elsewhere");
+  await expect(page.locator("#gBody")).toContainText("A pomodoro is running on your phone: Focus on Coursework until");
+  expect((await store(page)).pomo).toBeFalsy();
+  await page.click("[data-lb=take]");
+  await expect(page.locator("#gModal")).toBeHidden();
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
+  await expect.poll(async () => [(await live(page)).sid, (await live(page)).gen]).toEqual(["sOther", 2]);
+});
+
+test("End it and start new ends the phone's session and starts a fresh one here; the phone drops its own when it hears", async ({ page }) => {
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
+  await signIn(page);
+  await page.goto("http://127.0.0.1:4173/index.html#pomodoro");
+  const now = await page.evaluate(() => Date.now());
+  await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(remotePomo(now, 3))]);
+  await page.click("[data-pm=start]");
+  await page.click("[data-lb=fresh]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
+  const mine = await page.evaluate(() => localStorage.getItem("pc-dev"));
+  const s = await store(page);
+  expect(s.pomo.sid).not.toBe("sOther");
+  expect(s.pomo.end - s.pomo.start).toBe(25 * 60000);
+  /* the doc now carries our new session and names the one it ended, so the phone stops even if it never saw the end */
+  await expect.poll(async () => { const d = await live(page); return [d.dev, d.sid, d.ended]; }).toEqual([mine, s.pomo.sid, "sOther"]);
+});
+
+test("a session here ends when the other device starts a new one in its place", async ({ page }) => {
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
+  await signIn(page);
+  const d = await startHere(page);
+  await page.evaluate(([p, x]) => window.__cloud.push(p, x), [LIVE, remoteDoc(remotePomo(Date.now(), 0, { sid: "sNew" }), { ended: d.sid })]);
+  await expect(page.locator("#sync")).toHaveText("The pomodoro session was ended on your phone.");
+  expect((await store(page)).pomo).toBeFalsy();
+  expect(((await store(page)).days[T] || {}).cs || 0).toBe(0);
+});
+
+test("a session idle for hours on another device doesn't block a start here", async ({ page }) => {
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
+  await signIn(page);
+  await page.goto("http://127.0.0.1:4173/index.html#pomodoro");
+  const now = await page.evaluate(() => Date.now());
+  await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(remotePomo(now - 5 * 3600000, 0, { sid: "sOld" }))]);
+  await page.click("[data-pm=start]");
+  await expect(page.locator("#gModal")).toBeHidden();
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
+});
+
 test("signed out, nothing is written or offered; a pomodoro runs as before", async ({ page }) => {
   await page.addInitScript(fake);
   await openApp(page, { cfg: { quests: [CS], repFrozen: true }, hash: "#pomodoro" });

@@ -27,7 +27,8 @@ import { spAdd, spFmt } from "./43-sprint.js";
 import { focusSync } from "./44b-live-notification.js";
 import { addSession } from "./sessions.js";
 import { tomatoRows } from "./tomato.js";
-import { liveCardHtml, liveKey, renderLiveCard } from "./pomo-live.js";
+import { liveAlive, liveCardHtml, liveKey, liveWhat, renderLiveCard } from "./pomo-live.js";
+import { closeG, openG } from "../ui/18-modal.js";
 import { devId } from "../core/device.js";
 import { sfx } from "../ui/01-sound.js";
 import { render } from "../ui/04-render.js";
@@ -343,6 +344,11 @@ export function pmArmed() {
 export function pomoStart(q, at, quiet) {
   /* Viewing a past day refuses a hand start (it would log into the wrong day); an auto-start catching up (at) goes on. */
   if (locked() && !at) return false;
+  /* One pomodoro at a time across the account: a fresh start while another device runs one asks first. */
+  if (!at && !S.pomo && pomoElsewhere()) {
+    pomoAskElsewhere(q);
+    return false;
+  }
   if (S.timer) stopTimer();
   var c = pmCfg(),
     now = at || Date.now(),
@@ -425,6 +431,46 @@ export function pomoStop() {
   pmArm = 0;
   pmSave();
   render();
+}
+/* Another device of the account runs a pomodoro right now (G.liveRemote, kept by sync/54-account.js; one idle for 2 h
+     doesn't count). Hiding its card doesn't make it go away. */
+export function pomoElsewhere() {
+  var d = G.liveRemote;
+  return !!(d && d.pomo && liveAlive(d.pomo));
+}
+/* Starting while another device runs one: continue that session here, or end it there (logging nothing more for it)
+     and start this one. Never both: two sessions on two devices log into the same day and one side's minutes would be
+     lost when the day syncs. */
+export function pomoAskElsewhere(q) {
+  var d = G.liveRemote;
+  openG("Pomodoro running elsewhere", function (b) {
+    b.innerHTML =
+      '<p class="help">A pomodoro is running on your ' +
+      esc(d.name || "other device") +
+      ": " +
+      liveWhat(d.pomo) +
+      '.</p><p class="help">Only one runs at a time, so this device can continue it or end it and start a new one on ' +
+      esc(q.label) +
+      '.</p><div class="pm-acts"><button type="button" class="stone save" data-lb="take">Continue it here</button>' +
+      '<button type="button" class="stone del" data-lb="fresh">End it and start new</button></div>';
+    b.querySelector("[data-lb=take]").addEventListener("click", function () {
+      closeG();
+      if (G.liveTake)
+        G.liveTake().then(function (ok) {
+          if (ok && !pmOpen()) openPomo();
+        });
+    });
+    b.querySelector("[data-lb=fresh]").addEventListener("click", function () {
+      closeG();
+      Promise.resolve(G.liveEnd ? G.liveEnd(d) : null).then(function () {
+        if (pomoStart(q) && !pmOpen()) openPomo();
+        else if (pmOpen()) {
+          pmSig = "";
+          pmDraw();
+        }
+      });
+    });
+  });
 }
 /* The session was taken over (or ended) on another device: drop it here without logging anything; the other device
      logs what finishes from now on. msg says where it went. */

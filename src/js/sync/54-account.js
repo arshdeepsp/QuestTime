@@ -415,6 +415,7 @@ export function init() {
        session: it never ends ours (two devices may each run one). */
     var LIVE_CHECK = 5 * 60000,
       liveUnsub = null,
+      liveEnded = null,
       liveH = null,
       liveOwn = null,
       guardEnd = 0,
@@ -444,6 +445,9 @@ export function init() {
       var own = p ? { sid: p.sid, gen: p.gen } : liveOwn;
       liveOwn = p ? own : null;
       var data = { pomo: p ? strip(p) : null, dev: me, name: devName(), sid: own.sid, gen: own.gen, u: Date.now() };
+      /* A session started with "End it and start new" names the one it ended, so that device drops it even if it only
+         ever sees this later write. */
+      if (liveEnded) data.ended = liveEnded;
       clearTimeout(pushT);
       fb.db.batch([{ id: "live", path: livePath(), data: data }]).then(
         function () {},
@@ -460,6 +464,12 @@ export function init() {
         p = S.pomo;
       if (!d || d.dev === me) {
         G.liveRemote = null;
+      } else if (p && p.sid && d.ended === p.sid) {
+        liveOwn = null;
+        liveH = hashOf(null);
+        G.liveRemote = d.pomo && liveAlive(d.pomo) ? d : null;
+        pomoLost("The pomodoro session was ended on your " + (d.name || "other device") + ".");
+        return;
       } else if (p && p.sid && d.sid === p.sid) {
         if (+d.gen > +p.gen || (+d.gen === +p.gen && d.dev > me)) {
           /* Our session went on elsewhere (or ended there): drop it here, logging nothing. */
@@ -537,6 +547,23 @@ export function init() {
           liveSeen(r && r.data);
         });
     }
+    /* End another device's session from here ("End it and start new"): its sid with a higher gen and no pomo, so that
+       device drops it (pomoLost, nothing more logged) as soon as it hears; what it already logged stays. */
+    G.liveEnd = function (d) {
+      if (!user || !fb || !d) return Promise.resolve();
+      G.liveRemote = null;
+      renderLiveCard();
+      liveH = hashOf(null);
+      liveOwn = null;
+      liveEnded = d.sid;
+      var data = { pomo: null, dev: devId(), name: devName(), sid: d.sid, gen: (+d.gen || 1) + 1, u: Date.now() };
+      return Promise.race([
+        fb.db.batch([{ id: "live", path: livePath(), data: data }]),
+        new Promise(function (res) {
+          setTimeout(res, 4000);
+        }),
+      ]).catch(function () {});
+    };
     window.addEventListener("focus", function () {
       liveCheck();
     });
@@ -637,6 +664,7 @@ export function init() {
       queue = {};
       liveH = null;
       liveOwn = null;
+      liveEnded = null;
       G.liveRemote = null;
       store.use(localAdapter);
       setStatus("off");
