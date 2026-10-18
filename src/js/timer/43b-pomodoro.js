@@ -795,7 +795,16 @@ export function pmDraw() {
   var lk = pmLocked(),
     wipeN = pomoSetSize() + (p && p.phase === "work" ? 1 : 0),
     tally = "";
-  for (var i = 0; i < Math.max(c.every || 4, today); i++) tally += i < today ? tomatoSvg("tomato") : tomatoDim();
+  /* The tally is the current set, not the day: a set that just closed (its long break) shows full, and once a new set
+     starts it begins empty with the new cadence's slots, so pomodoros from an earlier set never count toward it. */
+  var setN = p ? p.every : c.every,
+    closed = !!(p && p.phase === "break" && p.long),
+    have = !setN ? today : closed ? setN : pomoOpen(T) % setN,
+    slots = setN || Math.max(4, today);
+  for (var i = 0; i < Math.max(slots, have); i++) tally += i < have ? tomatoSvg("tomato") : tomatoDim();
+  var tallyLbl = setN
+    ? (closed ? "Set of " + setN + " done" : have + " of " + setN + " in this set") + " \u00b7 " + today + " today"
+    : today + " pomodoros today";
   var log = pomoOf(T)
     .slice()
     .reverse()
@@ -828,8 +837,8 @@ export function pmDraw() {
     '</div><div class="pm-time"></div><div class="pm-sub">' +
     sub +
     '</div><div class="pm-tally" aria-label="' +
-    today +
-    ' pomodoros today">' +
+    tallyLbl +
+    '">' +
     tally +
     "</div></div>" +
     (!p || p.phase === "break"

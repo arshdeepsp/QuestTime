@@ -611,6 +611,46 @@ test("without the next-set switch the reminders ahead stop at the set's end, and
   expect(m[1205].act).toBe("pc_pomo_brk");
 });
 
+test("the tally shows the current set: a finished set shows full, and a new set with more pomodoros starts empty", async ({ page }) => {
+  await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 3 } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  const lit = page.locator(".pm-tally .tomato:not(.dim)"), all = page.locator(".pm-tally .tomato");
+  for (let i = 0; i < 3; i++) {
+    await page.click("[data-pm=start]");
+    await page.clock.fastForward(10 * 60000 + 1500);
+    if (i < 2) await page.click("[data-pm=skip]");
+  }
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
+  await expect(lit).toHaveCount(3);
+  await expect(all).toHaveCount(3);
+  await expect(page.locator(".pm-tally")).toHaveAttribute("aria-label", "Set of 3 done · 3 today");
+  await page.click(".pm-set summary");
+  await page.selectOption("select[data-pk=every]", "5");
+  await expect(lit).toHaveCount(3);
+  await page.click("[data-pm=skip]");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Set done");
+  await page.click("[data-pm=start]:visible");
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 5");
+  await expect(lit).toHaveCount(0);
+  await expect(all).toHaveCount(5);
+  await expect(page.locator(".pm-tally")).toHaveAttribute("aria-label", "0 of 5 in this set · 3 today");
+  await page.clock.fastForward(10 * 60000 + 1500);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
+  await expect(lit).toHaveCount(1);
+  await expect(all).toHaveCount(5);
+  await page.click("[data-pm=end]");
+  await expect(lit).toHaveCount(1);
+});
+
+test("after a finished set and End session, a bigger cadence shows an empty set, not the day's pomodoros", async ({ page }) => {
+  const done = Array.from({ length: 3 }, (_, i) => ({ q: "th", s: at(8, i * 30), e: at(8, i * 30 + 25), m: 25, ok: true, ...(i === 2 ? { c: 1 } : {}) }));
+  await openApp(page, { cfg: { quests: Q, pomo: { every: 5 } }, days: { [T]: { q: Q, th: 75, pomo: done } }, now: `${T}T10:00:00-05:00` });
+  await openPm(page);
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("3 today");
+  await expect(page.locator(".pm-tally .tomato:not(.dim)")).toHaveCount(0);
+  await expect(page.locator(".pm-tally .tomato")).toHaveCount(5);
+});
+
 test("in the set-done state a changed cadence takes effect on the new set: every 2 → 4 then Start a new set is pomodoro 1 of 4", async ({ page }) => {
   await openApp(page, { cfg: { quests: Q, pomo: { w: 10, b: 3, l: 10, every: 2 } }, now: `${T}T10:00:00-05:00` });
   await openPm(page);
