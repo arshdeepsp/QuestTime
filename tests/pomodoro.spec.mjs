@@ -5,6 +5,13 @@ const Q = [{ id: "th", type: "time", label: "Thesis", min: 90, addedOn: "2026-10
 const T = "2026-11-02";
 const state = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")));
 const day = async (page) => (await state(page)).days[T] || {};
+/* Jump to just past the running pomodoro's end ("end") or its break's end ("bend"), measured from the page's clock now.
+   A fixed jump drifts: the fake clock also runs in real time, and a transition caught more than PM_LATE_MS (5 s) late is
+   applied silently, so on a loaded machine the beep a sound test waits for never played. */
+const ffTo = async (page, k, pad = 1000) => {
+  const ms = await page.evaluate((k) => JSON.parse(localStorage.getItem("pc-cache-v1")).pomo[k] - Date.now(), k);
+  await page.clock.fastForward(Math.max(0, ms) + pad);
+};
 const openPm = async (page) => { await page.click("#toolsBtn"); await page.click(".qmenu button:has-text('Pomodoro')"); };
 const at = (h, m) => new Date(`${T}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00-05:00`).getTime();
 
@@ -254,11 +261,11 @@ test("a new set starts with the squish; a finished pomodoro beeps twice, the bre
   await expect.poll(() => chan(page, 1201)).toEqual(["pc_beep2"]);
   await expect.poll(() => chan(page, 1203)).toEqual(["pc_beep1"]);
   await expect.poll(() => page.evaluate(() => ["pc_beep1", "pc_beep2", "pc_beep3"].every((c) => (window.__ch || []).includes(c)))).toBe(true);
-  await page.clock.fastForward(25 * 60000 + 1500);
+  await ffTo(page, "end");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Short break");
   await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(2);
   await expect.poll(() => chan(page, 1202)).toEqual(["pc_beep1"]);
-  await page.clock.fastForward(5 * 60000 + 1500);
+  await ffTo(page, "bend");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Break over");
   await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(3);
   await page.click("[data-pm=start]:visible");
@@ -277,7 +284,7 @@ test("the set's last pomodoro beeps three times and its notification goes on pc_
   await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(1);
   expect(await page.evaluate(() => window.__sq)).toBe(0);
   await expect.poll(() => chan(page, 1201)).toEqual(["pc_beep3"]);
-  await page.clock.fastForward(25 * 60000 + 1500);
+  await ffTo(page, "end");
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Long break");
   await expect.poll(() => page.evaluate(() => window.__bp.length)).toBe(4);
   await page.click("[data-pm=skip]");
