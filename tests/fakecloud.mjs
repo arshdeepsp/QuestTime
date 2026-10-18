@@ -26,5 +26,7 @@ window.PCFB={init:function(){},
 function check(v,at){if(v===undefined||typeof v==="function")throw new Error("bad value at "+at);
   if(Array.isArray(v)){v.forEach(function(x,i){if(Array.isArray(x))throw new Error("nested array at "+at+"["+i+"]");check(x,at+"["+i+"]")})}
   else if(v&&typeof v==="object"){Object.keys(v).forEach(function(k){if(/^__.*__$/.test(k)||k==="")throw new Error("bad field name "+JSON.stringify(k)+" at "+at);check(v[k],at+"."+k)});if(at.indexOf(".")<0&&JSON.stringify(v).length>1048576)throw new Error("document too big: "+at)}}
+/* push() = another device wrote and a live listener (onDoc) hears it at once; the app is not brought back to the front. */
+window.__cloud.push=function(path,data){window.__cloud.put(path,data);var id=path.split("/").pop(),d=JSON.parse(JSON.stringify(window.__cloud.docs[path]));window.__cloud.listeners.forEach(function(l){if(l.path===path)l.cb({id:id,data:d,pending:false})})};
 /* remote() = another device wrote; the app sees it the next time it comes back to the front (no live listeners), so this also fires visibilitychange. */
 window.__cloud.remote=function(path,data){window.__cloud.put(path,data);setTimeout(function(){document.dispatchEvent(new Event("visibilitychange"))},0);var id=path.split("/").pop(),col=path.slice(0,path.lastIndexOf("/"));window.__cloud.listeners.forEach(function(l){if(l.path===path)l.cb({id:id,data:data,pending:false});if(l.col===col)l.cb([{id:id,data:data,pending:false,type:"modified"}])})};`;

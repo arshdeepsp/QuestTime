@@ -359,7 +359,8 @@ test("a burst of +/- taps is one write a few seconds later, and nothing from the
   expect(await page.evaluate(() => window.__cloud.writes)).toBe(0);
   await expect.poll(async () => ((await docs(page))["users/u1/days/2026-11-02"] || {}).cs, { timeout: 8000 }).toBe(50);
   expect(await page.evaluate(() => window.__cloud.writes)).toBe(1);
-  expect(await page.evaluate(() => window.__cloud.listeners.length)).toBe(0);
+  /* the only live listener is the running-pomodoro doc; quest data is never listened to */
+  expect(await page.evaluate(() => window.__cloud.listeners.map((l) => l.path || l.col))).toEqual(["users/u1/data/live"]);
   await expect(page.locator("#quests .q output.tapnum").last()).toHaveText("50m");
 });
 

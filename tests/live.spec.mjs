@@ -71,6 +71,39 @@ test("a pomodoro running on the phone is offered here, and Continue here takes i
   await expect.poll(async () => (await live(page)).pomo.phase).toBe("break");
 });
 
+test("a pomodoro started on the other device shows here while the app stays open, without a refresh or a return to the app", async ({ page }) => {
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
+  await signIn(page);
+  await page.goto("http://127.0.0.1:4173/index.html#today");
+  await expect(page.locator("#quests .q").first()).toBeVisible();
+  const now = await page.evaluate(() => Date.now());
+  await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(remotePomo(now, 1))]);
+  await expect(page.locator("#liveCard .livecard")).toContainText("Pomodoro running on your phone");
+  /* and when the phone ends it, the card goes */
+  await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(null, { sid: "sOther", gen: 1 })]);
+  await expect(page.locator("#liveCard .livecard")).toHaveCount(0);
+});
+
+test("on a phone the card's text has the whole width and the buttons sit on their own row", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 360, height: 780 }, isMobile: true, hasTouch: true, timezoneId: "America/Toronto", serviceWorkers: "block" });
+  const page = await ctx.newPage();
+  await page.addInitScript(fake);
+  await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
+  await signIn(page);
+  await page.goto("http://127.0.0.1:4173/index.html#today");
+  const now = await page.evaluate(() => Date.now());
+  await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(remotePomo(now, 1))]);
+  const card = page.locator("#liveCard .livecard");
+  await expect(card).toBeVisible();
+  const [t, b, x] = await Promise.all([card.locator(".lc-t").boundingBox(), card.locator("[data-live=take]").boundingBox(), card.locator("[data-live=hide]").boundingBox()]);
+  const c = await card.boundingBox();
+  expect(t.width).toBeGreaterThan(c.width * 0.7);
+  expect(b.y).toBeGreaterThan(t.y + t.height - 1);
+  expect(Math.abs(b.y - x.y)).toBeLessThan(4);
+  await ctx.close();
+});
+
 test("a session taken over on the phone stops here before it finishes, and nothing is logged twice", async ({ page }) => {
   await page.addInitScript(fake);
   await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
@@ -91,7 +124,7 @@ test("a session taken over on the phone stops here before it finishes, and nothi
   expect((await live(page)).dev).toBe("dPhone");
 });
 
-test("while a pomodoro runs here the account is checked every minute: a take-over elsewhere ends it here; another session or an older write doesn't", async ({ page }) => {
+test("the live doc is listened to: a take-over elsewhere ends it here at once; another session or an older write doesn't", async ({ page }) => {
   await page.addInitScript(fake);
   await openApp(page, { cfg: { quests: [CS], repFrozen: true } });
   await signIn(page);
@@ -104,17 +137,17 @@ test("while a pomodoro runs here the account is checked every minute: a take-ove
   const mine = await page.evaluate(() => localStorage.getItem("pc-dev"));
   await expect.poll(async () => [(await live(page)).dev, (await live(page)).gen]).toEqual([mine, 2]);
   /* the phone's last write from before the take-over lands late (gen 1): ours is said again, the session goes on */
-  await page.evaluate(([p, x]) => window.__cloud.put(p, x), [LIVE, remoteDoc({ ...theirs, ints: 1 })]);
-  await page.clock.fastForward(61000);
+  await page.evaluate(([p, x]) => window.__cloud.push(p, x), [LIVE, remoteDoc({ ...theirs, ints: 1 })]);
+  await page.waitForTimeout(300);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
   await expect.poll(async () => [(await live(page)).dev, (await live(page)).gen]).toEqual([mine, 2]);
   /* a different session on the phone (another sid): both may run, ours goes on */
-  await page.evaluate(([p, x]) => window.__cloud.put(p, x), [LIVE, remoteDoc(remotePomo(Date.now(), 1, { sid: "sElse", gen: 7 }))]);
-  await page.clock.fastForward(61000);
+  await page.evaluate(([p, x]) => window.__cloud.push(p, x), [LIVE, remoteDoc(remotePomo(Date.now(), 1, { sid: "sElse", gen: 7 }))]);
+  await page.waitForTimeout(300);
   await expect(page.locator("#pomoPage .pm-k")).toHaveText("Focus · pomodoro 1 of 4");
   /* now the phone takes it back (gen 3) */
-  await page.evaluate(([p, x]) => window.__cloud.put(p, x), [LIVE, remoteDoc({ ...theirs, gen: 3 })]);
-  await page.clock.fastForward(61000);
+  await page.evaluate(([p, x]) => window.__cloud.push(p, x), [LIVE, remoteDoc({ ...theirs, gen: 3 })]);
+  await page.waitForTimeout(300);
   await expect(page.locator("#sync")).toHaveText("Your pomodoro moved to your phone.");
   await expect(page.locator("#pomoPage .pm-k")).not.toContainText("Focus");
   expect(((await store(page)).days[T] || {}).cs || 0).toBe(0);

@@ -29,6 +29,7 @@ import {
   collection,
   getDoc,
   getDocs,
+  onSnapshot,
   setDoc,
   writeBatch,
   query,
@@ -169,6 +170,15 @@ const PCFB = {
             return b.commit();
           }),
         Promise.resolve(),
+      );
+    },
+    /* One document, live: cb(snap) now and on every change (the app listens to users/<uid>/data/live only). Returns
+       the unsubscribe function; errors (offline, signed out) just end the listener. */
+    onDoc(path, cb) {
+      return onSnapshot(
+        ref(path),
+        (s) => cb(snap(s)),
+        () => null,
       );
     },
     remove(paths) {

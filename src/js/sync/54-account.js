@@ -299,7 +299,11 @@ export function init() {
       if (document.visibilityState === "hidden") {
         clearTimeout(pushT);
         flushQueue();
-      } else pull();
+        liveListen(false);
+      } else {
+        liveListen(true);
+        pull();
+      }
     });
     /* A local doc with nothing in it (the default cfg a fresh install makes, a day with only an auto snapshot, no reflections) never beats a remote doc, whatever its stamp: startup housekeeping stamps docs too, and that must not overwrite real data from another device. */
     function emptyLocal(id) {
@@ -409,7 +413,8 @@ export function init() {
        same session (sid). Before logging a finished interval the running device reads the doc once (G.liveGuard), so a
        pomodoro is logged by whichever device runs the session at that moment, never twice. A different sid is another
        session: it never ends ours (two devices may each run one). */
-    var LIVE_CHECK = 60000,
+    var LIVE_CHECK = 5 * 60000,
+      liveUnsub = null,
       liveH = null,
       liveOwn = null,
       guardEnd = 0,
@@ -516,6 +521,22 @@ export function init() {
           return pomoAdopt(d);
         });
     };
+    /* The live doc is the one document this app listens to (the rest is pulled): a change on another device shows here
+       within a second or so, whether it is a session to continue or ours being taken over. Only while the app is in
+       front; on return the listener is attached again (its first snapshot is the current doc) and pull runs too. A
+       focus check and a slow poll while a session runs here cover a listener that dropped. */
+    function liveListen(on) {
+      if (liveUnsub) {
+        try {
+          liveUnsub();
+        } catch (x) {}
+        liveUnsub = null;
+      }
+      if (on && user && fb && fb.db.onDoc)
+        liveUnsub = fb.db.onDoc(livePath(), function (r) {
+          liveSeen(r && r.data);
+        });
+    }
     window.addEventListener("focus", function () {
       liveCheck();
     });
@@ -589,6 +610,7 @@ export function init() {
       user = u;
       setAcct({ uid: u.uid, email: u.email });
       store.use(cloudAdapter);
+      liveListen(document.visibilityState !== "hidden");
       setStatus("syncing");
       startP = Promise.resolve()
         .then(pull)
@@ -609,6 +631,7 @@ export function init() {
         } catch (x) {}
       });
       unsub = [];
+      liveListen(false);
       user = null;
       startP = null;
       queue = {};

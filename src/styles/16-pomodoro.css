@@ -377,6 +377,17 @@ body.au-open .pm-pill {
   .pm-garden {
     --th: min(12px, calc(26px / var(--cm)));
   }
+  /* The running-elsewhere card: the text gets the whole width, the buttons go on a row of their own. */
+  .livecard {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .lc-t {
+    flex: 1 1 calc(100% - 40px);
+  }
+  .livecard [data-live="take"] {
+    flex: 1;
+  }
 }
 @media (max-width: 420px) {
   .pm-acts .stone {
