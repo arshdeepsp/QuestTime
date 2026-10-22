@@ -3,6 +3,7 @@ import { G } from "../core/g.js";
 import { MID_FRAC, S, START_KEY } from "../core/00-state.js";
 import { cfg } from "../core/config.js";
 import { add, daysBetween, key, parse, todayKey, weekStart } from "../core/days.js";
+import { hm, num } from "../core/util.js";
 import { isVac, noStreakIn } from "./modes.js";
 import { dayDefMap, firstSeen } from "./past-days.js";
 import { scheduled, slim } from "./quests-on-day.js";
@@ -14,6 +15,19 @@ export function indexDays() {
   Object.keys(S.days).forEach(function (k) {
     if (S.days[k]) eKey.set(S.days[k], k);
   });
+}
+/* A period total: a time quest counting minutes (q.roll minutes per period) or a target quest counting a number (q.roll
+   of its unit per period). Everything about periods, pace and checkpoints treats both alike; rollFmt shows the amount. */
+export function isTotal(q) {
+  return !!q && !!q.roll && (q.type === "time" || q.type === "target");
+}
+export function rollFmt(q, v) {
+  return q && q.type === "target" ? num(v) + (q.ul ? " " + q.ul : "") : hm(v);
+}
+/* What a total asks of one work day: a time total's share in whole 5 minutes is schLen (schedule/model.js); a count
+   total's is its target over the period's work days, rounded up. */
+export function cntShare(q, k) {
+  return Math.ceil(q.roll / perWorkDays(q, k || todayKey()));
 }
 export function perOf(q) {
   return q && (q.per === "2w" || q.per === "month") ? q.per : "";
@@ -58,7 +72,8 @@ export function rollSum(id, k, q) {
     ws = q ? perStart(q, k) : weekStart(k);
   for (var d = ws; d <= k; d = add(d, 1)) {
     if (d < START_KEY) continue;
-    s += (S.days[d] || {})[id] | 0;
+    var v = (S.days[d] || {})[id];
+    s += q && q.type === "target" ? +v || 0 : v | 0;
   }
   return s;
 }
@@ -109,12 +124,12 @@ export function periodList(k) {
   var C = {},
     T = todayKey();
   cfg().quests.forEach(function (q) {
-    if (q.type === "time" && q.roll) C[q.id] = q;
+    if (isTotal(q)) C[q.id] = q;
   });
   for (var d = add(k, -31); d < k; d = add(d, 1)) {
     var e = S.days[d];
     ((e && e.q) || []).forEach(function (q) {
-      if (q.type === "time" && q.roll && !C[q.id]) C[q.id] = q;
+      if (isTotal(q) && !C[q.id]) C[q.id] = q;
     });
   }
   var out = [];
@@ -147,26 +162,33 @@ export function rollFrom(q) {
      behind, the shortfall is spread over the period's remaining work days instead of landing on the next one. */
 export function rollNeed(q, k) {
   var lin = Math.round((q.roll * workDaysIn(q, weekFrom(q, k), k)) / perWorkDays(q, k)),
-    before = rollSum(q.id, k, q) - ((S.days[k] || {})[q.id] | 0);
+    before = rollSum(q.id, k, q) - dayVal(q, S.days[k]);
   if (!scheduled(q, k)) return Math.min(lin, before);
   var left = workDaysIn(q, k, perEnd(q, k));
   if (left < 1) return lin;
   return Math.min(lin, Math.round(before + Math.max(0, weekTarget(q, k) - before) / left));
 }
-/* A daily time quest with no minimum (min 0): it only logs time. Never required, never met, no plan or streak; the row
-   shows the time logged and nothing to reach. A deadline's daily share (q.dl) going to 0 is not this. */
+/* A daily time or target quest with no minimum (min 0): it only logs time, or only counts. Never required, never met,
+   no plan or streak; the row shows what's logged and nothing to reach. A deadline's daily share (q.dl) going to 0 is not
+   this. */
 export function logOnly(q) {
-  return !!q && q.type === "time" && !q.roll && !q.dl && !(q.min > 0);
+  return !!q && (q.type === "time" || q.type === "target") && !q.roll && !q.dl && !(q.min > 0);
+}
+/* A day's amount for a quest: minutes (whole) for time, the number (decimals kept) for a count. */
+export function dayVal(q, e) {
+  var v = (e || {})[q.id];
+  return q.type === "target" ? +v || 0 : v | 0;
+}
+/* Met on a day: a total is met when it's on pace (rollNeed) that day. */
+export function rollMet(q, e) {
+  var k = eKey.get(e);
+  if (!k) return false;
+  return rollSum(q.id, k, q) >= rollNeed(q, k);
 }
 export function timeMet(q, e) {
   if (logOnly(q)) return false;
-  var v = e[q.id] | 0;
-  if (q.roll) {
-    var k = eKey.get(e);
-    if (!k) return false;
-    return rollSum(q.id, k, q) >= rollNeed(q, k);
-  }
-  return v >= q.min;
+  if (q.roll) return rollMet(q, e);
+  return (e[q.id] | 0) >= q.min;
 }
 
 /* Runs once at startup, in file-number order (main.js). */

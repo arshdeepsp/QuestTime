@@ -1,8 +1,8 @@
 /* ---- period totals: what this week (or 2 weeks / month) still needs ---- */
 import { DAYF } from "../core/00-state.js";
 import { parse, todayKey } from "../core/days.js";
-import { esc, fmtD, hm } from "../core/util.js";
-import { midDay, midNeed, perEnd, perOf, periodList, rollNeed, rollSum, weekTarget } from "./26-periods.js";
+import { esc, fmtD, hm, num } from "../core/util.js";
+import { midDay, midNeed, perEnd, perOf, periodList, rollFmt, rollNeed, rollSum, weekTarget } from "./26-periods.js";
 import { rewardsOff } from "./modes.js";
 import { closeG, openG } from "../ui/18-modal.js";
 
@@ -25,7 +25,7 @@ export function openCarryInfo() {
   openG("Weekly totals", function (b) {
     var P = periodStatus(todayKey());
     b.innerHTML =
-      '<p class="help">Day to day, only your daily quests count toward clearing days. A total quest (a week, 2 weeks or a calendar month) is checked twice.</p><p class="help"><b>Halfway:</b> by the end of the middle work day you need a third of the total. Miss it and the days so far are lost and your streak resets.</p><p class="help"><b>At the end:</b> reach the full total and the days you cleared stand. Miss it and the whole period is lost.</p><p class="help">The pace shown on each total is a guide to finish on time: fall behind and the gap is spread over the work days left.</p>' +
+      '<p class="help">Day to day, only your daily quests count toward clearing days. A total quest (time or a count, over a week, 2 weeks or a calendar month) is checked twice.</p><p class="help"><b>Halfway:</b> by the end of the middle work day you need a third of the total. Miss it and the days so far are lost and your streak resets.</p><p class="help"><b>At the end:</b> reach the full total and the days you cleared stand. Miss it and the whole period is lost.</p><p class="help">The pace shown on each total is a guide to finish on time: fall behind and the gap is spread over the work days left.</p>' +
       (P.length
         ? '<div class="mlist">' +
           P.map(function (x) {
@@ -40,9 +40,9 @@ export function openCarryInfo() {
               " " +
               esc(fmtD(x.end)) +
               '</em></span><span class="mv">' +
-              hm(x.s) +
+              rollFmt(x.q, x.s) +
               " of " +
-              hm(x.tg) +
+              rollFmt(x.q, x.tg) +
               (x.mid ? " (a third)" : "") +
               "</span></div>"
             );
@@ -89,9 +89,7 @@ export function renderCarryNote() {
           return (
             x.q.label +
             " " +
-            hm(x.s) +
-            "/" +
-            hm(x.tg) +
+            (x.q.type === "time" ? hm(x.s) + "/" + hm(x.tg) : num(x.s) + "/" + rollFmt(x.q, x.tg)) +
             (x.end === T ? "" : " by " + DAYF[parse(x.end).getDay()].slice(0, 3))
           );
         }).join(" \u00b7 ") +

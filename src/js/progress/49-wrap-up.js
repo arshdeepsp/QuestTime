@@ -1,5 +1,5 @@
 /* ---- daily wrap-up (share card / PDF of the day) ---- */
-import { logOnly } from "../rules/26-periods.js";
+import { logOnly, perWord } from "../rules/26-periods.js";
 import { G } from "../core/g.js";
 import { D, RANKS, S, START_KEY } from "../core/00-state.js";
 import { cfg } from "../core/config.js";
@@ -408,7 +408,11 @@ export function wrapCanvas(k) {
           : q.type === "limit"
             ? "max " + (q.unit === "min" ? q.max + "m" : q.max)
             : q.type === "target"
-              ? "goal " + num(q.min) + (q.ul ? " " + q.ul : "")
+              ? q.roll
+                ? num(q.roll) + " per " + perWord(q)
+                : q.min > 0
+                  ? "goal " + num(q.min) + (q.ul ? " " + q.ul : "")
+                  : q.ul || "counted"
               : q.type === "scale"
                 ? "pass at " + q.min + "+"
                 : "",

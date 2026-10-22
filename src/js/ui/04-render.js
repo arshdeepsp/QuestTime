@@ -18,7 +18,7 @@ import { checkFinish, renderShelf } from "../quests/35c-finish-lines.js";
 import { qmgr } from "../quests/38-quest-editor.js";
 import { mobileList } from "../quests/47-phone-rows.js";
 import { cleanDoneTodos, maybeReviewTodos } from "../quests/50b-todo-review.js";
-import { perWord, rollNeed, rollSum, weekFrom, weekTarget } from "../rules/26-periods.js";
+import { isTotal, logOnly, perWord, rollFmt, rollSum, weekFrom, weekTarget } from "../rules/26-periods.js";
 import { compute } from "../rules/compute.js";
 import { bases, gold, limBroken, metQ, ok, overQ, planOf, projSum } from "../rules/day-rules.js";
 import { isPaused, isVac, rewardsOff } from "../rules/modes.js";
@@ -257,9 +257,9 @@ export function renderBody(fromClick) {
       el.row.classList.toggle("met", metQ(q, e));
       el.row.classList.toggle("fail", !!v && !metQ(q, e));
     } else if (q.type === "target") {
-      el.out.textContent = num(v) + " / " + num(q.min);
+      el.out.textContent = q.roll || logOnly(q) ? num(v) : num(v) + " / " + num(q.min);
       el.minus.disabled = !(num(v) > 0);
-      el.row.classList.toggle("met", metQ(q, e));
+      el.row.classList.toggle("met", !q.off && !q.ign && metQ(q, e));
     } else if (q.type === "limit") {
       var over = overQ(q, e);
       el.out.textContent = q.unit === "min" ? hm(v) + " / " + q.max + "m" : (v | 0) + " / " + q.max;
@@ -354,60 +354,49 @@ export function renderBody(fromClick) {
   renderHeat();
   shown.forEach(function (q) {
     var el = qEls[q.id];
-    if (!el || q.type !== "time") return;
-    var rq = el.row.querySelector(".req"),
-      base = reqText(q),
-      xtra = "";
-    if (q.roll) {
-      var rk = k,
-        rs = rollSum(q.id, rk),
-        rn = rollNeed(q, rk),
-        df = rs - rn;
-      xtra =
-        " \u00b7 7-day: " +
-        hm(rs) +
-        " / " +
-        hm(rn) +
-        (df >= 0
-          ? df === 0
-            ? " \u00b7 on pace"
-            : " \u00b7 ahead " + hm(df)
-          : " \u00b7 " + hm(-df) + " more today keeps you on pace");
-    }
-    rq.textContent = base;
+    if (!el || (q.type !== "time" && !isTotal(q))) return;
+    var rq = el.row.querySelector(".req");
+    if (rq) rq.textContent = reqText(q);
   });
   /* Casual: totals just say how much of this period's target is done (no pace or "need" figures). */
   if (off && k === T)
     shown.forEach(function (q) {
       var el = qEls[q.id];
-      if (!el || q.type !== "time" || !q.roll) return;
+      if (!el || !isTotal(q)) return;
       var rq = el.row.querySelector(".req");
       if (rq)
         rq.textContent +=
-          " \u00b7 " + hm(rollSum(q.id, k, q)) + " of " + hm(weekTarget(q, k)) + " done this " + perWord(q);
+          " \u00b7 " +
+          rollFmt(q, rollSum(q.id, k, q)) +
+          " of " +
+          rollFmt(q, weekTarget(q, k)) +
+          " done this " +
+          perWord(q);
     });
   shown.forEach(function (q) {
     var el = qEls[q.id];
-    if (!el || q.type !== "time" || !q.roll) return;
+    if (!el || !isTotal(q)) return;
     var wt = weekTarget(q, k);
     if (wt < q.roll) {
       var rq = el.row.querySelector(".req");
       if (rq && rq.textContent.indexOf("this " + perWord(q)) < 0)
-        rq.textContent += " \u00b7 " + hm(wt) + " this " + perWord(q) + " (started " + fmtD(weekFrom(q, k)) + ")";
+        rq.textContent +=
+          " \u00b7 " + rollFmt(q, wt) + " this " + perWord(q) + " (started " + fmtD(weekFrom(q, k)) + ")";
     }
   });
   shown.forEach(function (q) {
     var el = qEls[q.id];
-    if (!el || q.type !== "time" || !q.roll || scheduled(q, k)) return;
+    if (!el || !isTotal(q) || scheduled(q, k)) return;
     var rq = el.row.querySelector(".req");
-    if (rq && rq.textContent.indexOf("off day") < 0) rq.textContent += " \u00b7 off day, extra time still counts";
+    if (rq && rq.textContent.indexOf("off day") < 0)
+      rq.textContent += " \u00b7 off day, " + (q.type === "time" ? "extra time still counts" : "extra still count");
   });
   shown.forEach(function (q) {
     var el = qEls[q.id];
     if (!el || !lateStart(q, k)) return;
     var rq = el.row.querySelector(".req");
     if (rq && rq.textContent.indexOf("counts from") < 0)
-      rq.textContent += " \u00b7 counts from " + (q.type === "time" && q.roll ? "next week" : "tomorrow");
+      rq.textContent += " \u00b7 counts from " + (isTotal(q) ? "next week" : "tomorrow");
   });
   schRows(defs, k);
   renderResetCard(st);
@@ -423,7 +412,7 @@ export function renderBody(fromClick) {
     uq =
       k === T
         ? cfg().quests.filter(function (q) {
-            return !isPaused(q, T) && !scheduled(q, T) && !(q.type === "time" && q.roll);
+            return !isPaused(q, T) && !scheduled(q, T) && !isTotal(q);
           })
         : [];
   var pt = [];

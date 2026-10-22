@@ -13,6 +13,10 @@ import { toast } from "../progress/03-badges.js";
 import { reviewTodos } from "../quests/50b-todo-review.js";
 import {
   cfgQ,
+  cntShare,
+  dayVal,
+  isTotal,
+  rollFmt,
   logOnly,
   midDay,
   midNeed,
@@ -142,15 +146,17 @@ export function nfCall(title, icon, head, body, btns) {
       }, 0);
   });
 }
-export function nfBar(label, done, goal) {
+/* A progress row: minutes by default; f formats another amount (a count total's rollFmt). */
+export function nfBar(label, done, goal, f) {
+  f = f || hm;
   var pc = goal ? Math.min(100, Math.round((done / goal) * 100)) : 0;
   return (
     '<div class="nfrow"><span>' +
     esc(label) +
     "</span><b>" +
-    hm(done) +
+    f(done) +
     " / " +
-    hm(goal) +
+    f(goal) +
     '</b><div class="nfbar"><i style="width:' +
     pc +
     '%"></i></div></div>'
@@ -345,7 +351,7 @@ export function notifAction(id, x, act) {
       W3 = periodList(T3);
     var b3 = W3.filter(function (q) {
       var x = dayDefMap(T3)[q.id];
-      return x && !x.off && rollSum(q.id, T3, q) < rollNeed(q, T3);
+      return x && !x.off && q.type === "time" && rollSum(q.id, T3, q) < rollNeed(q, T3);
     })[0];
     var preOf = function (q) {
         var md = midDay(q, T3);
@@ -364,6 +370,9 @@ export function notifAction(id, x, act) {
           q.label + (pre ? " (a third by " : " (by ") + DAYF[parse(pre ? md : pe).getDay()].slice(0, 3) + ")",
           rollSum(q.id, T3, q),
           pre ? midNeed(q, T3) : weekTarget(q, T3),
+          function (v) {
+            return rollFmt(q, v);
+          },
         );
       }).join(""),
       [nfJust5(b3), ["Schedule today", openSchedule], ["Later"]].filter(Boolean),
@@ -416,7 +425,11 @@ export function notifAction(id, x, act) {
       esc(rq.label) + " isn’t done yet.",
       rq.type === "time"
         ? nfBar(rq.label, re[rq.id] | 0, rq.roll ? schLen(rq, T) : rq.min)
-        : "<p>" + esc(remStatus(rq, re, T)) + "</p>",
+        : isTotal(rq)
+          ? nfBar(rq.label, dayVal(rq, re), cntShare(rq, T), function (v) {
+              return rollFmt(rq, v);
+            })
+          : "<p>" + esc(remStatus(rq, re, T)) + "</p>",
       [rq.type === "time" ? nfJust5(rq) : ["Today", nfGo, "save"], ["Later"]].filter(Boolean),
     );
   }

@@ -1,7 +1,7 @@
 /* ---- compute(): the day-by-day streak, freezes, grace and period-total judgments ---- */
 import { S, START_KEY } from "../core/00-state.js";
 import { add, todayKey } from "../core/days.js";
-import { indexDays, midDay, midNeed, perEnd, perStart, rollSum, weekFrom, weekTarget } from "./26-periods.js";
+import { indexDays, isTotal, midDay, midNeed, perEnd, perStart, rollSum, weekFrom, weekTarget } from "./26-periods.js";
 import { ok } from "./day-rules.js";
 import { isVac, noStreakIn, noStreakOn } from "./modes.js";
 import { dayDefMap, lockPast } from "./past-days.js";
@@ -77,7 +77,7 @@ export function compute(asOf) {
       vc = isVac(k);
     Object.keys(m).forEach(function (id) {
       var x = m[id];
-      if (x.type !== "time" || !x.roll) return;
+      if (!isTotal(x)) return;
       var o = seen[id] || (seen[id] = { uo: false });
       o.q = x;
       o.last = k;

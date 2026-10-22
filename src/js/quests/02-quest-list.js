@@ -43,11 +43,14 @@ export function reqText(q) {
   else if (q.type === "limit") t = "max " + (q.unit === "min" ? hmL(q.max) : q.max + (q.ul ? " " + q.ul : ""));
   else if (q.type === "wake") t = "between " + q.from + "-" + q.to;
   else if (q.type === "target")
-    t =
-      "goal " +
-      num(q.min) +
-      (q.ul ? " " + q.ul : "") +
-      (q.dl ? " today \u00b7 " + num(q.dl.total) + " total by " + fmtD(q.dl.due) : "");
+    t = q.roll
+      ? num(q.roll) + (q.ul ? " " + q.ul : "") + " per " + perWord(q)
+      : logOnly(q)
+        ? "no goal, just counts"
+        : "goal " +
+          num(q.min) +
+          (q.ul ? " " + q.ul : "") +
+          (q.dl ? " today \u00b7 " + num(q.dl.total) + " total by " + fmtD(q.dl.due) : "");
   else if (q.type === "scale") t = "rate 1-" + (q.scale || 5) + ", pass at " + q.min + "+";
   else t = "done today";
   if (q.note) t += ", " + q.note;

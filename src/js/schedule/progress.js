@@ -3,6 +3,7 @@ import { G } from "../core/g.js";
 import { S } from "../core/00-state.js";
 import { atMin, dayWin, nowMinInDay, todayKey } from "../core/days.js";
 import { hm } from "../core/util.js";
+import { cntShare, dayVal } from "../rules/26-periods.js";
 import { metQ } from "../rules/day-rules.js";
 import { SCH_STEP } from "./51-schedule.js";
 import { hhmmOf, schAll, schFree, schLeft, schLen, schNewId, schOfQ, schQuests, schSave } from "./model.js";
@@ -117,5 +118,6 @@ export function schReplan(id) {
     : "No free time left today to re-plan it.";
 }
 export function schDayDone(q, e, k) {
+  if (q.type === "target" && q.roll) return dayVal(q, e) >= cntShare(q, k);
   return q.roll ? ((e || {})[q.id] | 0) >= schLen(q, k) : metQ(q, e);
 }

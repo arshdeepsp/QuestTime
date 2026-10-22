@@ -14,7 +14,7 @@ import { nf } from "./35d-plan.js";
 import { add, parse } from "../core/days.js";
 import { esc, hm, num } from "../core/util.js";
 import { weekCount } from "../rules/xp.js";
-import { logOnly } from "../rules/26-periods.js";
+import { cntShare, logOnly } from "../rules/26-periods.js";
 import { activeDefs } from "../rules/quests-on-day.js";
 import { schDayDone } from "../schedule/progress.js";
 import { schLen } from "../schedule/model.js";
@@ -36,7 +36,15 @@ export function remStatus(q, e, k) {
   var v = (e || {})[q.id];
   if (q.type === "time")
     return hm(v | 0) + " of " + hm(q.roll ? schLen(q, k) : q.min) + (q.roll ? " today" : "") + " so far.";
-  if (q.type === "target") return num(+v || 0) + " of " + num(q.min) + (q.ul ? " " + q.ul : "") + " so far.";
+  if (q.type === "target")
+    return (
+      num(+v || 0) +
+      " of " +
+      num(q.roll ? cntShare(q, k) : q.min) +
+      (q.ul ? " " + q.ul : "") +
+      (q.roll ? " today" : "") +
+      " so far."
+    );
   if (q.type === "scale") return "Not rated yet.";
   if (q.type === "weekly") return weekCount(q.id, k) + " of " + q.min + " days this week so far.";
   return "Not done yet.";

@@ -17,8 +17,10 @@ export function allDays(q) {
 export function isEasier(o, n, T) {
   if (n.type !== o.type) return true;
   if (!o.opt && n.opt) return true;
-  if (o.type === "time" && !o.roll && n.roll) return true;
-  if (o.type === "time" && o.roll && n.roll && num(n.roll) < num(o.roll)) return true;
+  if ((o.type === "time" || o.type === "target") && o.type === n.type) {
+    if (!o.roll && n.roll) return true;
+    if (o.roll && n.roll && num(n.roll) < num(o.roll)) return true;
+  }
   if (n.startOn && n.startOn > (o.startOn || "")) return true;
   if (n.pausedUntil && n.pausedUntil !== o.pausedUntil && isPaused(n, add(T, 1))) return true;
   var nd = allDays(n);

@@ -6,7 +6,7 @@ import { add, atMin, dayMidMin, dayWin, parse, todayKey, weekStart } from "../co
 import { LN, capPlugin } from "../core/native.js";
 import { esc, hm, hmL } from "../core/util.js";
 import { openTodos } from "../quests/50b-todo-review.js";
-import { midDay, midNeed, perEnd, periodList, rollSum, weekTarget } from "../rules/26-periods.js";
+import { midDay, midNeed, perEnd, periodList, rollFmt, rollSum, weekTarget } from "../rules/26-periods.js";
 import { compute } from "../rules/compute.js";
 import { limOf, metQ, ok, planOf } from "../rules/day-rules.js";
 import { rewardsOff } from "../rules/modes.js";
@@ -252,7 +252,7 @@ export function nfPlan() {
       if (!nd || s >= nd) return;
       if (!cp || d < cp.d) cp = { d: d, L: [], h: 0, f: 0 };
       if (d === cp.d) {
-        cp.L.push(q.label + " " + hm(s) + " of " + hm(nd));
+        cp.L.push(q.label + " " + rollFmt(q, s) + " of " + rollFmt(q, nd));
         if (half) cp.h++;
         else cp.f++;
       }

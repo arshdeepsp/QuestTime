@@ -3,7 +3,7 @@ import { G } from "../core/g.js";
 import { S, START_KEY } from "../core/00-state.js";
 import { add, todayKey } from "../core/days.js";
 import { cache } from "../core/storage.js";
-import { midAt } from "./26-periods.js";
+import { isTotal, midAt } from "./26-periods.js";
 import { hasEntry } from "./day-rules.js";
 import { activeDefs, defsOf } from "./quests-on-day.js";
 import { schAll, schNorm } from "../schedule/model.js";
@@ -71,7 +71,7 @@ export function lockPast() {
     e.ck = [];
     lockReps(d, e);
     (e.q || []).forEach(function (q) {
-      if (q.type === "time" && q.roll && midAt(q, d, d) === d) e.ck.push(q.id);
+      if (isTotal(q) && midAt(q, d, d) === d) e.ck.push(q.id);
     });
     ch = true;
   }

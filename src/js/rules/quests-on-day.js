@@ -1,5 +1,5 @@
 /* ---- which quests are on a day, and which are required ---- */
-import { logOnly } from "./26-periods.js";
+import { isTotal, logOnly } from "./26-periods.js";
 import { LEGACY, S } from "../core/00-state.js";
 import { cfg } from "../core/config.js";
 import { dayMidMin, nowMinInDay, parse, todayKey } from "../core/days.js";
@@ -71,12 +71,12 @@ export function activeDefs(k) {
         if (q.startOn && k < q.startOn && q.type !== "todo") return false;
         if (q.type === "todo") return !q.doneOn || q.doneOn === k;
         if (q.dl && (k > q.dl.due || k < q.dl.from)) return false;
-        return !isPaused(q, k) && (scheduled(q, k) || (q.type === "time" && q.roll));
+        return !isPaused(q, k) && (scheduled(q, k) || isTotal(q));
       })
       .map(function (q) {
         var o = slim(q);
-        if (q.type === "time" && q.roll && q.opt) o.uopt = true;
-        if (q.type === "time" && q.roll && !scheduled(q, k)) {
+        if (isTotal(q) && q.opt) o.uopt = true;
+        if (isTotal(q) && !scheduled(q, k)) {
           o.opt = true;
           o.off = true;
         }
@@ -102,14 +102,14 @@ export function stampAdded(q) {
 export function lateStart(q, k) {
   if (!q.addedOn || q.type === "todo" || q.type === "weekly") return false;
   if (q.startOn) return false;
-  if (q.type === "time" && q.roll) return false;
+  if (isTotal(q)) return false;
   return k === q.addedOn && (q.addedMin || 0) >= dayMidMin(k);
 }
 /* Required each day: not optional, not X-times-a-week, not a to-do, and not a period total (q.roll): totals are judged
      once, at the end of their period (see periodCheck in compute). */
 export function reqOf(d) {
   return d.filter(function (q) {
-    return !q.opt && q.type !== "weekly" && q.type !== "todo" && !(q.type === "time" && q.roll) && !logOnly(q);
+    return !q.opt && q.type !== "weekly" && q.type !== "todo" && !isTotal(q) && !logOnly(q);
   });
 }
 export function reqDefsFor(k) {

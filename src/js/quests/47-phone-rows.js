@@ -8,6 +8,8 @@ import { esc, fmtD, hm, num } from "../core/util.js";
 import { qEls, qWrap, reqText } from "./02-quest-list.js";
 import { openMgr } from "./38-quest-editor.js";
 import {
+  isTotal,
+  rollFmt,
   perEnd,
   perOf,
   perStart,
@@ -36,25 +38,29 @@ export var COLQ, qOpen, FIT_MIN, fitCv, LESS_N;
 /* Phone row summary (HTML). A total shows what to do today from the pace figure (rollNeed) as a value over a caption: "1h 29m / to go today", "\u2714 / on pace" or "+40m / ahead of pace"; the period total lives in Details. Off days and tracking-only mode show "10h / of 15h this week". */
 export function qSummary(q, e) {
   var v = e[q.id];
-  if (q.type === "time") {
+  if (q.type === "time" && !q.roll) {
     var d = +v || 0;
-    if (logOnly(q)) return hm(d);
-    if (!q.roll) return hm(d) + " / " + hm(q.min);
-    var T = todayKey(),
+    return logOnly(q) ? hm(d) : hm(d) + " / " + hm(q.min);
+  }
+  if (q.type === "target" && !q.roll)
+    return logOnly(q) ? rollFmt(q, v) : num(v || 0) + " / " + num(q.min) + (q.ul ? " " + q.ul : "");
+  if (isTotal(q)) {
+    /* A count total's figures go without the unit, so "12 / to go today" fits the box. */
+    var f = q.type === "time" ? hm : num,
+      T = todayKey(),
       rs = rollSum(q.id, T),
       two = function (a, b) {
         return "<b>" + a + "</b> <small>" + b + "</small>";
       };
     if (rewardsOff() || q.off || !scheduled(q, T))
-      return two(hm(rs), "of " + hm(weekTarget(q, T)) + " this " + perWord(q));
+      return two(f(rs), "of " + f(weekTarget(q, T)) + " this " + perWord(q));
     var rn = rollNeed(q, T);
     return rs < rn
-      ? two(hm(rn - rs), "to go today")
+      ? two(f(rn - rs), "to go today")
       : rs === rn
         ? two("\u2714", "on pace")
-        : two("+" + hm(rs - rn), "ahead of pace");
+        : two("+" + f(rs - rn), "ahead of pace");
   }
-  if (q.type === "target") return num(v || 0) + " / " + num(q.min) + (q.ul ? " " + q.ul : "");
   if (q.type === "limit")
     return (q.unit === "min" ? hm(+v || 0) : num(v || 0)) + " / " + (q.unit === "min" ? hm(q.max) : num(q.max));
   if (q.type === "wake") return v ? String(v) : "--:--";
@@ -76,7 +82,7 @@ export function openDetails(q) {
       rows.push('<div class="dt-r"><span>' + k + "</span><b>" + v + "</b></div>");
     }
     r("Goal", esc(reqText(q)));
-    if (q.type === "time" && q.roll) {
+    if (isTotal(q)) {
       var rs = rollSum(q.id, T),
         rn = rollNeed(q, T);
       var wt = weekTarget(q, T),
@@ -86,7 +92,7 @@ export function openDetails(q) {
       if (prd)
         r(
           "This " + pw + "\u2019s target",
-          hm(wt) +
+          rollFmt(q, wt) +
             " (started " +
             fmtD(weekFrom(q, T)) +
             ", so " +
@@ -94,7 +100,7 @@ export function openDetails(q) {
             " of " +
             perWorkDays(q, T) +
             " work days). Full " +
-            hm(q.roll) +
+            rollFmt(q, q.roll) +
             " from next " +
             pw +
             ".",
@@ -102,16 +108,16 @@ export function openDetails(q) {
       r(
         perOf(q) ? "This period (" + fmtD(perStart(q, T)) + "\u2013" + fmtD(perEnd(q, T)) + ")" : "This week",
         rewardsOff()
-          ? hm(rs) + " of " + hm(wt) + " done"
-          : hm(rs) +
+          ? rollFmt(q, rs) + " of " + rollFmt(q, wt) + " done"
+          : rollFmt(q, rs) +
               " of " +
-              hm(wt) +
+              rollFmt(q, wt) +
               " \u00b7 " +
               (rs < rn
-                ? hm(rn - rs) + " more today keeps you on pace"
+                ? rollFmt(q, rn - rs) + " more today keeps you on pace"
                 : rs === rn
                   ? "on pace"
-                  : "ahead by " + hm(rs - rn)),
+                  : "ahead by " + rollFmt(q, rs - rn)),
       );
     }
 
@@ -140,10 +146,7 @@ export function openDetails(q) {
       if (qc.sch) r("Last 30 days", qc.met + " of " + qc.sch + " (" + Math.round((qc.met / qc.sch) * 100) + "%)");
     }
     if (lateStart(q, T))
-      r(
-        "Counts from",
-        q.type === "time" && q.roll ? "next week (added late in the week)" : "tomorrow (added late in the day)",
-      );
+      r("Counts from", isTotal(q) ? "next week (added late in the week)" : "tomorrow (added late in the day)");
     else if (q.opt) r("Optional", "Yes");
     var SLd = qSubjs(q),
       TLd = qTopics(q);

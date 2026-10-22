@@ -2,7 +2,7 @@
 import { S } from "../core/00-state.js";
 import { mins } from "../core/days.js";
 import { num } from "../core/util.js";
-import { timeMet } from "./26-periods.js";
+import { logOnly, rollMet, timeMet } from "./26-periods.js";
 import { defsOf, reqOf } from "./quests-on-day.js";
 
 export function projSum(id, upto) {
@@ -45,7 +45,7 @@ export function metQ(q, e) {
   if (q.type === "time") return timeMet(q, e);
   if (q.type === "limit") return (v | 0) <= q.max;
   if (q.type === "check" || q.type === "weekly" || q.type === "todo") return v === true;
-  if (q.type === "target") return num(v) >= q.min;
+  if (q.type === "target") return logOnly(q) ? false : q.roll ? rollMet(q, e) : num(v) >= q.min;
   if (q.type === "scale") return (v | 0) >= q.min;
   return false;
 }

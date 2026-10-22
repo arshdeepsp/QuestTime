@@ -10,7 +10,7 @@ import { clone, esc, fmtD, num } from "../core/util.js";
 import { DN } from "./02-quest-list.js";
 import { countsOnDay, overMsg, wouldExceed } from "./35b-daily-limit.js";
 import { LIB, TN, moreSum } from "./38-quest-editor.js";
-import { logOnly, perOf, perWord } from "../rules/26-periods.js";
+import { isTotal, logOnly, perOf, perWord } from "../rules/26-periods.js";
 import { activeDefs, stampAdded } from "../rules/quests-on-day.js";
 import { subjList } from "../subjects/32-subjects.js";
 import { topicPick, wireTopicPick } from "../subjects/35-links.js";
@@ -116,43 +116,59 @@ export function drawNQ(msg) {
     }[q.type] +
     '"></label>';
   var p = "";
+  /* Goal type for time and count quests: the same amount every day, or a total over a week / 2 weeks / month. */
+  var goalCards = function (daily, sub) {
+      return (
+        '<div class="goalcards" role="radiogroup" aria-label="Goal type"><button type="button" class="gcard' +
+        (q.roll ? "" : " on") +
+        '" data-goal="" role="radio" aria-checked="' +
+        !q.roll +
+        '"><b>' +
+        daily +
+        "</b><span>" +
+        sub +
+        '</span></button><button type="button" class="gcard' +
+        (q.roll ? " on" : "") +
+        '" data-goal="1" role="radio"' +
+        (logOnly(q) ? " disabled" : "") +
+        ' aria-checked="' +
+        !!q.roll +
+        '"><b>Total over a period</b><span>Busy days cover empty ones later in the period</span></button></div>'
+      );
+    },
+    perPick = function () {
+      return (
+        '<div class="sjfield"><span class="sjlab">Every</span><div class="sjpick" role="radiogroup" aria-label="Period">' +
+        [
+          ["", "Week"],
+          ["2w", "2 weeks"],
+          ["month", "Month"],
+        ]
+          .map(function (o) {
+            var on = perOf(q) === o[0];
+            return (
+              '<button type="button" class="stone mini' +
+              (on ? " on" : "") +
+              '" data-per="' +
+              o[0] +
+              '" role="radio" aria-checked="' +
+              on +
+              '">' +
+              o[1] +
+              (o[0] === "" ? " <small>" + wkSpan() + "</small>" : "") +
+              "</button>"
+            );
+          })
+          .join("") +
+        "</div></div>"
+      );
+    };
   if (q.type === "time")
     p =
-      '<div class="goalcards" role="radiogroup" aria-label="Goal type"><button type="button" class="gcard' +
-      (q.roll ? "" : " on") +
-      '" data-goal="" role="radio" aria-checked="' +
-      !q.roll +
-      '"><b>Daily minimum</b><span>Same amount every day</span></button><button type="button" class="gcard' +
-      (q.roll ? " on" : "") +
-      '" data-goal="1" role="radio"' +
-      (logOnly(q) ? " disabled" : "") +
-      ' aria-checked="' +
-      !!q.roll +
-      '"><b>Total over a period</b><span>Busy days cover empty ones later in the period</span></button></div>' +
+      goalCards("Daily minimum", "Same amount every day") +
       (q.roll
-        ? '<div class="sjfield"><span class="sjlab">Every</span><div class="sjpick" role="radiogroup" aria-label="Period">' +
-          [
-            ["", "Week"],
-            ["2w", "2 weeks"],
-            ["month", "Month"],
-          ]
-            .map(function (o) {
-              var on = perOf(q) === o[0];
-              return (
-                '<button type="button" class="stone mini' +
-                (on ? " on" : "") +
-                '" data-per="' +
-                o[0] +
-                '" role="radio" aria-checked="' +
-                on +
-                '">' +
-                o[1] +
-                (o[0] === "" ? " <small>" + wkSpan() + "</small>" : "") +
-                "</button>"
-              );
-            })
-            .join("") +
-          "</div></div><label>Total per " +
+        ? perPick() +
+          "<label>Total per " +
           perWord(q) +
           ' (hours)<input type="number" id="nqRollH" min="0.5" step="0.5" value="' +
           num(q.roll / 60) +
@@ -164,9 +180,20 @@ export function drawNQ(msg) {
           ">No minimum: it just logs time and is never required.</p>");
   else if (q.type === "target")
     p =
-      '<label>Goal<input type="number" data-n="min" min="0" step="any" value="' +
-      q.min +
-      '"></label><label>Unit<input data-s="ul" value="' +
+      goalCards("Daily goal", "Same number every day") +
+      (q.roll
+        ? perPick() +
+          "<label>Total per " +
+          perWord(q) +
+          '<input type="number" id="nqRollN" min="1" step="any" value="' +
+          num(q.roll) +
+          '"></label>'
+        : '<label>Goal<input type="number" data-n="min" min="0" step="any" value="' +
+          q.min +
+          '"></label><p class="help" id="nqLo"' +
+          (logOnly(q) ? "" : " hidden") +
+          ">No goal: it just counts and is never required.</p>") +
+      '<label>Unit<input data-s="ul" value="' +
       esc(q.ul || "") +
       '" placeholder="glasses"></label><label>Step<input type="number" data-n="step" min="0" step="any" value="' +
       (q.step || 1) +
@@ -236,8 +263,7 @@ export function drawNQ(msg) {
         [add(T0, 1), "Tomorrow"],
         [nextMonday(T0), "Next week"],
       ];
-    if (NQ.startOn === undefined && q.type === "time" && q.roll && !perOf(q) && lateInWeek(T0))
-      NQ.startOn = nextMonday(T0);
+    if (NQ.startOn === undefined && isTotal(q) && !perOf(q) && lateInWeek(T0)) NQ.startOn = nextMonday(T0);
     var cur = NQ.startOn || "",
       more = "";
     more +=
@@ -341,7 +367,10 @@ export function drawNQ(msg) {
       var p = x.getAttribute("data-per"),
         k0 = { "": 1, "2w": 2, month: 4.3 },
         was = perOf(NQ);
-      NQ.roll = Math.max(30, Math.round(((NQ.roll / k0[was]) * k0[p]) / 30) * 30);
+      NQ.roll =
+        NQ.type === "target"
+          ? Math.max(1, Math.round((NQ.roll / k0[was]) * k0[p]))
+          : Math.max(30, Math.round(((NQ.roll / k0[was]) * k0[p]) / 30) * 30);
       if (p) NQ.per = p;
       else delete NQ.per;
       drawNQ();
@@ -349,11 +378,18 @@ export function drawNQ(msg) {
   });
   nqB.querySelectorAll("[data-goal]").forEach(function (x) {
     x.addEventListener("click", function () {
-      if (x.getAttribute("data-goal")) NQ.roll = NQ.roll || 420;
+      if (x.getAttribute("data-goal"))
+        NQ.roll = NQ.roll || (NQ.type === "target" ? Math.max(1, Math.round((NQ.min || 1) * 7)) : 420);
       else delete NQ.roll;
       drawNQ();
     });
   });
+  var nrn = nqB.querySelector("#nqRollN");
+  if (nrn)
+    nrn.addEventListener("input", function () {
+      var v = num(this.value);
+      if (v > 0) NQ.roll = v;
+    });
   var nrh = nqB.querySelector("#nqRollH");
   if (nrh)
     nrh.addEventListener("input", function () {
@@ -364,7 +400,7 @@ export function drawNQ(msg) {
     x.addEventListener(x.tagName === "SELECT" ? "change" : "input", function () {
       var f = x.getAttribute("data-n");
       NQ[f] = num(x.value);
-      if (f === "min" && NQ.type === "time" && !NQ.roll) {
+      if (f === "min" && (NQ.type === "time" || NQ.type === "target") && !NQ.roll) {
         var gc = nqB.querySelector('[data-goal="1"]'),
           lo = nqB.querySelector("#nqLo");
         if (gc) gc.disabled = logOnly(NQ);
@@ -423,7 +459,8 @@ export function drawNQ(msg) {
     if (!(q.lim > 0)) delete q.lim;
     if (!/^\d{2}:\d{2}$/.test(q.rem || "") || !remOk(q)) delete q.rem;
     if (
-      ((q.type === "weekly" || q.type === "target") && !(q.min > 0)) ||
+      (q.type === "weekly" && !(q.min > 0)) ||
+      (q.type === "target" && !(q.roll > 0 || q.min >= 0)) ||
       (q.type === "time" && !(q.min >= 0)) ||
       (q.type === "time" && q.lim && q.lim < (q.roll ? 5 : q.min)) ||
       (q.type === "scale" && !(q.min >= 1 && q.min <= (q.scale || 5))) ||

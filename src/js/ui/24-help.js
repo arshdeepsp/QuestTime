@@ -228,7 +228,7 @@ export function init() {
           [
             "Time, target, limit, check, clock time, rating, weekly and to-do.",
             "Most are required. Optional quests, weekly goals and to-dos never fail a day.",
-            "A time quest with a minimum of 0 just logs time: it shows what you’ve done today and is never required.",
+            "A time quest with a minimum of 0 just logs time, and a target quest with a goal of 0 just counts (coffees, pages): they show what you’ve done today and are never required.",
             "Tap ⋯ on a quest for details, pausing or Just 5.",
           ],
         ],
@@ -288,6 +288,7 @@ export function init() {
           "Judged once, at the end of the week.",
           [
             "A total quest runs over a week (Monday to Sunday, or Sunday to Saturday if you change it in Settings › Your day), every 2 weeks, or a calendar month.",
+            "Totals can be time (10 hours a week) or a count (30 pull-ups a week, 300 km a month): pick a target quest and set its goal type to a total.",
             "Day to day only daily quests count. Each total is checked twice: by its middle work day you need a third (miss it and the days so far are lost, streak reset), and on the last day you need all of it (miss it and the whole period is lost).",
             "Its pace is a guide: fall behind and the gap is spread over the work days left. On days you didn’t tick it sits under Off today, and extra time still counts.",
           ],

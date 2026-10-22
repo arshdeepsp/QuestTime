@@ -109,6 +109,28 @@ export function drawMgr(msg) {
       '"></label>'
     );
   }
+  /* Goal type for time and count quests: a daily goal, or a total per week / 2 weeks / month. */
+  function rollSel(q, i, daily) {
+    return (
+      '<label>Goal type<select data-p="rollmode" data-i="' +
+      i +
+      '"' +
+      (logOnly(q) ? " disabled" : "") +
+      '><option value=""' +
+      (q.roll ? "" : " selected") +
+      ">" +
+      daily +
+      '</option><option value="roll"' +
+      (q.roll && !perOf(q) ? " selected" : "") +
+      ">Weekly total (" +
+      wkSpan() +
+      ')</option><option value="roll2w"' +
+      (q.roll && perOf(q) === "2w" ? " selected" : "") +
+      '>Total every 2 weeks</option><option value="rollm"' +
+      (q.roll && perOf(q) === "month" ? " selected" : "") +
+      ">Monthly total</option></select></label>"
+    );
+  }
   qDraft.forEach(function (q, i) {
     var p = isPaused(q, T),
       par = "",
@@ -124,21 +146,7 @@ export function drawMgr(msg) {
     else if (q.type === "weekly") par = numIn("Times per week", "min", i, q.min, 1, 1, 7);
     else if (q.type === "time") {
       par =
-        '<label>Goal type<select data-p="rollmode" data-i="' +
-        i +
-        '"' +
-        (logOnly(q) ? " disabled" : "") +
-        '><option value=""' +
-        (q.roll ? "" : " selected") +
-        '>Daily minimum</option><option value="roll"' +
-        (q.roll && !perOf(q) ? " selected" : "") +
-        ">Weekly total (" +
-        wkSpan() +
-        ')</option><option value="roll2w"' +
-        (q.roll && perOf(q) === "2w" ? " selected" : "") +
-        '>Total every 2 weeks</option><option value="rollm"' +
-        (q.roll && perOf(q) === "month" ? " selected" : "") +
-        ">Monthly total</option></select></label>" +
+        rollSel(q, i, "Daily minimum") +
         (q.roll
           ? numIn("Total per " + perWord(q) + " (hours)", "rollh", i, num(q.roll / 60), "any", 0.5)
           : numIn("Min (minutes)", "min", i, q.min, 10, 0, 960) +
@@ -155,7 +163,15 @@ export function drawMgr(msg) {
           : "");
     } else if (q.type === "target") {
       par =
-        numIn("Goal", "min", i, q.min, "any", 0) +
+        (q.dl ? "" : rollSel(q, i, "Daily goal")) +
+        (q.roll
+          ? numIn("Total per " + perWord(q), "rollc", i, num(q.roll), "any", 1)
+          : numIn("Goal", "min", i, q.min, "any", 0) +
+            '<p class="help" data-lo="' +
+            i +
+            '"' +
+            (logOnly(q) ? "" : " hidden") +
+            ">No goal: it just counts and is never required. Set a goal to pick another goal type.</p>") +
         txtIn("Unit", "ul", i, q.ul, "glasses") +
         numIn("Step", "step", i, q.step || 1, "any", 0);
       parMore = numIn("Project total (optional)", "total", i, q.total || "", "any", 0);
@@ -419,9 +435,14 @@ export function drawMgr(msg) {
         if (v) {
           var per = v === "roll2w" ? "2w" : v === "rollm" ? "month" : "",
             k0 = { "": 1, "2w": 2, month: 4.3 };
-          q.roll = q.roll
-            ? Math.round(((q.roll / k0[was]) * k0[per]) / 30) * 30 || q.roll
-            : Math.max(60, (q.min || 30) * 7 * k0[per]);
+          if (q.type === "target")
+            q.roll = q.roll
+              ? Math.round((q.roll / k0[was]) * k0[per]) || q.roll
+              : Math.max(1, Math.round((q.min || 1) * 7 * k0[per]));
+          else
+            q.roll = q.roll
+              ? Math.round(((q.roll / k0[was]) * k0[per]) / 30) * 30 || q.roll
+              : Math.max(60, (q.min || 30) * 7 * k0[per]);
           if (per) q.per = per;
           else delete q.per;
         } else {
@@ -429,6 +450,11 @@ export function drawMgr(msg) {
           delete q.per;
         }
         drawMgr();
+        return;
+      }
+      if (f === "rollc") {
+        var rc = num(v);
+        if (rc > 0) q.roll = rc;
         return;
       }
       if (f === "rollh") {
@@ -452,7 +478,7 @@ export function drawMgr(msg) {
         v = q.type === "target" || f === "step" ? num(v) : Math.max(0, Math.round(+v || 0));
       }
       q[f] = v;
-      if (f === "min" && q.type === "time" && !q.roll) {
+      if (f === "min" && (q.type === "time" || q.type === "target") && !q.roll) {
         var rs = qmgr.querySelector('select[data-p="rollmode"][data-i="' + x.getAttribute("data-i") + '"]'),
           lh = qmgr.querySelector('[data-lo="' + x.getAttribute("data-i") + '"]');
         if (rs) rs.disabled = logOnly(q);
@@ -640,7 +666,7 @@ export function saveMgr() {
         !(q.label || "").trim() ||
         (q.type === "weekly" && !(q.min > 0)) ||
         (q.type === "time" && !(q.min >= 0)) ||
-        (q.type === "target" && !(q.min > 0 && (+q.step || 1) > 0)) ||
+        (q.type === "target" && !((q.roll > 0 || q.min >= 0) && (+q.step || 1) > 0)) ||
         (q.type === "limit" && !(q.max >= 0)) ||
         (q.type === "time" && q.lim && q.lim < (q.roll ? 5 : q.min)) ||
         (q.type === "scale" && !(q.min >= 1 && q.min <= (q.scale || 5))) ||

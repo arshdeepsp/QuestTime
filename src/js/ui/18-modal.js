@@ -1,6 +1,6 @@
 /* ---- generic modal ---- */
 import { esc, hm, hmL, num } from "../core/util.js";
-import { eKey, logOnly, perOf, perWord, rollSum, weekTarget } from "../rules/26-periods.js";
+import { eKey, isTotal, logOnly, perOf, perWord, rollFmt, rollSum, weekTarget } from "../rules/26-periods.js";
 import { metQ } from "../rules/day-rules.js";
 
 export var gEl, gBody, gTitle, gScrim, gLast, gOnClose;
@@ -30,14 +30,21 @@ export function closeG() {
 export function fmtVal(q, e) {
   var v = e[q.id];
   if (q.type === "wake") return v || "\u2014";
-  if (q.type === "time" && q.roll) {
-    var k = eKey.get(e);
+  if (isTotal(q)) {
+    var k = eKey.get(e),
+      dv = q.type === "time" ? hm(v) : num(v);
     return k
-      ? hm(v) + " \u00b7 " + hm(rollSum(q.id, k, q)) + " of " + hm(weekTarget(q, k)) + " this " + perWord(q)
-      : hm(v);
+      ? dv +
+          " \u00b7 " +
+          rollFmt(q, rollSum(q.id, k, q)) +
+          " of " +
+          rollFmt(q, weekTarget(q, k)) +
+          " this " +
+          perWord(q)
+      : dv;
   }
   if (q.type === "time") return logOnly(q) ? hm(v) : hm(v) + " of " + hmL(q.min);
-  if (q.type === "target") return num(v) + " / " + num(q.min) + (q.ul ? " " + q.ul : "");
+  if (q.type === "target") return logOnly(q) ? rollFmt(q, v) : num(v) + " / " + num(q.min) + (q.ul ? " " + q.ul : "");
   if (q.type === "limit")
     return (q.unit === "min" ? hm(v) : v | 0) + " (max " + (q.unit === "min" ? hmL(q.max) : q.max) + ")";
   if (q.type === "scale") return v ? v + "/" + (q.scale || 5) : "\u2014";
@@ -48,7 +55,7 @@ export function qList(e, defs) {
     '<div class="mlist">' +
     defs
       .map(function (q) {
-        var tot = q.type === "time" && !!q.roll,
+        var tot = isTotal(q),
           k0 = tot && eKey.get(e),
           ok_ = tot ? !!k0 && rollSum(q.id, k0, q) >= weekTarget(q, k0) : metQ(q, e),
           opt = q.opt || q.type === "weekly" || q.type === "todo" || tot;
