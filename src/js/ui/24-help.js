@@ -369,6 +369,7 @@ export function init() {
           [
             "Turn them on in Settings › Notifications and choose which to get.",
             "Tapping one opens what it’s about: your timer, open quests, the schedule or a deadline.",
+            "A quest can remind you on its own: open it in the quest editor, More options › Remind me if not done by, and pick a time. On each day it’s on your list you get a nudge then, unless it’s already done (a total’s share for the day counts). Quest reminders can be switched off together in Settings › Notifications.",
           ],
         ],
         [

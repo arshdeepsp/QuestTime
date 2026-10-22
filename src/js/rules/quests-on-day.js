@@ -36,6 +36,7 @@ export function slim(q) {
     "addedOn",
     "addedMin",
     "startOn",
+    "rem",
   ].forEach(function (f) {
     if (q[f] != null && q[f] !== "") o[f] = q[f];
   });

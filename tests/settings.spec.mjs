@@ -31,7 +31,7 @@ test("notification types appear once notifications are on", async ({ page }) => 
   await page.click("[data-st='alerts']");
   await expect(page.locator("[data-nf]")).toHaveCount(0);
   await page.click("#nfOn");
-  await expect(page.locator("[data-nf]")).toHaveCount(8);
+  await expect(page.locator("[data-nf]")).toHaveCount(9);
   await page.click("[data-nf='checkin']");
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("pc-cache-v1")).cfg.nf.checkin)).toBe(false);
 });

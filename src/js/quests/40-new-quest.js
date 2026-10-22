@@ -1,4 +1,5 @@
 /* ---- new quest modal ---- */
+import { remField, remOk } from "../notifications/quest-remind.js";
 import { G } from "../core/g.js";
 import { S, dirty } from "../core/00-state.js";
 import { cfg, saveCfg } from "../core/config.js";
@@ -263,6 +264,7 @@ export function drawNQ(msg) {
         '<div class="edrow"><label>Daily limit, minutes (optional)<input type="number" data-n="lim" min="0" step="5" value="' +
         (q.lim || "") +
         '" placeholder="none"></label></div>';
+    more += remField(q, 'data-s="rem"');
     if (subjList().length)
       more +=
         '<div class="sjfield"><span class="sjlab">Feeds topics (optional)</span>' + topicPick("data-nq", q) + "</div>";
@@ -308,7 +310,7 @@ export function drawNQ(msg) {
       NQ = nqDefaults(b.getAttribute("data-t"), nm);
       if (al) NQ._all = true;
       if (NQ.type !== "todo")
-        ["topics", "subjs", "subj"].forEach(function (f) {
+        ["topics", "subjs", "subj", "rem"].forEach(function (f) {
           if (old[f]) NQ[f] = old[f];
         });
       if (old.days && NQ.type !== "weekly" && NQ.type !== "todo") NQ.days = old.days;
@@ -419,6 +421,7 @@ export function drawNQ(msg) {
       return;
     }
     if (!(q.lim > 0)) delete q.lim;
+    if (!/^\d{2}:\d{2}$/.test(q.rem || "") || !remOk(q)) delete q.rem;
     if (
       ((q.type === "weekly" || q.type === "target") && !(q.min > 0)) ||
       (q.type === "time" && !(q.min >= 0)) ||

@@ -12,6 +12,7 @@ import { limOf, metQ, ok, planOf } from "../rules/day-rules.js";
 import { rewardsOff } from "../rules/modes.js";
 import { activeDefs, reqOf } from "../rules/quests-on-day.js";
 import { vowDefs, vowNid, vowPending } from "../rules/vow.js";
+import { questRemPlan } from "./quest-remind.js";
 import { resumeSync, schNotifs } from "../schedule/resume.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerMin } from "../timer/13-focus-timer.js";
@@ -275,6 +276,8 @@ export function nfPlan() {
     }
   }
   if (n.sched) schNotifs(T, e, push);
+  /* A quest's own reminder ("Remind me if not done by", quest-remind.js): 4100+. */
+  if (n.qrem) questRemPlan(T, push);
   if (n.dl)
     (cfg().deadlines || []).forEach(function (d, i) {
       var dk = add(d.date, -1);
@@ -650,6 +653,7 @@ export function init() {
     checkin: true,
     checkinAt: "19:00",
     todos: true,
+    qrem: true,
     risk: true,
     dl: true,
     review: true,

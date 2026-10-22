@@ -503,6 +503,7 @@ export function renderSettings() {
           ["pace", "Pace", "Midday and halfway-checkpoint alerts"],
           ["checkin", "Evening check-in", "Only if quests are still open"],
           ["todos", "Open to-dos", "30 minutes before bed"],
+          ["qrem", "Quest reminders", "Set on a quest: More options › Remind me"],
           ["risk", "Streak at risk", "After a missed day"],
           ["dl", "Deadline eve", "The evening before"],
           ["review", "Review topics", "Sundays, for topics left 2+ weeks"],

@@ -8,6 +8,7 @@ import { cache, flush } from "../core/storage.js";
 import { clone, esc, fmtD, hm, hmL, num } from "../core/util.js";
 import { DN, reqText } from "./02-quest-list.js";
 import { WDN, capOf, overDays } from "./35b-daily-limit.js";
+import { remField, remOk } from "../notifications/quest-remind.js";
 import { renderRules } from "../rulebook/07b-rulebook.js";
 import { logOnly, perOf, perWord } from "../rules/26-periods.js";
 import { easeNote, easedIds, guardEasing } from "../rules/easing.js";
@@ -34,6 +35,7 @@ export function moreSum(q) {
   else if (sl.length) p.push(sl.length + " subject" + (sl.length === 1 ? "" : "s"));
   if (q.fin) p.push("finish line");
   if (q.note) p.push("note");
+  if (q.rem && remOk(q)) p.push("reminder " + q.rem);
   return p.length ? p.join(" \u00b7 ") : "starts today, no limit, no topics";
 }
 export function openMgr() {
@@ -333,6 +335,7 @@ export function drawMgr(msg) {
               '" value="' +
               esc(q.startOn || "") +
               '"></label></div>' +
+              remField(q, 'data-p="rem" data-i="' + i + '"') +
               linkH +
               "</div>"
             : "")) +
@@ -389,6 +392,11 @@ export function drawMgr(msg) {
         q.scale = +v;
         if (q.min > q.scale) q.min = q.scale;
         drawMgr();
+        return;
+      }
+      if (f === "rem") {
+        if (/^\d{2}:\d{2}$/.test(v)) q.rem = v;
+        else delete q.rem;
         return;
       }
       if (f === "startOn") {

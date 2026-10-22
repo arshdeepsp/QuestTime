@@ -28,7 +28,10 @@ import { rewardsOff } from "../rules/modes.js";
 import { dayDefMap } from "../rules/past-days.js";
 import { activeDefs, reqOf } from "../rules/quests-on-day.js";
 import { openSchedule } from "../schedule/page.js";
+import { schLen } from "../schedule/model.js";
+import { schDayDone } from "../schedule/progress.js";
 import { schTap } from "../schedule/resume.js";
+import { remStatus } from "./quest-remind.js";
 import { allTopics, topicStats } from "../subjects/33-topics.js";
 import { timerCap, toggleTimer } from "../timer/13-focus-timer.js";
 import { spShow } from "../timer/43-sprint.js";
@@ -393,6 +396,30 @@ export function notifAction(id, x, act) {
     schTap(x);
     return;
   }
+  /* A quest's own reminder (quest-remind.js): where it stands, and Just 5 on a time quest. */
+  if (id >= 4100 && id < 4380) {
+    var T = todayKey(),
+      rq = null;
+    activeDefs(T).forEach(function (q) {
+      if (q.id === x.q) rq = q;
+    });
+    var re = S.days[T] || {};
+    if (!rq) return nfGo();
+    if (schDayDone(rq, re, T)) {
+      nfGo();
+      setSync(rq.label + " is done for today.");
+      return;
+    }
+    return nfCall(
+      "Reminder",
+      "note",
+      esc(rq.label) + " isn’t done yet.",
+      rq.type === "time"
+        ? nfBar(rq.label, re[rq.id] | 0, rq.roll ? schLen(rq, T) : rq.min)
+        : "<p>" + esc(remStatus(rq, re, T)) + "</p>",
+      [rq.type === "time" ? nfJust5(rq) : ["Today", nfGo, "save"], ["Later"]].filter(Boolean),
+    );
+  }
   if (id === 4001) {
     var due = allTopics().filter(function (o) {
       return topicStats(o.t).due;
@@ -440,7 +467,14 @@ export function liveTapPoll() {
 /* Runs once at startup, in file-number order (main.js). */
 export function init() {
   CALL_IDS = function (id) {
-    return (id >= 2000 && id < 2100) || id === 2200 || id === 2500 || id === 2600 || (id >= 3500 && id < 4000);
+    return (
+      (id >= 2000 && id < 2100) ||
+      id === 2200 ||
+      id === 2500 ||
+      id === 2600 ||
+      (id >= 3500 && id < 4000) ||
+      (id >= 4100 && id < 4380)
+    );
   };
   setTimeout(liveTapPoll, 700);
   document.addEventListener("visibilitychange", function () {
