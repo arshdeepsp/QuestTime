@@ -25,7 +25,7 @@ npm run android:apk
 - `test` → build + Playwright (headless Chromium, fake clock, seeded localStorage), served over http by `tests/serve.mjs` on :4173 (file:// lost localStorage across reloads and made reload tests flaky). ~490 tests, ~4 min (`--workers=2` in the container).
 - `android:apk` → build, `npx cap sync android`, `node scripts/add-native.cjs`, `./gradlew assembleDebug`. Never run `assembleDebug` alone after source changes.
 - First Android setup: `npx cap add android`, `node scripts/add-permissions.cjs`, `npx @capacitor/assets generate --android`, then `npm run android:apk`.
-- Push to `main` → GitHub Actions runs tests, deploys `dist/` to Pages only if green.
+- Push to `main` → GitHub Actions runs tests, deploys `dist/` to Pages only if green. Both jobs run on `ubuntu-24.04`, pinned: `ubuntu-latest` moved to 26.04, where Playwright 1.56 (pinned in package.json) can't install Chromium. Upgrade Playwright before moving the runner.
 
 ## Layout
 ```
