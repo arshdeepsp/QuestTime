@@ -226,6 +226,9 @@ test("a session idle for hours on another device doesn't block a start here", as
   await signIn(page);
   await page.goto("http://127.0.0.1:4173/index.html#pomodoro");
   const now = await page.evaluate(() => Date.now());
+  await expect(page.locator("#pomoPage .pm-k")).toHaveText("Ready");
+  /* signed in and listening before the other device's stale doc arrives */
+  await expect.poll(() => page.evaluate(() => window.__cloud.listeners.length)).toBeGreaterThan(0);
   await page.evaluate(([p, d]) => window.__cloud.push(p, d), [LIVE, remoteDoc(remotePomo(now - 5 * 3600000, 0, { sid: "sOld" }))]);
   await page.click("[data-pm=start]");
   await expect(page.locator("#gModal")).toBeHidden();

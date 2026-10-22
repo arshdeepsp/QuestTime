@@ -42,6 +42,7 @@ export var PM_LATE_MS,
   PM_RANGE,
   PM_PRESETS,
   pmDelArm,
+  pmEd,
   PM_ARM_MS,
   pmPg,
   pmPill,
@@ -239,6 +240,7 @@ export function pmCfg() {
   c.w = pmClamp("w", c.w);
   c.b = pmClamp("b", c.b);
   c.l = pmClamp("l", c.l);
+  c.every = pmClamp("every", c.every);
   c.presets = (Array.isArray(c.presets) ? c.presets : []).slice(0, PM_PRESETS);
   delete c.chain;
   return c;
@@ -301,6 +303,27 @@ export function pmPresetSave(name) {
   c.pomo.presets = c0.presets.concat([x]);
   saveCfg(c);
   return true;
+}
+/* Edit a preset in place (the editor's draft: name and its four values, clamped). Editing never applies it. */
+export function pmPresetUpdate(e) {
+  var c = clone(cfg());
+  c.pomo = Object.assign({}, PM_DEF, c.pomo || {});
+  c.pomo.presets = (c.pomo.presets || []).map(function (x) {
+    if (x.id !== e.id) return x;
+    var y = {
+        id: x.id,
+        w: pmClamp("w", e.w),
+        b: pmClamp("b", e.b),
+        l: pmClamp("l", e.l),
+        every: pmClamp("every", e.every),
+      },
+      nm = String(e.name || "")
+        .trim()
+        .slice(0, 20);
+    if (nm) y.name = nm;
+    return y;
+  });
+  saveCfg(c);
 }
 export function pmPresetDel(id) {
   var c = clone(cfg());
@@ -886,12 +909,32 @@ export function pmClick(ev) {
     })[0];
     if (px && !pmApply({ w: px.w, b: px.b, l: px.l, every: px.every })) setSync("Presets apply once this set ends.");
     haptic("light");
+  } else if (a === "pedit") {
+    var pe = pmCfg().presets.filter(function (x) {
+      return x.id === b.getAttribute("data-id");
+    })[0];
+    pmEd = pe && !(pmEd && pmEd.id === pe.id) ? Object.assign({ name: "" }, pe) : null;
+    pmDelArm = null;
+    haptic("light");
+  } else if (a === "pecancel") {
+    pmEd = null;
+  } else if (a === "pesave") {
+    if (pmEd) pmPresetUpdate(pmEd);
+    pmEd = null;
+    haptic("light");
   } else if (a === "pdel") {
     var pid = b.getAttribute("data-id");
     if (pmDelArm && pmDelArm.id === pid && Date.now() - pmDelArm.t < PM_ARM_MS) {
       pmDelArm = null;
+      pmEd = null;
       pmPresetDel(pid);
     } else pmDelArm = { id: pid, t: Date.now() };
+    haptic("light");
+  } else if (a === "ev") {
+    pmSet("every", pmCfg().every + +b.getAttribute("data-d"));
+    haptic("light");
+  } else if (a === "pev") {
+    if (pmEd) pmEd.every = pmClamp("every", pmEd.every + +b.getAttribute("data-d"));
     haptic("light");
   } else if (a === "psave") {
     var nm = pmPg.querySelector("#pmPName");
@@ -902,6 +945,15 @@ export function pmClick(ev) {
   pmDraw();
 }
 export function pmChange(ev) {
+  var f = ev.target.closest("[data-pe]");
+  if (f && pmEd) {
+    var k = f.getAttribute("data-pe");
+    if (k === "name") pmEd.name = f.value;
+    else if (f.value !== "" && isFinite(+f.value)) pmEd[k] = pmClamp(k, +f.value);
+    pmSig = "";
+    pmDraw();
+    return;
+  }
   var s = ev.target.closest("select[data-pk], input[data-pk]");
   if (!s) return;
   if (s.value !== "" && isFinite(+s.value)) pmSet(s.getAttribute("data-pk"), +s.value);
@@ -918,10 +970,11 @@ export function pmPresetsHtml(c, lk) {
     h = '<div class="pm-pre" aria-label="Presets">';
   L.forEach(function (x) {
     var on = pmPresetIs(x, c),
-      armed = pmDelArm && pmDelArm.id === x.id && Date.now() - pmDelArm.t < PM_ARM_MS;
+      ed = pmEd && pmEd.id === x.id;
     h +=
       '<span class="pm-pchip' +
       (on ? " on" : "") +
+      (ed ? " ed" : "") +
       '"><button type="button" class="stone mini" data-pm="preset" data-id="' +
       x.id +
       '" aria-pressed="' +
@@ -930,13 +983,13 @@ export function pmPresetsHtml(c, lk) {
       (lk && !on ? " disabled" : "") +
       ">" +
       esc(pmPresetLabel(x)) +
-      '</button><button type="button" class="stone mini del" data-pm="pdel" data-id="' +
+      '</button><button type="button" class="stone mini" data-pm="pedit" data-id="' +
       x.id +
-      '" aria-label="Delete preset ' +
+      '" aria-expanded="' +
+      !!ed +
+      '" aria-label="Edit preset ' +
       esc(pmPresetLabel(x)) +
-      '">' +
-      (armed ? "Delete?" : "✕") +
-      "</button></span>";
+      '">Edit</button></span>';
   });
   if (L.length < PM_PRESETS && !dup)
     h +=
@@ -945,16 +998,65 @@ export function pmPresetsHtml(c, lk) {
   return (
     h +
     "</div>" +
+    pmEditHtml() +
     (L.length
       ? ""
       : '<p class="help">Save up to ' + PM_PRESETS + " presets of lengths and long break, and switch with one tap.</p>")
   );
 }
+/* The preset editor (Edit on a chip): its name, three lengths and long-break cadence, Save / Cancel and an armed Delete.
+     The draft lives in pmEd (updated on each field's change), so a redraw while it's open keeps what was typed. Editing a
+     preset never applies it and isn't held by a set under way. */
+export function pmEditHtml() {
+  var e = pmEd;
+  if (!e) return "";
+  var armed = pmDelArm && pmDelArm.id === e.id && Date.now() - pmDelArm.t < PM_ARM_MS;
+  return (
+    '<div class="pm-ped" role="group" aria-label="Edit preset"><label>Name <input type="text" data-pe="name" maxlength="20" value="' +
+    esc(e.name || "") +
+    '" placeholder="' +
+    esc(e.w + "/" + e.b + (e.every ? " · " + e.l + " ×" + e.every : "")) +
+    '"></label><div class="pm-rows"><label>Focus <small>15–90 min</small>' +
+    pmNum("w", e.w, false, "pe") +
+    "</label><label>Short break <small>5–30 min</small>" +
+    pmNum("b", e.b, false, "pe") +
+    "</label><label>Long break <small>10–60 min</small>" +
+    pmNum("l", e.l, false, "pe") +
+    '</label><div class="pm-lab">Long break comes' +
+    pmStep("pev", e.every, false) +
+    '</div></div><div class="pm-acts"><button type="button" class="stone save mini" data-pm="pesave">Save preset</button>' +
+    '<button type="button" class="stone mini" data-pm="pecancel">Cancel</button>' +
+    '<button type="button" class="stone del mini" data-pm="pdel" data-id="' +
+    e.id +
+    '">' +
+    (armed ? "Delete?" : "Delete") +
+    "</button></div></div>"
+  );
+}
+/* Long break comes: a − / + counter from never (0) to every PM_RANGE.every[1] (12) pomodoros. */
+export function pmStep(act, v, dis) {
+  var r = PM_RANGE.every;
+  return (
+    '<span class="pm-step"><button type="button" class="stone mini" data-pm="' +
+    act +
+    '" data-d="-1" aria-label="Long break sooner"' +
+    (dis || v <= r[0] ? " disabled" : "") +
+    '>\u2212</button><output class="pm-ev" aria-live="polite">' +
+    (v ? "every " + v : "never") +
+    '</output><button type="button" class="stone mini" data-pm="' +
+    act +
+    '" data-d="1" aria-label="Long break later"' +
+    (dis || v >= r[1] ? " disabled" : "") +
+    ">+</button></span>"
+  );
+}
 /* A length in minutes, any whole number in its range (PM_RANGE), typed or stepped. */
-export function pmNum(k, cur, dis) {
+export function pmNum(k, cur, dis, attr) {
   var r = PM_RANGE[k];
   return (
-    '<input type="number" inputmode="numeric" data-pk="' +
+    '<input type="number" inputmode="numeric" data-' +
+    (attr || "pk") +
+    '="' +
     k +
     '" min="' +
     r[0] +
@@ -967,31 +1069,6 @@ export function pmNum(k, cur, dis) {
     '"' +
     (dis ? " disabled" : "") +
     ">"
-  );
-}
-export function pmSel(k, vals, cur, unit, dis) {
-  return (
-    '<select data-pk="' +
-    k +
-    '" aria-label="' +
-    k +
-    '"' +
-    (dis ? " disabled" : "") +
-    ">" +
-    vals
-      .map(function (v) {
-        return (
-          '<option value="' +
-          v +
-          '"' +
-          (v === cur ? " selected" : "") +
-          ">" +
-          (unit === "n" ? (v ? "every " + v : "never") : v + " min") +
-          "</option>"
-        );
-      })
-      .join("") +
-    "</select>"
   );
 }
 export function pmDraw() {
@@ -1129,9 +1206,9 @@ export function pmDraw() {
     pmNum("b", c.b, lk) +
     "</label><label>Long break <small>10–60 min</small>" +
     pmNum("l", c.l, lk) +
-    "</label><label>Long break comes" +
-    pmSel("every", [0, 2, 3, 4, 5, 6], c.every, "n", lk) +
-    "</label></div>" +
+    '</label><div class="pm-lab">Long break comes' +
+    pmStep("ev", c.every, lk) +
+    "</div></div>" +
     (lk
       ? '<p class="help pm-lock">Locked until this set ends' +
         (c.every ? " \u00b7 " + (c.every - (pomoOpen(T) % c.every)) + " of " + c.every + " to go" : "") +
@@ -1367,7 +1444,8 @@ export function init() {
   PM_LATE_MS = 5000;
   PM_GCOL = 10;
   PM_DEF = { w: 25, b: 5, l: 15, every: 4, auto: false };
-  PM_RANGE = { w: [15, 90], b: [5, 30], l: [10, 60] };
+  PM_RANGE = { w: [15, 90], b: [5, 30], l: [10, 60], every: [0, 12] };
+  pmEd = null;
   PM_PRESETS = 4;
   pmDelArm = null;
   /* The page redraws every second while a pomodoro runs, so Stop's "Stop? Not counted" arming lives outside the markup
